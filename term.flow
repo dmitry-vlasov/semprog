@@ -1,0 +1,34 @@
+import types;
+
+export {
+    UndefVal();
+    Term ::= TermVar, TermFunc;
+    TermVar(name : string, type : Type);
+    TermFunc(name : string, args : [Term], type : Type);
+
+    term2s(term : Term) -> string;
+    term2vars(term : Term) -> Set<TermVar>;
+    undefVal = UndefVal();
+}
+
+term2s(term : Term) -> string {
+    switch (term) {
+        TermVar(name, type): name;
+        TermFunc(name, args, type): {
+            if (length(args) == 0) name else {
+                    name + "(" + strGlue(map(args, term2s), ", ") + ")";
+            }
+        }
+    }
+}
+
+term2vars(term : Term) -> Set<TermVar> {
+    doTerm2s(makeSet(), term);
+}
+
+doTerm2s(acc : Set<TermVar>, term : Term) -> Set<TermVar> {
+    switch (term) {
+        TermVar(__, __): insertSet(acc, term);
+        TermFunc(__, args, __): fold(args, acc, doTerm2s);
+    }
+}

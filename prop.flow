@@ -1,0 +1,49 @@
+import eval;
+import dynamic;
+
+export {
+    makeBoolConst(name : string, v : bool) -> Oper {
+        Oper(name, boolType, 
+            \__, args, __ -> if (length(args) != 0) flow(undefVal) else flow(v),
+            \__,__,__ -> name
+        );
+    }
+    boolTrue = makeBoolConst("T", true);
+    boolFalse = makeBoolConst("F", false);
+
+    makeBoolUnary(name : string, op : (bool) -> bool) -> Oper {
+        Oper(name, unaryBoolFnType, 
+            \e, args, vals -> {
+                if (length(args) != 1) flow(undefVal) else {
+                    flow(op(flow2b(e.eval(args[0], vals))));
+                }
+            },
+            \s, args, opers -> {
+                if (length(args) != 1) "broken term" else
+                name + s.show(args[0], opers);
+            }
+        )
+    }
+
+    lnot = makeBoolUnary("!", \v -> !v);
+
+    makeBoolBinary(name : string, op : (bool, bool) -> bool) -> Oper {
+        Oper(name, binaryBoolFnType,
+            \e, args, vals -> {
+                if (length(args) != 2) flow(undefVal) else {
+                    op(flow2b(e.eval(args[0], vals)), flow2b(e.eval(args[1], vals)));
+                }
+            },
+            \s, args, opers -> {
+                if (length(args) != 2) "broken term" else
+                "(" + s.show(args[0], opers) + " " + name + " " + s.show(args[1], opers) + ")";
+            }
+        );
+    }
+    lor = makeBoolBinary("\\/", \v1, v2 -> v1 || v2);
+    land = makeBoolBinary("/\\", \v1, v2 -> v1 && v2);
+    limpl = makeBoolBinary("->", \v1, v2 -> !v1 || v2);
+    leq = makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2));
+
+    propLogic = EvalAlgebra([boolTrue, boolFalse, lnot, land, limpl, leq]);
+}

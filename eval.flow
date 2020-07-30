@@ -1,0 +1,67 @@
+import ds/tree;
+import ds/set;
+import string;
+
+import types;
+import term;
+
+export {
+    Eval(
+        eval : (term : Term, vals : Tree<string, flow>) -> flow
+    );
+    Show(
+        show : (term : Term, opers : Tree<string, Oper>) -> string
+    );
+
+    Oper(
+        name : string, 
+        sign : TypeFunc, 
+        sem  : (Eval, args : [Term], vals : Tree<string, flow>) -> flow,
+        show : (Show, args : [Term], opers : Tree<string, Oper>) -> string
+    );
+
+    EvalAlgebra(opers : [Oper]);
+
+    algebraEval(alg : EvalAlgebra) -> Eval;
+
+    showDfOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
+    showUnaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
+    showBinaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
+}
+
+algebraEval(alg : EvalAlgebra) -> Eval {
+    opers = fold(alg.opers, makeTree(), \acc, op -> setTree(acc, op.name, op));
+    Eval(\term, vals -> evalTerm(term, vals, opers));
+}
+
+evalTerm(term : Term, vals : Tree<string, flow>, opers : Tree<string, Oper>) -> flow {
+    eval = Eval(\t, vs -> evalTerm(t, vs, opers));
+    switch (term) {
+        TermVar(name, type): {
+            lookupTreeDef(vals, name, undefVal);
+        }
+        TermFunc(name, args, type): {
+            eitherMap(lookupTree(opers, name), \op -> op.sem(eval, args, vals), undefVal);
+        }
+    }
+}
+
+showDfOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
+    \s, args, opers -> {
+        name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \a -> s.show(a, opers)), ", ") + ")");
+    }
+}
+
+showUnaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
+    \s, args, opers -> {
+        if (length(args) != 1) "broken term" else
+            name + s.show(args[0], opers);
+    }
+}
+
+showBinaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
+    \s, args, opers -> {
+        if (length(args) != 2) "broken term" else
+        "(" + s.show(args[0], opers) + " " + name + " " + s.show(args[1], opers) + ")";
+    }
+}

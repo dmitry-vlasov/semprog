@@ -1,0 +1,211 @@
+import prop;
+
+export {
+    makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> Oper {
+        Oper(Q + " " + v + " : " + type2s(t), 
+            fnType([arType(t)] , boolType),
+            \e, args, vals -> {
+                if (length(args) != 2) undefVal else {
+                    flow(quant(
+                        cast(e.eval(args[0], vals) : flow -> [flow]),
+                        \a -> flow2b(e.eval(args[1], setTree(vals, v, a)))
+                    ));
+                }
+            },
+            \s, args, opers -> {
+                if (length(args) != 2) "broken term" else
+                Q + " " + v + " : " + s.show(args[0], opers) + " " + s.show(args[1], opers);
+            }
+        ); 
+    }
+
+    makeEquality(t : Type) -> Oper {
+        Oper("=" + type2s(t), 
+            fnType([t, t] , boolType),
+            \e, args, vals -> {
+                if (length(args) != 2) flow(undefVal) else {
+                    flow(e.eval(args[0], vals) == e.eval(args[1], vals));
+                }
+            },
+            showBinaryOper("=")
+        );
+    }
+
+    makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> Oper {
+        Oper(name, fnType(types, boolType),
+            \e, args, vals -> {
+                if (length(args) != length(types)) undefVal else {
+                    flow(p(map(args, \arg -> e.eval(arg, vals))))
+                }
+            },
+            showDfOper(name)
+        );
+    }
+
+    makeIntUnary(name : string, op : (int) -> int) -> Oper {
+        Oper(name, unaryIntFnType, 
+            \e, args, vals -> {
+                if (length(args) != 1) flow(undefVal) else {
+                    op(flow2i(e.eval(args[0], vals)));
+                }
+            },
+            showUnaryOper(name)
+        )
+    }
+
+    makeIntBinary(name : string, op : (int, int) -> int) -> Oper {
+        Oper(name, binaryIntFnType,
+            \e, args, vals -> {
+                if (length(args) != 2) flow(undefVal) else {
+                    op(flow2i(e.eval(args[0], vals)), flow2i(e.eval(args[1], vals)));
+                }
+            },
+            showBinaryOper(name)
+        );
+    }
+
+    makeConcat(type : Type) -> Oper {
+        Oper(
+            "conc", fnType([arType(type), arType(type)], arType(type)),
+            \e, args, vals -> {
+                if (length(args) != 2) flow(undefVal) else {
+                    concat(
+                        cast(e.eval(args[0], vals) : flow -> [flow]), 
+                        cast(e.eval(args[1], vals) : flow -> [flow])
+                    );
+                }
+            },
+            showDfOper("conc")
+        );
+    }
+
+    makeCons(type : Type) -> Oper {
+        Oper(
+            "cons", fnType([type, arType(type)], arType(type)),
+            \e, args, vals -> {
+                if (length(args) != 2) flow(undefVal) else {
+                    concat(
+                        [e.eval(args[0], vals)], 
+                        cast(e.eval(args[1], vals) : flow -> [flow])
+                    );
+                }
+            },
+            showDfOper("cons")
+        );
+    }
+
+    makeTail(type : Type) -> Oper {
+        Oper(
+            "tail", fnType([arType(type)], arType(type)),
+            \e, args, vals -> {
+                if (length(args) != 1) flow(undefVal) else {
+                    tail(cast(e.eval(args[1], vals) : flow -> [flow]));
+                }
+            },
+            showDfOper("cons")
+        );
+    }
+
+    makeEmpty(type : Type) -> Oper {
+        Oper(
+            "tail", fnType([], arType(type)),
+            \e, args, vals -> {
+                if (length(args) != 0) flow(undefVal) else [];
+            },
+            showDfOper("cons")
+        );
+    }
+
+    concatIntArrays = makeConcat(intType);
+
+    makeIf(type : Type) -> Oper {
+        Oper(
+            "if", fnType([boolType, type, type], type),
+            \e, args, vals -> {
+                if (length(args) != 3) flow(undefVal) else {
+                    if (flow2b(e.eval(args[0], vals))) {
+                        e.eval(args[1], vals);
+                    } else {
+                        e.eval(args[2], vals);
+                    }
+                }
+            },
+            \s, args, opers -> {
+                if (length(args) != 3) "broken term" else
+                "(if " + s.show(args[0], opers) + " then " + s.show(args[1], opers) + " else " + s.show(args[2], opers) + ")";
+            }
+        );
+    }
+
+    makeLambda(v : string, t : Type, type : Type) -> Oper {
+        Oper(
+            "\\ " + v + ".", 
+            fnType([t, type], fnType([t], type)),
+            \e, args, vals -> {
+                \x -> e.eval(args[0], setTree(vals, v, x))
+            },
+            \s, args, opers -> {
+                "\\ " + v + " : " + type2s(t) + " " + s.show(args[0], opers)
+            }
+        );
+    }
+
+    doRec(
+        f_0 : ([flow]) -> flow,
+        f_1 : ([flow]) -> flow,
+        g : ([flow]) -> flow,
+        p : ([flow]) -> flow,
+        args : [flow]
+    ) -> flow {
+        if (flow2b(p(args))) f_0(args) else {
+            f_1(concat(
+                [doRec(f_0, f_1, g, p, 
+                    concat([g(args)], tail(args))
+                )],
+                args
+            ));
+        }
+    }
+
+    rec(
+        f_0 : ([flow]) -> flow,
+        f_1 : ([flow]) -> flow,
+        g : ([flow]) -> flow,
+        p : ([flow]) -> flow
+    ) -> ([flow]) -> flow {
+        \args -> doRec(f_0, f_1, g, p, args);
+    }
+
+    makeRec(n : Type, arg_types : [Type], val : Type) -> Oper {
+        Oper("rec", 
+            fnType(
+                [
+                    fnType(concat([n], arg_types), val),       // f_0
+                    fnType(concat([val, n], arg_types), val),  // f_1
+                    fnType(concat([n], arg_types), n),         // g
+                    fnType(concat([n], arg_types), boolType),  // p
+                ],
+                fnType(concat([n], arg_types), val)
+            ),
+            \e, args, vals -> {
+                f_0 = cast(e.eval(args[0], vals): flow -> ([flow]) -> flow);
+                f_1 = cast(e.eval(args[1], vals): flow -> ([flow]) -> flow);
+                g   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
+                p   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
+                rec(f_0, f_1, g, p);
+            },
+            showDfOper("rec")
+        );
+    }
+
+
+/*
+    makeArithmetics(vars : [string], types : [Type]) -> [Oper] {
+
+    }
+
+    rqArithmeticsLogic = EvalAlgebra(concat(propLogic.opers,
+        [makeQuantifier("x", typeInt)])
+    );
+    */
+}

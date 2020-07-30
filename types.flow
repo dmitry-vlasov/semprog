@@ -1,0 +1,87 @@
+import ds/tree;
+import ds/set;
+import string;
+
+export {
+    Type ::= TypeVar, TypeFunc;
+    TypeVar(name : string);
+    TypeFunc(
+        name : string, 
+        args : [Type], 
+        show : ((Type)-> string, [Type]) -> string
+    );
+
+    type2s(type : Type) -> string;
+
+    showFnType(show : (Type) -> string, args : [Type]) -> string;
+    showArType(show : (Type) -> string, args : [Type]) -> string;
+    showPrType(show : (Type) -> string, args : [Type]) -> string;
+    showUnType(show : (Type) -> string, args : [Type]) -> string;
+    showDfType(name : string) -> (show : (Type) -> string, args : [Type]) -> string;
+
+    constType(name : string) -> TypeFunc;
+    arType(type : Type) -> TypeFunc;
+    fnType(args : [Type], val : Type) -> TypeFunc;
+    unType(args : [Type]) -> TypeFunc;
+    prType(args : [Type]) -> TypeFunc;
+
+    undefType = TypeFunc("", [], \__,__ -> "undef_type");
+
+    boolType = constType("bool");
+    unaryBoolFnType = fnType([boolType], boolType);
+    binaryBoolFnType = fnType([boolType, boolType], boolType);
+
+    intType = constType("int");
+    unaryIntFnType = fnType([intType], intType);
+    binaryIntFnType = fnType([intType, intType], intType);
+}
+
+type2s(type : Type) -> string {
+    switch (type) {
+        TypeVar(name): name;
+        TypeFunc(__, args, show): show(type2s, args);
+    }
+}
+
+showFnType(show : (Type) -> string, args : [Type]) -> string {
+    "(" + strGlue(map(tail(args), show), ", ") + ") -> " + show(args[0]);
+}
+
+showArType(show : (Type) -> string, args : [Type]) -> string {
+    "[" + show(args[0]) + "]";
+}
+
+showPrType(show : (Type) -> string, args : [Type]) -> string {
+    strGlue(map(args, show), "X");
+}
+
+showUnType(show : (Type) -> string, args : [Type]) -> string {
+    strGlue(map(args, show), "U");
+}
+
+showDfType(name : string) -> (show : (Type) -> string, args : [Type]) -> string {
+    \show, args -> {
+        name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, show), ", ") + ")");
+    }
+}
+
+
+constType(name : string) -> TypeFunc {
+    TypeFunc(name, [], \__,__ -> name);
+}
+
+arType(type : Type) -> TypeFunc {
+    TypeFunc("ar", [type], showArType);
+}
+
+fnType(args : [Type], val : Type) -> TypeFunc {
+    TypeFunc("fn", concat([val], args), showFnType);
+}
+
+unType(args : [Type]) -> TypeFunc {
+    TypeFunc("U", args, showUnType);
+}
+
+prType(args : [Type]) -> TypeFunc {
+    TypeFunc("X", args, showPrType);
+}
