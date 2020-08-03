@@ -3,6 +3,7 @@ import ds/set;
 import string;
 
 export {
+    // General algebraic types: variables and type constructors.
     Type ::= TypeVar, TypeFunc;
     TypeVar(name : string);
     TypeFunc(
@@ -13,24 +14,22 @@ export {
 
     type2s(type : Type) -> string;
 
-    showFnType(show : (Type) -> string, args : [Type]) -> string;
-    showArType(show : (Type) -> string, args : [Type]) -> string;
-    showPrType(show : (Type) -> string, args : [Type]) -> string;
-    showUnType(show : (Type) -> string, args : [Type]) -> string;
-    showDfType(name : string) -> (show : (Type) -> string, args : [Type]) -> string;
-
+    // A set of common algebraic type operators
     constType(name : string) -> TypeFunc;
     arType(type : Type) -> TypeFunc;
     fnType(args : [Type], val : Type) -> TypeFunc;
     unType(args : [Type]) -> TypeFunc;
     prType(args : [Type]) -> TypeFunc;
 
+    // A special constant - undefined type.
     undefType = TypeFunc("", [], \__,__ -> "undef_type");
 
+    // Common const type: boolean
     boolType = constType("bool");
     unaryBoolFnType = fnType([boolType], boolType);
     binaryBoolFnType = fnType([boolType, boolType], boolType);
 
+    // Common const type: integer
     intType = constType("int");
     unaryIntFnType = fnType([intType], intType);
     binaryIntFnType = fnType([intType, intType], intType);

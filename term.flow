@@ -1,34 +1,45 @@
 import types;
 
 export {
-    UndefVal();
-    Term ::= TermVar, TermFunc;
-    TermVar(name : string, type : Type);
-    TermFunc(name : string, args : [Term], type : Type);
+    // General form of an algebraic term: variable or an operation over other terms.
+    AlgTerm ::= AlgTermVar, AlgTermFunc;
+    AlgTermVar(name : string, type : Type);
+    AlgTermFunc(name : string, args : [AlgTerm], type : Type);
 
-    term2s(term : Term) -> string;
-    term2vars(term : Term) -> Set<TermVar>;
-    undefVal = UndefVal();
+    algTerm2s(term : AlgTerm) -> string;
+    algTypedTerm2s(term : AlgTerm) -> string;
+    algTerm2vars(term : AlgTerm) -> Set<AlgTermVar>;
 }
 
-term2s(term : Term) -> string {
+algTerm2s(term : AlgTerm) -> string {
     switch (term) {
-        TermVar(name, type): name;
-        TermFunc(name, args, type): {
+        AlgTermVar(name, type): name;
+        AlgTermFunc(name, args, type): {
             if (length(args) == 0) name else {
-                    name + "(" + strGlue(map(args, term2s), ", ") + ")";
+                    name + "(" + strGlue(map(args, algTerm2s), ", ") + ")";
             }
         }
     }
 }
 
-term2vars(term : Term) -> Set<TermVar> {
-    doTerm2s(makeSet(), term);
+algTypedTerm2s(term : AlgTerm) -> string {
+    switch (term) {
+        AlgTermVar(name, type): name + " : " + type2s(type);
+        AlgTermFunc(name, args, type): {
+            if (length(args) == 0) name else {
+                    name + " : " + type2s(type) +  " (" + strGlue(map(args, algTypedTerm2s), ", ") + ")";
+            }
+        }
+    }
 }
 
-doTerm2s(acc : Set<TermVar>, term : Term) -> Set<TermVar> {
+algTerm2vars(term : AlgTerm) -> Set<AlgTermVar> {
+    doAlgTerm2s(makeSet(), term);
+}
+
+doAlgTerm2s(acc : Set<AlgTermVar>, term : AlgTerm) -> Set<AlgTermVar> {
     switch (term) {
-        TermVar(__, __): insertSet(acc, term);
-        TermFunc(__, args, __): fold(args, acc, doTerm2s);
+        AlgTermVar(__, __): insertSet(acc, term);
+        AlgTermFunc(__, args, __): fold(args, acc, doAlgTerm2s);
     }
 }

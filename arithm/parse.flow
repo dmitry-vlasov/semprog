@@ -1,0 +1,64 @@
+import lingo/pegcode/driver;
+import term;
+
+export {
+    parseArithm(str : string) -> AlgTerm;
+}
+
+parseArithm(str : string) -> AlgTerm {
+    e_gr = "#include arithm/arithm.lingo";
+	parsic(compilePegGrammar(e_gr), str, 
+        SemanticActions(
+            mergeTree(defaultPegActions.t,
+            pairs2tree([
+                Pair("makeBoolFunc", \s -> {
+                    //println("makeBoolFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), tail(s), boolType)
+                }),
+                Pair("makeBoolVar",  \s -> {
+                    //println("makeBoolVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), boolType)
+                }),
+
+                Pair("makeIntFunc", \s -> {
+                    //println("makeIntFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), tail(s), intType)
+                }),
+                Pair("makeIntVar",  \s -> {
+                    //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), intType)
+                }),
+
+                Pair("makeArrFunc", \s -> {
+                    //println("makeArrFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), tail(s), arType(intType))
+                }),
+                Pair("makeArrFuncNary", \s -> {
+                    //println("makeArrFuncNary: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), s[1], arType(intType))
+                }),
+                Pair("makeArray", \s -> {
+                    //println("makeArray: " + flow2s(s[0]) + " = " + toString(s));
+                    //println(s[1]);
+                    AlgTermFunc("array-" + i2s(length(s[1])), s[1], arType(intType))
+                }),
+                Pair("makeArrVar",  \s -> {
+                    //println("makeArrVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), arType(intType))
+                }),
+                Pair("makeQuantifier", \s -> { 
+                    //println(s[1]);
+                    var = cast(s[1] : flow -> AlgTermVar);
+                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]) + " " + var.name, tail(s), boolType)
+                }),
+                Pair("makeArrFromTo", \s -> { 
+                    //println("makeArrFromTo: " + flow2s(s[0]) + " = " + toString(s));
+                    var = cast(s[1] : flow -> AlgTermVar);
+                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name);
+                    AlgTermFunc(flow2s(s[0]), tail(s), boolType)
+                }),
+            ]))
+        )
+    );
+}

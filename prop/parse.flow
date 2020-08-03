@@ -1,0 +1,19 @@
+import lingo/pegcode/driver;
+import term;
+
+export {
+    parseProp(str : string) -> AlgTerm;
+}
+
+parseProp(str : string) -> AlgTerm {
+    e_gr = "#include prop/prop.lingo";
+	parsic(compilePegGrammar(e_gr), str, 
+        SemanticActions(
+            mergeTree(defaultPegActions.t,
+            pairs2tree([
+                Pair("makeBoolFunc", \s -> AlgTermFunc(flow2s(s[0]), tail(s), boolType)),
+                Pair("makeBoolVar",  \s -> AlgTermVar(flow2s(s[0]), boolType)),
+            ]))
+        )
+    );
+}

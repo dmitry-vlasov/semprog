@@ -1,0 +1,13 @@
+S = ws (or | and | impl | neg | eq | var | true | false);
+or   = "(" ws S:l "\\/" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
+and  = "(" ws S:l "/\\" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
+impl = "(" ws S:l "->"  $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
+eq   = "(" ws S:l "<->" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
+neg  = "!" $op ws S:e { makeBoolFunc(:op, :e)};
+var  = letter+ $s ws { makeBoolVar($s) };
+letter = 'a'-'z' | 'A'-'Z' | '0'-'9' | '_';
+true = "T" $c ws { makeBoolFunc($c) };
+false = "F" $c ws { makeBoolFunc($c) };
+
+ws = ws_*;
+ws_ = ' ' | '\t' | '\n' | '\r';

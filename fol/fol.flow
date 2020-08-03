@@ -1,0 +1,65 @@
+import eval;
+import dynamic;
+
+export {
+    // Basic first order logic construcitons: restricted quantifier, equality and predicates.
+    makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper;
+    makeEquality(t : Type) -> EvalOper ;
+    makeNotEquality(t : Type) -> EvalOper ;
+    makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper;
+}
+
+makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
+    EvalOper(Q + " " + v,
+        fnType([arType(t), boolType] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 3) {
+                undefVal 
+            } else {
+                flow(quant(
+                    cast(e.eval(args[1], vals) : flow -> [flow]),
+                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                ));
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            Q + " " + v + " : " + s.show(args[0]) + " " + s.show(args[1]);
+        }
+    ); 
+}
+
+makeEquality(t : Type) -> EvalOper {
+    EvalOper("=", 
+        fnType([t, t] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 2) flow(undefVal) else {
+                flow(e.eval(args[0], vals) == e.eval(args[1], vals));
+            }
+        },
+        showBinaryEvalOper("=")
+    );
+}
+
+makeNotEquality(t : Type) -> EvalOper {
+    EvalOper("!=", 
+        fnType([t, t] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 2) flow(undefVal) else {
+                flow(e.eval(args[0], vals) != e.eval(args[1], vals));
+            }
+        },
+        showBinaryEvalOper("!=")
+    );
+}
+
+makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper {
+    EvalOper(name, fnType(types, boolType),
+        \e, args, vals -> {
+            if (length(args) != length(types)) undefVal else {
+                flow(p(map(args, \arg -> e.eval(arg, vals))))
+            }
+        },
+        showDfEvalOper(name)
+    );
+}

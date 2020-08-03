@@ -1,0 +1,8 @@
+import test/prop;
+import test/arithm;
+
+main() -> void {
+    testProp();
+    testArithm();
+    quit(0);
+}

@@ -6,62 +6,115 @@ import types;
 import term;
 
 export {
+    // General semantics: eval function.
     Eval(
-        eval : (term : Term, vals : Tree<string, flow>) -> flow
+        eval : (AlgTerm : AlgTerm, vals : Tree<string, flow>) -> flow
     );
     Show(
-        show : (term : Term, opers : Tree<string, Oper>) -> string
+        show : (AlgTerm : AlgTerm) -> string
     );
 
-    Oper(
+    // The structure, which defines a sementics for an operation.
+    EvalOper(
         name : string, 
         sign : TypeFunc, 
-        sem  : (Eval, args : [Term], vals : Tree<string, flow>) -> flow,
-        show : (Show, args : [Term], opers : Tree<string, Oper>) -> string
+        sem  : (Eval, args : [AlgTerm], vals : Tree<string, flow>) -> flow,
+        show : (Show, args : [AlgTerm]) -> string
     );
 
-    EvalAlgebra(opers : [Oper]);
+    // Algebra: consists of a set of operations with their sementics.
+    EvalAlgebra(name : string, opers : [EvalOper]);
 
     algebraEval(alg : EvalAlgebra) -> Eval;
+    algebraShow(alg : EvalAlgebra) -> Show;
 
-    showDfOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
-    showUnaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
-    showBinaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string;
+    // Show info about algebra, mainly its signature
+    evalAlgebra2s(alg : EvalAlgebra) -> string;
+
+    showDfEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
+    showConstEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
+    showUnaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
+    showBinaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
+    showBracketEvalOper(open : string, close : string, infix : string) -> (Show, args : [AlgTerm]) -> string;
+
+    // Special constant: undefined value.
+    UndefVal();
+    undefVal = UndefVal();
+    showValuation(v : Tree<string, flow>) -> string;
 }
 
 algebraEval(alg : EvalAlgebra) -> Eval {
     opers = fold(alg.opers, makeTree(), \acc, op -> setTree(acc, op.name, op));
-    Eval(\term, vals -> evalTerm(term, vals, opers));
+    Eval(\term, vals -> evalAlgTerm(term, vals, opers));
 }
 
-evalTerm(term : Term, vals : Tree<string, flow>, opers : Tree<string, Oper>) -> flow {
-    eval = Eval(\t, vs -> evalTerm(t, vs, opers));
+evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, EvalOper>) -> flow {
+    eval = Eval(\t, vs -> evalAlgTerm(t, vs, opers));
+    //println("eval of: " + term.name);
     switch (term) {
-        TermVar(name, type): {
+        AlgTermVar(name, type): {
             lookupTreeDef(vals, name, undefVal);
         }
-        TermFunc(name, args, type): {
+        AlgTermFunc(name, args, type): {
+            if (!containsKeyTree(opers, name)) {
+                println("unknown operator: " + name);
+            }
             eitherMap(lookupTree(opers, name), \op -> op.sem(eval, args, vals), undefVal);
         }
     }
 }
 
-showDfOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
-    \s, args, opers -> {
-        name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \a -> s.show(a, opers)), ", ") + ")");
+algebraShow(alg : EvalAlgebra) -> Show {
+    opers = fold(alg.opers, makeTree(), \acc, op -> setTree(acc, op.name, op));
+    Show(\term -> showAlgTerm(term, opers));
+}
+
+showAlgTerm(term : AlgTerm, opers : Tree<string, EvalOper>) -> string {
+    show = Show(\t, -> showAlgTerm(t, opers));
+    switch (term) {
+        AlgTermVar(name, type): name;
+        AlgTermFunc(name, args, type): {
+            if (!containsKeyTree(opers, name)) {
+                println("unknown operator: " + name);
+            }
+            eitherMap(lookupTree(opers, name), \op -> op.show(show, args), "undefVal");
+        }
     }
 }
 
-showUnaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
-    \s, args, opers -> {
-        if (length(args) != 1) "broken term" else
-            name + s.show(args[0], opers);
+evalAlgebra2s(alg : EvalAlgebra) -> string {
+    "Algebra " + alg.name + ":\n"+ 
+    strGlue(map(alg.opers, \op -> "\t" + op.name + " : " + type2s(op.sign) + "\n"),  "");
+}
+
+showDfEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> {
+        name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \a -> s.show(a)), ", ") + ")");
     }
 }
 
-showBinaryOper(name) -> (Show, args : [Term], opers : Tree<string, Oper>) -> string {
-    \s, args, opers -> {
-        if (length(args) != 2) "broken term" else
-        "(" + s.show(args[0], opers) + " " + name + " " + s.show(args[1], opers) + ")";
+showConstEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> if (length(args) != 0) "broken AlgTerm" else name;
+}
+
+showUnaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> {
+        if (length(args) != 1) "broken AlgTerm" else
+            name + s.show(args[0]);
     }
+}
+
+showBinaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> {
+        if (length(args) != 2) "broken AlgTerm" else
+        "(" + s.show(args[0]) + " " + name + " " + s.show(args[1]) + ")";
+    }
+}
+
+showBracketEvalOper(open : string, close : string, infix : string) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> open + strGlue(map(args, \a -> s.show(a)), infix + " ") + close;
+}
+
+showValuation(v : Tree<string, flow>) -> string {
+    strGlue(map(tree2pairs(v), \p -> p.first + "=" + toString(p.second)),  ", ");
 }

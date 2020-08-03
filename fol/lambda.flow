@@ -1,0 +1,90 @@
+import eval;
+import dynamic;
+
+export {
+    // Recursion, lambda and conditional operators
+    makeIf(type : Type) -> EvalOper;
+    makeLambda(v : string, t : Type, type : Type) -> EvalOper;
+    makeRecursion(n : Type, arg_types : [Type], val : Type) -> EvalOper;
+}
+
+makeIf(type : Type) -> EvalOper {
+    EvalOper(
+        "if", fnType([boolType, type, type], type),
+        \e, args, vals -> {
+            if (length(args) != 3) flow(undefVal) else {
+                if (flow2b(e.eval(args[0], vals))) {
+                    e.eval(args[1], vals);
+                } else {
+                    e.eval(args[2], vals);
+                }
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            "(if " + s.show(args[0]) + " then " + s.show(args[1]) + " else " + s.show(args[2]) + ")";
+        }
+    );
+}
+
+makeLambda(v : string, t : Type, type : Type) -> EvalOper {
+    EvalOper(
+        "\\ " + v + ".", 
+        fnType([t, type], fnType([t], type)),
+        \e, args, vals -> {
+            \x -> e.eval(args[0], setTree(vals, v, x))
+        },
+        \s, args -> {
+            "\\ " + v + " : " + type2s(t) + " " + s.show(args[0])
+        }
+    );
+}
+
+doRecursion(
+    f_0 : ([flow]) -> flow,
+    f_1 : ([flow]) -> flow,
+    g : ([flow]) -> flow,
+    p : ([flow]) -> flow,
+    args : [flow]
+) -> flow {
+    if (flow2b(p(args))) f_0(args) else {
+        f_1(concat(
+            [doRecursion(f_0, f_1, g, p, 
+                concat([g(args)], tail(args))
+            )],
+            args
+        ));
+    }
+}
+
+recursion(
+    f_0 : ([flow]) -> flow,
+    f_1 : ([flow]) -> flow,
+    g : ([flow]) -> flow,
+    p : ([flow]) -> flow
+) -> ([flow]) -> flow {
+    \args -> doRecursion(f_0, f_1, g, p, args);
+}
+
+makeRecursion(n : Type, arg_types : [Type], val : Type) -> EvalOper {
+    EvalOper("rec", 
+        fnType(
+            [
+                fnType(concat([n], arg_types), val),       // f_0
+                fnType(concat([val, n], arg_types), val),  // f_1
+                fnType(concat([n], arg_types), n),         // g
+                fnType(concat([n], arg_types), boolType),  // p
+            ],
+            fnType(concat([n], arg_types), val)
+        ),
+        \e, args, vals -> {
+            f_0 = cast(e.eval(args[0], vals): flow -> ([flow]) -> flow);
+            f_1 = cast(e.eval(args[1], vals): flow -> ([flow]) -> flow);
+            g   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
+            p   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
+            recursion(f_0, f_1, g, p);
+        },
+        showDfEvalOper("rec")
+    );
+}
+

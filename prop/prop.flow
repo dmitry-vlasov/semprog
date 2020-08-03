@@ -1,0 +1,49 @@
+import eval;
+import dynamic;
+
+export {
+    // The definition of semantics for a classical propositional logic.
+    makeBoolConst(name : string, v : bool) -> EvalOper;
+    boolTrue = makeBoolConst("T", true);
+    boolFalse = makeBoolConst("F", false);
+
+    makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper;
+    lnot = makeBoolUnary("!", \v -> !v);
+
+    makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper;
+    lor = makeBoolBinary("\\/", \v1, v2 -> v1 || v2);
+    land = makeBoolBinary("/\\", \v1, v2 -> v1 && v2);
+    limpl = makeBoolBinary("->", \v1, v2 -> !v1 || v2);
+    leq = makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2));
+
+    propLogic = EvalAlgebra("propositioal logic", [boolTrue, boolFalse, lnot, land, limpl, leq, lor]);
+}
+
+makeBoolConst(name : string, v : bool) -> EvalOper {
+    EvalOper(name, boolType, 
+        \__, args, __ -> if (length(args) != 0) flow(undefVal) else flow(v),
+        \__,__ -> name
+    );
+}
+
+makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper {
+    EvalOper(name, unaryBoolFnType, 
+        \e, args, vals -> {
+            if (length(args) != 1) flow(undefVal) else {
+                flow(op(flow2b(e.eval(args[0], vals))));
+            }
+        },
+        showUnaryEvalOper(name)
+    )
+}
+
+makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
+    EvalOper(name, binaryBoolFnType,
+        \e, args, vals -> {
+            if (length(args) != 2) flow(undefVal) else {
+                op(flow2b(e.eval(args[0], vals)), flow2b(e.eval(args[1], vals)));
+            }
+        },
+        showBinaryEvalOper(name)
+    );
+}
