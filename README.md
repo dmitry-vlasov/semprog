@@ -4,7 +4,7 @@ Semantic programming framework.
 Used to formalize and glue together semantics of different kinds.
 
 Currently following semantics are implemented:
-  - standard boolean operations (/\, \/, ->, <->, !, T, F),
+  - standard boolean operations (/\\, \\/, ->, <->, !, T, F),
   - restricted quantifiers (E, A),
   - equality (=, !=),
   - arithmetics (+,-,*,/)
