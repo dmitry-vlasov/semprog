@@ -21,7 +21,9 @@ export {
 
 makeBoolConst(name : string, v : bool) -> EvalOper {
     EvalOper(name, boolType, 
-        \__, args, __ -> if (length(args) != 0) flow(undefVal) else flow(v),
+        \__, args, __ -> {
+            if (length(args) != 0) flow(undefVal) else flow(v)
+        },
         \__,__ -> name
     );
 }
@@ -41,7 +43,10 @@ makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
     EvalOper(name, binaryBoolFnType,
         \e, args, vals -> {
             if (length(args) != 2) flow(undefVal) else {
-                op(flow2b(e.eval(args[0], vals)), flow2b(e.eval(args[1], vals)));
+                flow(op(
+                    flow2b(e.eval(args[0], vals)), 
+                    flow2b(e.eval(args[1], vals))
+                ));
             }
         },
         showBinaryEvalOper(name)

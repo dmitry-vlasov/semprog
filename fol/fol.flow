@@ -14,7 +14,7 @@ makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> b
         fnType([arType(t), boolType] , boolType),
         \e, args, vals -> {
             if (length(args) != 3) {
-                undefVal 
+                flow(undefVal)
             } else {
                 flow(quant(
                     cast(e.eval(args[1], vals) : flow -> [flow]),
@@ -56,7 +56,7 @@ makeNotEquality(t : Type) -> EvalOper {
 makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper {
     EvalOper(name, fnType(types, boolType),
         \e, args, vals -> {
-            if (length(args) != length(types)) undefVal else {
+            if (length(args) != length(types)) flow(undefVal) else {
                 flow(p(map(args, \arg -> e.eval(arg, vals))))
             }
         },

@@ -54,8 +54,6 @@ parseArithm(str : string) -> AlgTerm {
                 }),
                 Pair("makeArrFromTo", \s -> { 
                     //println("makeArrFromTo: " + flow2s(s[0]) + " = " + toString(s));
-                    var = cast(s[1] : flow -> AlgTermVar);
-                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name);
                     AlgTermFunc(flow2s(s[0]), tail(s), boolType)
                 }),
             ]))

@@ -8,10 +8,10 @@ import term;
 export {
     // General semantics: eval function.
     Eval(
-        eval : (AlgTerm : AlgTerm, vals : Tree<string, flow>) -> flow
+        eval : (term : AlgTerm, vals : Tree<string, flow>) -> flow
     );
     Show(
-        show : (AlgTerm : AlgTerm) -> string
+        show : (term : AlgTerm) -> string
     );
 
     // The structure, which defines a sementics for an operation.

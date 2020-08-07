@@ -6,6 +6,7 @@ export {
 }
 
 testArithm() {
+    print_bool_val = \val -> if (isSameStructType(val, undefVal)) "<UNDEF>" else b2s(val);
     iter(arithm_tests, \p -> {
         //println("Testing: " + p.first);
         term = parseArithm(p.first);
@@ -17,7 +18,7 @@ testArithm() {
         //println("");
         //println(p.first + " = " + prop_show(term));
         println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
-            b2s(algebraEval(algebra).eval(term, p.second)) + "\n"
+            print_bool_val(algebraEval(algebra).eval(term, p.second)) + "\n"
         )
     });
 }

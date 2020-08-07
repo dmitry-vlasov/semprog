@@ -9,13 +9,21 @@ testProp() {
     println(evalAlgebra2s(propLogic));
     prop_eval = algebraEval(propLogic).eval;
     prop_show = algebraShow(propLogic).show;
+
+    print_bool_val = \val -> if (isSameStructType(val, undefVal)) "<UNDEF>" else b2s(val);
+
     iter(prop_tests, \p -> {
         term = parseProp(p.first);
         println(p.first + " = " + algTypedTerm2s(term));
         //println(p.first + " = " + prop_show(term));
-        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
-            b2s(prop_eval(term, p.second)) + "\n"
-        )
+        val = prop_eval(term, p.second);
+        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " + print_bool_val(val));
+        //println(val);
+        //println("")
+
+        //println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
+        //    b2s(flow2b(v)) + "\n"
+        //)
     });
 }
 
