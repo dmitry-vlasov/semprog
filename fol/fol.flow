@@ -7,6 +7,7 @@ export {
     makeEquality(t : Type) -> EvalOper ;
     makeNotEquality(t : Type) -> EvalOper ;
     makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper;
+    makeFilter(v : string, t : Type) -> EvalOper;
 }
 
 makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
@@ -25,6 +26,26 @@ makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> b
         \s, args -> {
             if (length(args) != 3) "broken term" else
             Q + " " + v + " : " + s.show(args[0]) + " " + s.show(args[1]);
+        }
+    ); 
+}
+
+makeFilter(v : string, t : Type) -> EvalOper {
+    EvalOper("S " + v,
+        fnType([arType(t), boolType] , arType(t)),
+        \e, args, vals -> {
+            if (length(args) != 3) {
+                flow(undefVal)
+            } else {
+                flow(filter(
+                    cast(e.eval(args[1], vals) : flow -> [flow]),
+                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                ));
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            "S " + v + " : " + s.show(args[0]) + " " + s.show(args[1]);
         }
     ); 
 }

@@ -17,7 +17,7 @@ doGetQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
    switch (f) {
         AlgTermVar(var, type): acc;
         AlgTermFunc(op, args, type): 
-            if (!(startsWith(op, "A ") || startsWith(op, "E "))) {
+            if (!(startsWith(op, "A ") || startsWith(op, "E ") || startsWith(op, "S ") )) {
                 fold(args, acc, doGetQuantifiers);
             } else {
                 if (length(args) == 0) acc else {
@@ -70,6 +70,7 @@ arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra {
     quants = set2array(getQuantifiers(f));
     forall_qs = fold(quants, [], \acc, v -> concat(acc, [makeQuantifier("A", v.name, v.type, forall)]));
     exists_qs = fold(quants, [], \acc, v -> concat(acc, [makeQuantifier("E", v.name, v.type, exists)]));
+    filter_qs = fold(quants, [], \acc, v -> concat(acc, [makeFilter(v.name, v.type)]));
     equalities = [
         makeEquality(intType), 
         makeEquality(arType(intType)), 
@@ -97,7 +98,7 @@ arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra {
     int_consts = fold(set2array(getIntConsts(f)), [], \acc, v -> concat(acc, [makeIntConst(i2s(v), v)]));
     EvalAlgebra("arithmetics", concatA([
         propLogic.opers,
-        forall_qs, exists_qs, 
+        forall_qs, exists_qs, filter_qs,
         equalities, predicates, 
         array_ops, array_dims,
         int_ops, int_consts

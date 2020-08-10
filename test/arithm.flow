@@ -12,14 +12,13 @@ testArithm() {
         term = parseArithm(p.first);
         //println(p.first + " 1= " + algTypedTerm2s(term));
         algebra = arithmeticsAlgebra(term);
-        //println(evalAlgebra2s(algebra));
+        println(evalAlgebra2s(algebra));
         //println(p.first + " 2= " + algebraShow(algebra).show(term));
         //println(p.first + " 3= " + algTypedTerm2s(term));
         //println("");
         //println(p.first + " = " + prop_show(term));
-        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
-            print_bool_val(algebraEval(algebra).eval(term, p.second)) + "\n"
-        )
+        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " );
+        println(algebraEval(algebra).eval(term, p.second));
     });
 }
 
@@ -45,4 +44,5 @@ arithm_tests = [
     Pair("E x : [a ... b] A y : [2 ... x] ( (x = ((x / y) * y)) -> (y = x))", pairs2tree([Pair("a", 1),   Pair("b", 6)  ])),
     Pair("E x : [a ... b] A y : [2 ... x] ( (x = ((x / y) * y)) -> (y = x))", pairs2tree([Pair("a", 346), Pair("b", 348)])),
     Pair("E x : [a ... b] A y : [2 ... x] ( (x = ((x / y) * y)) -> (y = x))", pairs2tree([Pair("a", 632), Pair("b", 640)])),
+    Pair("S x : [1 ... 3] ((x / 2) = 1)", makeTree()),
 ]

@@ -1,4 +1,4 @@
-form = ws (or | and | impl | neg | eq | true | false | forall | exists | in | sub | eq_int | eq_arr | neq_int | neq_arr | less_eq  | less);
+form = ws (or | and | impl | neg | eq | true | false | forall | exists | filter | in | sub | eq_int | eq_arr | neq_int | neq_arr | less_eq  | less);
 
 //form =   ws (or | and | impl | neg | eq | true | false | forall | exists | in | sub | less);
 
@@ -12,6 +12,7 @@ true   = "T" $c ws { makeBoolFunc($c) };
 false  = "F" $c ws { makeBoolFunc($c) };
 forall = "A" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
 exists = "E" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
+filter = "S" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
 
 in      = "(" ws term_int:l "in"  $op ws term_arr:r ")" ws { makeBoolFunc($op, :l, :r)};
 sub     = "(" ws term_arr:l "sub" $op ws term_arr:r ")" ws { makeBoolFunc($op, :l, :r)};
