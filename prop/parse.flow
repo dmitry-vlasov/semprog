@@ -13,6 +13,12 @@ parseProp(str : string) -> AlgTerm {
             pairs2tree([
                 Pair("makeBoolFunc", \s -> AlgTermFunc(flow2s(s[0]), tail(s), boolType)),
                 Pair("makeBoolVar",  \s -> AlgTermVar(flow2s(s[0]), boolType)),
+                Pair("makeBoolQuantifier", \s -> { 
+                    //println(s[1]);
+                    var = cast(s[1] : flow -> AlgTermVar);
+                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]) + " " + var.name, tail(s), boolType)
+                }),
             ]))
         )
     );

@@ -1,4 +1,4 @@
-S = ws (or | and | impl | neg | eq | true | false | var);
+S = ws (forall | exists | or | and | impl | neg | eq | true | false | var);
 or   = "(" ws S:l "\\/" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
 and  = "(" ws S:l "/\\" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
 impl = "(" ws S:l "->"  $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
@@ -8,6 +8,9 @@ var  = letter+ $s ws { makeBoolVar($s) };
 letter = 'a'-'z' | 'A'-'Z' | '0'-'9' | '_';
 true = "T" $c ws { makeBoolFunc($c) };
 false = "F" $c ws { makeBoolFunc($c) };
+
+forall = "BA" $q ws var:v S:f { makeBoolQuantifier($q, :v, :f)};
+exists = "BE" $q ws var:v S:f { makeBoolQuantifier($q, :v, :f)};
 
 ws = ws_*;
 ws_ = ' ' | '\t' | '\n' | '\r';
