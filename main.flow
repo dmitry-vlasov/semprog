@@ -1,8 +1,10 @@
-import test/prop;
-import test/arithm;
+//import test/prop;
+//import test/arithm;
+import test/qbf;
 
 main() -> void {
-    testProp();
-    testArithm();
+    //testProp();
+    //testArithm();
+    testQBF();
     quit(0);
 }

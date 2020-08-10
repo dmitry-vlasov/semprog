@@ -1,0 +1,48 @@
+import prop/prop;
+import prop/parse;
+
+export {
+    testQBF() -> void;    
+}
+
+testQBF() {
+
+
+    print_bool_val = \val -> if (isSameStructType(val, undefVal)) "<UNDEF>" else b2s(val);
+
+    iter(QBF_tests, \p -> {
+
+        term = parseProp(p.first);
+        algebra = makeQBFAlgebra(getBoolQuantifiers(term));
+        eval = algebraEval(algebra).eval;
+        show = algebraShow(algebra).show;
+        println(p.first + " = " + algTypedTerm2s(term));
+        //println(p.first + " = " + prop_show(term));
+        val = eval(term, p.second);
+        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " + print_bool_val(val));
+        //println(val);
+        //println("")
+
+        //println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
+        //    b2s(flow2b(v)) + "\n"
+        //)
+    });
+}
+
+QBF_tests = [
+    Pair("T", makeTree()),
+    Pair("F", makeTree()),
+    Pair("x", makeTree1("x", true)),
+    Pair("x", makeTree1("x", false)),
+    Pair("!x", makeTree1("x", true)),
+    Pair("!x", makeTree1("x", false)),
+    Pair("(x /\\ y)", pairs2tree([Pair("x", false), Pair("y", true)])),
+    Pair("(x /\\ y)", pairs2tree([Pair("x", true), Pair("y", true)])),
+    Pair("(x \\/ y)", pairs2tree([Pair("x", false), Pair("y", true)])),
+    Pair("(x \\/ y)", pairs2tree([Pair("x", true), Pair("y", true)])),
+    Pair("(x \\/ y)", pairs2tree([Pair("x", false), Pair("y", false)])),
+    Pair("(x /\\ (y \\/ z))", pairs2tree([Pair("x", true), Pair("y", false), Pair("z", true)])),
+    Pair("BE x (x -> x)", makeTree()),
+    Pair("BA x BE y (x -> y)", makeTree()),
+    Pair("BA x !(x <-> x)", makeTree())
+]

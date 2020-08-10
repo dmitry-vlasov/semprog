@@ -15,8 +15,52 @@ export {
     land = makeBoolBinary("/\\", \v1, v2 -> v1 && v2);
     limpl = makeBoolBinary("->", \v1, v2 -> !v1 || v2);
     leq = makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2));
-
+    
     propLogic = EvalAlgebra("propositioal logic", [boolTrue, boolFalse, lnot, land, limpl, leq, lor]);
+
+    makeBoolQuantifier(BQ : string, v : string) -> EvalOper;
+    makeQBFAlgebra(vars : [string]) -> EvalAlgebra;
+
+    getBoolQuantifiers(f : AlgTerm) -> [string];
+}
+
+
+makeQBFAlgebra(vars : [string]) -> EvalAlgebra {
+    EvalAlgebra("QBF logic", concat3(
+        propLogic.opers, 
+        map(vars, \v -> makeBoolQuantifier("BA", v)), 
+        map(vars, \v -> makeBoolQuantifier("BE", v))  
+        )
+    );
+}
+
+makeBoolQuantifier(BQ : string, v : string) -> EvalOper {
+    EvalOper(BQ + " " + v,
+        fnType([boolType] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 2) {
+                flow(undefVal)
+            } else {
+                if (BQ == "BA") {
+                    flow( 
+                        flow2b(e.eval(args[1], setTree(vals, v, true))) 
+                        && 
+                        flow2b(e.eval(args[1], setTree(vals, v, false)))
+                        );
+                } else {
+                    flow( 
+                        flow2b(e.eval(args[1], setTree(vals, v, true))) 
+                        || 
+                        flow2b(e.eval(args[1], setTree(vals, v, false)))
+                        );
+                }
+            }
+        },
+        \s, args -> {
+            if (length(args) != 2) "broken term" else
+            BQ + " " + v + " " + s.show(args[1]);
+        }
+    ); 
 }
 
 makeBoolConst(name : string, v : bool) -> EvalOper {
@@ -51,4 +95,29 @@ makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
         },
         showBinaryEvalOper(name)
     );
+}
+
+getBoolQuantifiers(f : AlgTerm) -> [string] {
+    vs = doGetBoolQuantifiers(makeSet(), f);
+    set2array (mapSet(vs, \v -> v.name))
+}
+
+doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
+   switch (f) {
+        AlgTermVar(var, type): acc;
+        AlgTermFunc(op, args, type): 
+            if (!(startsWith(op, "BA ") || startsWith(op, "BE "))) {
+                fold(args, acc, doGetBoolQuantifiers);
+            } else {
+                if (length(args) == 0) acc else {
+                    v = args[0];
+                    switch (v) {
+                        AlgTermVar(__,__): 
+                            fold(tail(args), insertSet(acc, v), doGetBoolQuantifiers);
+                        AlgTermFunc(__,__,__): 
+                            fold(args, acc, doGetBoolQuantifiers);
+                    }
+                }
+            }
+   } 
 }
