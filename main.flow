@@ -2,11 +2,13 @@ import test/prop;
 import test/arithm;
 import test/qbf;
 import test/long_prop;
+import test/atom;
 
 main() -> void {
     //testProp();
     //testArithm();
     //testQBF();
-    testLongProp();
+    //testLongProp();
+    testAtom();
     quit(0);
 }

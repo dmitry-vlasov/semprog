@@ -1,0 +1,120 @@
+import term;
+
+export {
+    atomize(term : AlgTerm) -> AlgTerm;
+}
+
+AtomEnv(term : AlgTerm, extrTerm : [AlgTerm]);
+
+atomize(term : AlgTerm) -> AlgTerm {
+    fresh_var_counter := 0;
+    doAtomize(AtomEnv(term, [])).term;
+}
+
+doAtomize(e : AtomEnv) -> AtomEnv {
+    switch (e.term) {
+
+        AlgTermVar(__, __): {
+            AtomEnv(e.term, []);
+        }
+        
+        AlgTermFunc(name, args, type): {
+            if (type == boolType) {
+                if (checkQuantor(name)) {
+                    at_formula = doAtomize(AtomEnv(args[2], []));
+                    at_t = doAtomize(AtomEnv(args[1], []));
+                    if (length(at_t.extrTerm) == 0) {
+                        at_formula;
+                    }
+                    else {
+                        and_at_t = AlgTermFunc("/\\-"+i2s(length(at_t.extrTerm)), at_t.extrTerm, naryBoolFnType(length(at_t.extrTerm)));
+                        AtomEnv(
+                            AlgTermFunc(
+                                name, 
+                                [args[0], at_t.term, AlgTermFunc("/\\", [at_formula.term, and_at_t], binaryBoolFnType)],
+                                type
+                            ),
+                            []
+                        )
+                    }
+
+                } 
+                else if (checkLogicOperation(name)) {
+                    AtomEnv(
+
+                        AlgTermFunc(
+                            name, 
+                            [doAtomize(AtomEnv(args[0], [])).term, doAtomize(AtomEnv(args[1], [])).term], 
+                            type
+                        ),
+                        []
+                    )
+                }
+                else {
+                    at_1 = doAtomize(AtomEnv(args[0], []));
+                    at_2 = doAtomize(AtomEnv(args[1], []));
+                    at_1_op_at_2 = AlgTermFunc(name, [at_1.term , at_2.term], fnType([type, type], boolType));
+                    and_at_1 = AlgTermFunc("/\\-"+i2s(length(at_1.extrTerm)), at_1.extrTerm, naryBoolFnType(length(at_1.extrTerm)));
+                    and_at_2 = AlgTermFunc("/\\-"+i2s(length(at_2.extrTerm)), at_2.extrTerm, naryBoolFnType(length(at_2.extrTerm)));
+                    
+                    if (length(at_1.extrTerm) == 0) {
+                        if (length(at_2.extrTerm) == 0) {
+                            e
+                        }
+                        else {
+                            AtomEnv(AlgTermFunc("/\\", [at_1_op_at_2, and_at_2], binaryBoolFnType), [])
+                        }
+                    }
+                    else {
+                        if (length(at_2.extrTerm) == 0) {
+                            AtomEnv(AlgTermFunc("/\\", [at_1_op_at_2, and_at_1], binaryBoolFnType), [])
+                        }
+                        else {
+                            AtomEnv(
+                                AlgTermFunc("/\\-3", [at_1_op_at_2, and_at_1, and_at_2], naryBoolFnType(3)), 
+                                []
+                            );                            
+                        }                    
+                    }
+
+                }
+            }
+            else {
+                y = makeNewVariable(type);
+                e1 = foldi(args, Pair(e, []), \i, acc, arg -> {
+                    switch (arg) {
+                        AlgTermVar(__, __): {
+                            Pair(acc.first, concat(acc.second, [arg]))
+                        }
+                        default : {
+                            e2 = doAtomize(AtomEnv(acc.first with term = arg));
+                            Pair(
+                                e2, 
+                                concat(acc.second, [e2.term])
+                            );
+                        }
+                    }
+                });
+                z = AlgTermFunc(name, e1.second, type);
+                y_eq = AlgTermFunc("=", [y, z], fnType([type, type], boolType));
+                AtomEnv(y, concat(e1.first.extrTerm, [y_eq])); 
+            }
+        }
+    }
+}
+
+fresh_var_counter = ref 0;
+
+makeNewVariable(type : Type) -> AlgTermVar {
+    fresh_var_counter := ^fresh_var_counter + 1;
+    AlgTermVar("__tmp__" + i2s(^fresh_var_counter), type);
+}
+
+checkQuantor(name : string) -> bool {
+    startsWith(name, "E ") || startsWith(name, "A ") || startsWith(name, "S ")
+}
+
+checkLogicOperation(name : string) -> bool {
+    name == "\\/" || name == "/\\" || name == "->" || name == "!"
+}
+

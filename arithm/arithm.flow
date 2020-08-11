@@ -96,8 +96,9 @@ arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra {
     array_dims = fold(set2array(getArrayDims(f)), [], \acc, dim -> concat(acc, [arrayCreate(intType, dim)]));
     int_ops = [intInv, intAdd, intDiv, intProd, intSub];
     int_consts = fold(set2array(getIntConsts(f)), [], \acc, v -> concat(acc, [makeIntConst(i2s(v), v)]));
+    lens = getLongLogOpers(f);
     EvalAlgebra("arithmetics", concatA([
-        propLogic.opers,
+        makeLongPropLogicAlgebra(lens).opers,
         forall_qs, exists_qs, filter_qs,
         equalities, predicates, 
         array_ops, array_dims,
