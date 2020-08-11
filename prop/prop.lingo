@@ -1,16 +1,23 @@
-S = ws (forall | exists | or | and | impl | neg | eq | true | false | var);
-or   = "(" ws S:l "\\/" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
-and  = "(" ws S:l "/\\" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
-impl = "(" ws S:l "->"  $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
-eq   = "(" ws S:l "<->" $op ws S:r ")" ws { makeBoolFunc(:op, :l, :r)};
-neg  = "!" $op ws S:e { makeBoolFunc(:op, :e)};
+form = ws (forall | exists | long_or | long_and | or | and | impl | neg | eq | true | false | var);
+or   = "(" ws form:l "\\/" $op ws form:r ")" ws { makeBoolFunc(:op, :l, :r)};
+and  = "(" ws form:l "/\\" $op ws form:r ")" ws { makeBoolFunc(:op, :l, :r)};
+impl = "(" ws form:l "->"  $op ws form:r ")" ws { makeBoolFunc(:op, :l, :r)};
+eq   = "(" ws form:l "<->" $op ws form:r ")" ws { makeBoolFunc(:op, :l, :r)};
+
+long_or = "(" ws long_or_arg:a1 long_or_arg:a2 (long_or_arg)+:as ")" ws { makeLongOr(:a1, :a2, :as) };
+long_or_arg = form:a ("\\/" ws)? { :a };
+
+long_and = "(" ws long_and_arg:a1 long_and_arg:a2  (long_and_arg)+:as ")" ws { makeLongAnd(:a1, :a2, :as) };
+long_and_arg = form:a ("/\\" ws)? { :a };
+
+neg  = "!" $op ws form:e { makeBoolFunc(:op, :e)};
 var  = letter+ $s ws { makeBoolVar($s) };
 letter = 'a'-'z' | 'A'-'Z' | '0'-'9' | '_';
 true = "T" $c ws { makeBoolFunc($c) };
 false = "F" $c ws { makeBoolFunc($c) };
 
-forall = "BA" $q ws var:v S:f { makeBoolQuantifier($q, :v, :f)};
-exists = "BE" $q ws var:v S:f { makeBoolQuantifier($q, :v, :f)};
+forall = "BA" $q ws var:v form:f { makeBoolQuantifier($q, :v, :f)};
+exists = "BE" $q ws var:v form:f { makeBoolQuantifier($q, :v, :f)};
 
 ws = ws_*;
 ws_ = ' ' | '\t' | '\n' | '\r';

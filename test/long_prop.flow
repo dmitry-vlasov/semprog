@@ -1,0 +1,36 @@
+import prop/prop;
+import prop/parse;
+
+export {
+    testLongProp() -> void;    
+}
+
+testLongProp() {
+    print_bool_val = \val -> if (isSameStructType(val, undefVal)) "<UNDEF>" else b2s(val);
+
+    iter(long_prop_tests, \p -> {
+        term = parseProp(p.first);
+        lens = getLongLogOpers(term);
+        algebra = makeLongPropLogicAlgebra(lens);
+        println(evalAlgebra2s(algebra));
+        eval = algebraEval(algebra).eval;
+        show = algebraShow(algebra).show;
+        println(p.first + " = " + algTypedTerm2s(term));
+        //println(p.first + " = " + prop_show(term));
+        val = eval(term, p.second);
+        println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " + print_bool_val(val));
+        //println(val);
+        //println("")
+
+        //println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " +
+        //    b2s(flow2b(v)) + "\n"
+        //)
+    });
+}
+
+long_prop_tests = [
+    Pair("(x /\\ y /\\ z)", pairs2tree([Pair("x", false), Pair("y", true), Pair("z", true)])),
+    Pair("(x /\\ y /\\ z)", pairs2tree([Pair("x", true), Pair("y", true), Pair("z", true)])),
+    Pair("(x \\/ y \\/z \\/ t)", pairs2tree([Pair("x", false), Pair("y", true), Pair("z", false), Pair("t", true)])),
+    Pair("(x \\/ y \\/z \\/ t)", pairs2tree([Pair("x", false), Pair("y", false), Pair("z", false), Pair("t", false)])),
+]

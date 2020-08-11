@@ -1,10 +1,12 @@
 import test/prop;
 import test/arithm;
 import test/qbf;
+import test/long_prop;
 
 main() -> void {
-    testProp();
-    testArithm();
-    testQBF();
+    //testProp();
+    //testArithm();
+    //testQBF();
+    testLongProp();
     quit(0);
 }
