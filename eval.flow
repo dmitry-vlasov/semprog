@@ -22,6 +22,9 @@ export {
         show : (Show, args : [AlgTerm]) -> string
     );
 
+    makeSem(sem  : (Eval, args : [AlgTerm], vals : Tree<string, flow>) -> flow) -> (Eval) -> Eval;
+    makeShow(show  : (Show, args : [AlgTerm]) -> string) -> (Show) -> Show;
+
     // Algebra: consists of a set of operations with their sementics.
     EvalAlgebra(name : string, opers : [EvalOper]);
 
@@ -36,6 +39,7 @@ export {
     showUnaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
     showBinaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string;
     showBracketEvalOper(open : string, close : string, infix : string) -> (Show, args : [AlgTerm]) -> string;
+    showNaryEvalOper(name : string, arity : int) -> (Show, args : [AlgTerm]) -> string;
 
     // Special constant: undefined value.
     UndefVal();
@@ -87,27 +91,34 @@ evalAlgebra2s(alg : EvalAlgebra) -> string {
     strGlue(map(alg.opers, \op -> "\t" + op.name + " : " + type2s(op.sign) + "\n"),  "");
 }
 
-showDfEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+showDfEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
         name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \a -> s.show(a)), ", ") + ")");
     }
 }
 
-showConstEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+showConstEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> if (length(args) != 0) "broken AlgTerm" else name;
 }
 
-showUnaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+showUnaryEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
         if (length(args) != 1) "broken AlgTerm" else
             name + s.show(args[0]);
     }
 }
 
-showBinaryEvalOper(name) -> (Show, args : [AlgTerm]) -> string {
+showBinaryEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
         if (length(args) != 2) "broken AlgTerm" else
         "(" + s.show(args[0]) + " " + name + " " + s.show(args[1]) + ")";
+    }
+}
+
+showNaryEvalOper(name : string, arity : int) -> (Show, args : [AlgTerm]) -> string {
+    \s, args -> {
+        if (length(args) != arity) "broken AlgTerm" else
+        "(" + strGlue(map(args, \arg -> s.show(arg)), " " + name + " ")  + ")";
     }
 }
 
@@ -117,4 +128,23 @@ showBracketEvalOper(open : string, close : string, infix : string) -> (Show, arg
 
 showValuation(v : Tree<string, flow>) -> string {
     strGlue(map(tree2pairs(v), \p -> p.first + "=" + toString(p.second)),  ", ");
+}
+
+// Experimental
+
+makeSem(sem  : (Eval, args : [AlgTerm], vals : Tree<string, flow>) -> flow) -> (Eval) -> Eval {
+    \e -> Eval(\t, vs -> 
+        switch (t) {
+            AlgTermVar(v, __): lookupTreeDef(vs, v, undefVal);
+            AlgTermFunc(__, args, __): sem(e, args, vs);
+        }
+    );
+}
+makeShow(show  : (Show, args : [AlgTerm]) -> string) -> (Show) -> Show {
+    \s -> Show(\t ->
+        switch (t) {
+            AlgTermVar(v, __): v;
+            AlgTermFunc(__, args, __): show(s, args);
+        }
+    );
 }

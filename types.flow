@@ -26,13 +26,15 @@ export {
 
     // Common const type: boolean
     boolType = constType("bool");
-    unaryBoolFnType = fnType([boolType], boolType);
-    binaryBoolFnType = fnType([boolType, boolType], boolType);
+    naryBoolFnType(n : int) -> TypeFunc;
+    unaryBoolFnType = naryBoolFnType(1);
+    binaryBoolFnType = naryBoolFnType(2);
 
     // Common const type: integer
     intType = constType("int");
-    unaryIntFnType = fnType([intType], intType);
-    binaryIntFnType = fnType([intType, intType], intType);
+    naryIntFnType(n : int) -> TypeFunc;
+    unaryIntFnType = naryIntFnType(1);
+    binaryIntFnType = naryIntFnType(2);
 }
 
 type2s(type : Type) -> string {
@@ -83,4 +85,12 @@ unType(args : [Type]) -> TypeFunc {
 
 prType(args : [Type]) -> TypeFunc {
     TypeFunc("X", args, showPrType);
+}
+
+naryBoolFnType(n : int) -> TypeFunc {
+    fnType(map(enumFromTo(0, n - 1), \__ -> boolType), boolType);
+}
+
+naryIntFnType(n : int) -> TypeFunc {
+    fnType(map(enumFromTo(0, n - 1), \__ -> intType), intType);
 }

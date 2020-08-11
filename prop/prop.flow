@@ -22,6 +22,11 @@ export {
     makeQBFAlgebra(vars : [string]) -> EvalAlgebra;
 
     getBoolQuantifiers(f : AlgTerm) -> [string];
+
+    makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper;
+
+    makeLongOr(arity : int) -> EvalOper;
+    makeLongAnd(arity : int) -> EvalOper;
 }
 
 
@@ -120,4 +125,24 @@ doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
                 }
             }
    } 
+}
+
+makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper {
+    EvalOper(name, 
+        naryBoolFnType(arity),
+        \e, args, vals -> {
+            if (length(args) != arity) flow(undefVal) else {
+                flow(op(map(args, \arg -> flow2b(e.eval(arg, vals)))));
+            }
+        },
+        showNaryEvalOper(name, arity)
+    );
+}
+
+makeLongOr(arity : int) -> EvalOper {
+    makeBoolNary("\\/", arity, any);
+}
+
+makeLongAnd(arity : int) -> EvalOper {
+    makeBoolNary("/\\", arity, any);
 }
