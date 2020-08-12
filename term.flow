@@ -9,6 +9,7 @@ export {
     algTerm2s(term : AlgTerm) -> string;
     algTypedTerm2s(term : AlgTerm) -> string;
     algTerm2vars(term : AlgTerm) -> Set<AlgTermVar>;
+    undefTerm = AlgTermVar("UNDEF", undefType);
 }
 
 algTerm2s(term : AlgTerm) -> string {

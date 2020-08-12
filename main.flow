@@ -3,12 +3,14 @@ import test/arithm;
 import test/qbf;
 import test/long_prop;
 import test/atom;
+import test/trans;
 
 main() -> void {
     //testProp();
     //testArithm();
     //testQBF();
     //testLongProp();
-    testAtom();
+    //testAtom();
+    testTrans();
     quit(0);
 }

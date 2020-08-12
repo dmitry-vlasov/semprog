@@ -30,6 +30,8 @@ export {
     makeLongAnd(arity : int) -> EvalOper;
     makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra;
     getLongLogOpers(f : AlgTerm) -> [int];
+
+    makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra;
 }
 
 // General boolean operators
@@ -183,4 +185,10 @@ doGetLongLogOpers(acc : Set<int>, f : AlgTerm) -> Set<int> {
             }
         }
    } 
+}
+
+makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra {
+    qbf_algebra = makeQBFAlgebra(vars);
+    long_algebra = makeLongPropLogicAlgebra(lens);
+    EvalAlgebra("QBFLongAlgebra", concat(qbf_algebra.opers, long_algebra.opers));
 }
