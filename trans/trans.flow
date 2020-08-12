@@ -1,0 +1,109 @@
+import trans/atom;
+//import ds/cart_prod;
+
+export {
+    delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm;
+    TransParams(praElems : [int], listPositions : [int]);
+}
+
+delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
+
+    if (term.name == "=") {
+        x = cast(term.args[0] : AlgTerm -> AlgTermVar);
+        t = term.args[1];
+        switch (t) {
+            AlgTermVar(name, type) : {
+                if (type == intType) {
+                    intEquality2qbf(x, t, par);
+                }
+                else if (type == arType(intType)) {
+                    intArrayEquality2qbf(x, t, par);
+                }
+                else {
+                    undefTerm
+                }
+            }
+            AlgTermFunc(name, args, type) : {
+                if (name == "tail") {
+                    tailEquality2qbf(x, t, par)
+                } 
+                else if (name == "concat") {
+                    undefTerm
+                }
+                else if (isDigits(name)) {
+                    undefTerm
+                }
+                else {
+                    undefTerm
+                }
+            }
+
+        }
+        
+    } 
+    else  {
+        undefTerm
+    }
+}
+
+
+intEquality2qbf(x : AlgTermVar, y : AlgTermVar, par : TransParams) -> AlgTerm {
+    x1 = encodeVarAsBoolVect(x, par);
+    y1 = encodeVarAsBoolVect(y, par);
+
+    AlgTermFunc(
+        "/\\-"+i2s(length(par.praElems)), 
+        map(zipWith(x1, y1, \a, b -> Pair(a, b)), \p -> AlgTermFunc("<->", [p.first, p.second], boolType)),
+        boolType
+    )
+}
+
+intArrayEquality2qbf(x : AlgTermVar, y : AlgTermVar, par : TransParams) -> AlgTerm {
+    x1 = encodeVarAsBoolMatrix(x, par);
+    y1 = encodeVarAsBoolMatrix(y, par);
+
+    AlgTermFunc(
+        "/\\-"+i2s(length(par.praElems)),
+        map(zipWith(x1, y1, \a, b -> Pair(a, b)), \p -> AlgTermFunc(
+            "/\\-"+i2s(length(par.listPositions)),
+            map(zipWith(p.first, p.second, \a, b -> Pair(a, b)), \l -> AlgTermFunc("<->", [l.first, l.second], boolType)),
+            boolType
+        )),   
+        boolType
+    )
+
+}
+
+tailEquality2qbf(x : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm {
+    x1 = encodeVarAsBoolMatrix(x, par);
+    y1 = encodeVarAsBoolMatrix(cast(t.args[0] : AlgTerm -> AlgTermVar), par);
+
+    andNotX = AlgTermFunc(
+        "/\\-"+i2s(length(par.praElems)),
+        map(par.praElems, \l -> AlgTermFunc("!",
+            [AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(length(par.listPositions) - 1), boolType)], boolType)
+            ),
+        boolType    
+    );
+    
+    andEquivXY = AlgTermFunc(
+        "/\\-"+i2s(length(par.praElems)),
+        map(zipWith(x1, y1, \a, b -> Pair(a, b)), \p -> AlgTermFunc(
+            "/\\-"+i2s(length(par.listPositions) - 1),
+            map(zipWith(tail(p.first), p.second, \a, b -> Pair(a, b)), \l -> AlgTermFunc("<->", [l.first, l.second], boolType)),
+            boolType
+        )),   
+        boolType
+    );
+
+    AlgTermFunc("/\\", [andNotX, andEquivXY], boolType);
+}
+
+encodeVarAsBoolVect(x : AlgTermVar, par : TransParams) -> [AlgTermVar] {
+    map(par.praElems, \a -> AlgTermVar(x.name + "^" + i2s(a), boolType));
+}
+
+encodeVarAsBoolMatrix(x : AlgTermVar, par : TransParams) -> [[AlgTermVar]] {
+    map(par.praElems, \a -> map(par.listPositions, \l -> (AlgTermVar(x.name + "^" + i2s(a)+ "_"+i2s(l), boolType))));
+}
+
