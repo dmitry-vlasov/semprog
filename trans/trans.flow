@@ -25,7 +25,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
             }
             AlgTermFunc(name, args, type) : {
                 if (name == "tail") {
-                    tailEquality2qbf(x, t, par)
+                    tailEquality2qbf(x, t, par);
                 } 
                 else if (name == "concat") {
                     undefTerm
@@ -41,7 +41,21 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
         }
         
     } 
-    else  {
+    else if (checkLogicOperationName(term)) {
+        AlgTermFunc(term.name, map(term.args, \arg -> {
+            switch (arg) {
+                AlgTermVar(__, __) : {
+                    arg
+                }
+                AlgTermFunc(__, __, __) : {
+                    delta2qbf(arg, par)
+                }
+            }
+            }), 
+            boolType
+        );
+    }
+    else {
         undefTerm
     }
 }
@@ -107,3 +121,6 @@ encodeVarAsBoolMatrix(x : AlgTermVar, par : TransParams) -> [[AlgTermVar]] {
     map(par.praElems, \a -> map(par.listPositions, \l -> (AlgTermVar(x.name + "^" + i2s(a)+ "_"+i2s(l), boolType))));
 }
 
+checkLogicOperationName(term : AlgTerm) -> bool {
+    startsWith(term.name, "\\/") || startsWith(term.name, "/\\") || term.name == "!" || term.name == "->" || term.name == "<->" 
+}
