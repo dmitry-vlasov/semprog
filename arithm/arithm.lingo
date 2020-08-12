@@ -36,7 +36,7 @@ inv_int  = "-" $op ws term_int:x { makeIntFunc($op, :x)};
 term_arr = concat_arr | tail_arr | add_arr | const_arr | get_arr | var_arr | from_to;
 
 concat_arr = "(" ws term_arr:l "+" $op ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
-tail_arr   = "tail" $op ws "(" ws term_arr:l ")" ws         { makeArrFunc($op, :l, :r)};
+tail_arr   = "tail" $op ws "(" ws term_arr:l ")" ws         { makeArrFunc($op, :l)};
 add_arr    = "add" $op ws "(" ws term_int:l "," ws term_arr:r  ")" ws { makeArrFunc($op, :l, :r)};
 const_arr  = "[" $op ws arr_term*:as "]" ws { makeArray($op, :as)};
 arr_term   = term_int:x (',' ws)? { :x };
