@@ -31,6 +31,8 @@ export {
     makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra;
     getLongLogOpers(f : AlgTerm) -> [int];
 
+    makeLongOperation(name : string, args : [AlgTerm]) -> AlgTermFunc;
+
     makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra;
 }
 
@@ -185,6 +187,10 @@ doGetLongLogOpers(acc : Set<int>, f : AlgTerm) -> Set<int> {
             }
         }
    } 
+}
+
+makeLongOperation(name : string, args : [AlgTerm]) -> AlgTermFunc {
+    AlgTermFunc(name + "-" + i2s(length(args)), args, boolType);
 }
 
 makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra {
