@@ -98,26 +98,26 @@ showDfEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
 }
 
 showConstEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
-    \s, args -> if (length(args) != 0) "broken AlgTerm" else name;
+    \s, args -> if (length(args) != 0) "broken const " + name + ", args: [" + strGlue(map(args, algTerm2s), ", ") + "]" else name;
 }
 
 showUnaryEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
-        if (length(args) != 1) "broken AlgTerm" else
+        if (length(args) != 1) "broken unary " + name + ", args: [" + strGlue(map(args, algTerm2s), ", ") + "]"  else
             name + s.show(args[0]);
     }
 }
 
 showBinaryEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
-        if (length(args) != 2) "broken AlgTerm" else
+        if (length(args) != 2) "broken binary " + name + ", args: [" + strGlue(map(args, algTerm2s), ", ") + "]"  else
         "(" + s.show(args[0]) + " " + name + " " + s.show(args[1]) + ")";
     }
 }
 
 showNaryEvalOper(name : string, arity : int) -> (Show, args : [AlgTerm]) -> string {
     \s, args -> {
-        if (length(args) != arity) "broken AlgTerm" else
+        if (length(args) != arity) "broken " + i2s(arity) + "-ary " + name + ", args: [" + strGlue(map(args, algTerm2s), ", ") + "]" else
         "(" + strGlue(map(args, \arg -> s.show(arg)), " " + name + " ")  + ")";
     }
 }
