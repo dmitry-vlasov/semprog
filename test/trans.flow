@@ -37,6 +37,7 @@ testTrans() {
 trans_tests = [
     Pair("(x = y)", makeTree()),
     Pair("(x = tail(y))", makeTree()),
+    Pair("(z = concat(x, y))", makeTree()),
     /*Pair("(x < (1 + 1))", makeTree()),
     Pair("(x < (y + 1))", makeTree()),
     Pair("E x : [1, 2] (x = x)", makeTree()),

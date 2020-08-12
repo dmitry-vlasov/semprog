@@ -1,4 +1,4 @@
-import trans/atom;
+import prop/prop;
 //import ds/cart_prod;
 
 export {
@@ -28,7 +28,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
                     tailEquality2qbf(x, t, par);
                 } 
                 else if (name == "concat") {
-                    undefTerm
+                    concatEquality2qbf(x, t, par);
                 }
                 else if (isDigits(name)) {
                     undefTerm
@@ -76,15 +76,7 @@ intArrayEquality2qbf(x : AlgTermVar, y : AlgTermVar, par : TransParams) -> AlgTe
     x1 = encodeVarAsBoolMatrix(x, par);
     y1 = encodeVarAsBoolMatrix(y, par);
 
-    AlgTermFunc(
-        "/\\-"+i2s(length(par.praElems)),
-        map(zipWith(x1, y1, \a, b -> Pair(a, b)), \p -> AlgTermFunc(
-            "/\\-"+i2s(length(par.listPositions)),
-            map(zipWith(p.first, p.second, \a, b -> Pair(a, b)), \l -> AlgTermFunc("<->", [l.first, l.second], boolType)),
-            boolType
-        )),   
-        boolType
-    )
+    makeXequivY(x1, y1, length(par.praElems), par);
 
 }
 
@@ -92,13 +84,7 @@ tailEquality2qbf(x : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm 
     x1 = encodeVarAsBoolMatrix(x, par);
     y1 = encodeVarAsBoolMatrix(cast(t.args[0] : AlgTerm -> AlgTermVar), par);
 
-    andNotX = AlgTermFunc(
-        "/\\-"+i2s(length(par.praElems)),
-        map(par.praElems, \l -> AlgTermFunc("!",
-            [AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(length(par.listPositions) - 1), boolType)], boolType)
-            ),
-        boolType    
-    );
+    andNotX = makeAndNotX(x, length(par.listPositions) - 1, par);
     
     andEquivXY = AlgTermFunc(
         "/\\-"+i2s(length(par.praElems)),
@@ -111,6 +97,97 @@ tailEquality2qbf(x : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm 
     );
 
     AlgTermFunc("/\\", [andNotX, andEquivXY], boolType);
+}
+
+concatEquality2qbf(z : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm {
+    z1 = encodeVarAsBoolMatrix(z, par);
+    x = cast(t.args[0] : AlgTerm -> AlgTermVar);
+    y = cast(t.args[1] : AlgTerm -> AlgTermVar);
+    x1 = encodeVarAsBoolMatrix(x, par);
+    y1 = encodeVarAsBoolMatrix(y, par);
+
+    andNotx_and_orx = \i -> {
+        AlgTermFunc(
+            "/\\", 
+            [
+                makeAndNotX(x, i, par),
+                makeLongBoolOperation("\\/", map(par.praElems, \l -> AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(i-1), boolType)))                
+            ],
+            boolType
+        )
+    }
+
+    z_equiv_y_from_i = \i -> {
+        makeLongBoolOperation("/\\",
+            map(zipWith(z1, y1, \a, b -> Pair(a, b)), \p ->  
+                makeLongBoolOperation("/\\", map(enumFromTo(i, length(par.listPositions) - 1), \k -> AlgTermFunc("<->", [p.first[k], p.second[k - i]], boolType)))
+            )
+        )
+    };
+
+    andNotx0_imp_z_equiv_y_to_i = \i -> {
+        AlgTermFunc(
+            "->",
+            [ 
+                makeAndNotX(x, 0, par),
+                makeXequivY(z1, y1, i - 1, par)
+            ],
+            boolType
+        )
+    }
+
+    andNotx_and_orx_imp_long = \n -> {
+        AlgTermFunc (
+            "->", 
+            [
+                andNotx_and_orx(n),
+                AlgTermFunc(
+                    "/\\",
+                    [
+                        makeXequivY(z1, x1, n - 1, par),
+                        z_equiv_y_from_i(n)
+                    ],
+                    boolType
+                )
+            ],
+            boolType
+        )
+    }
+
+    makeLongBoolOperation("/\\", map(
+            enumFromTo(1, length(par.listPositions) - 1),
+            \j -> {
+                AlgTermFunc(
+                    "/\\",
+                    [
+                        andNotx_and_orx_imp_long(j), 
+                        andNotx0_imp_z_equiv_y_to_i(j)
+                    ],
+                    boolType
+                )
+            }
+            
+        )
+    )
+}
+
+makeXequivY(x : [[AlgTermVar]], y : [[AlgTermVar]], andBoundIndex : int, par : TransParams) -> AlgTermFunc {
+    makeLongBoolOperation("/\\",  
+            map(zipWith(x, y, \a, b -> Pair(a, b)), \p -> makeLongBoolOperation("/\\",
+                map(zipWith(p.first, p.second, \a, b -> Pair(a, b)), \l -> AlgTermFunc("<->", [l.first, l.second], boolType))
+            )
+        )
+    ) 
+}
+
+makeAndNotX(x : AlgTermVar, index : int,  par : TransParams) -> AlgTermFunc {
+    makeLongBoolOperation("/\\", 
+        map(par.praElems, \l -> AlgTermFunc("!",
+            [AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(index), boolType)], boolType)
+            )
+            
+    )
+
 }
 
 encodeVarAsBoolVect(x : AlgTermVar, par : TransParams) -> [AlgTermVar] {
