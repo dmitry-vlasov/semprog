@@ -33,9 +33,10 @@ sub_int  = "(" ws term_int:l "-" $op ws term_int:r ")" ws { makeIntFunc($op, :l,
 div_int  = "(" ws term_int:l "/" $op ws term_int:r ")" ws { makeIntFunc($op, :l, :r)};
 inv_int  = "-" $op ws term_int:x { makeIntFunc($op, :x)};
 
-term_arr = concat_arr | tail_arr | add_arr | const_arr | get_arr | var_arr | from_to;
+term_arr = conc1_arr | conc2_arr |tail_arr | add_arr | const_arr | get_arr | var_arr | from_to;
 
-concat_arr = "(" ws term_arr:l "+" $op ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
+conc1_arr = "(" ws term_arr:l "+" $op ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
+conc2_arr =  "concat" $op ws "(" ws term_arr:l "," ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
 tail_arr   = "tail" $op ws "(" ws term_arr:l ")" ws         { makeArrFunc($op, :l)};
 add_arr    = "add" $op ws "(" ws term_int:l "," ws term_arr:r  ")" ws { makeArrFunc($op, :l, :r)};
 const_arr  = "[" $op ws arr_term*:as "]" ws { makeArray($op, :as)};

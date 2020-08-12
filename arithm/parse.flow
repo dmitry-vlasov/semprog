@@ -31,7 +31,9 @@ parseArithm(str : string) -> AlgTerm {
 
                 Pair("makeArrFunc", \s -> {
                     //println("makeArrFunc: " + flow2s(s[0]) + " = " + toString(s));
-                    AlgTermFunc(flow2s(s[0]), tail(s), arType(intType))
+                    op1 = flow2s(s[0]);
+                    op = if (op1 == "+") "concat" else op1;
+                    AlgTermFunc(op, tail(s), arType(intType))
                 }),
                 Pair("makeArrFuncNary", \s -> {
                     //println("makeArrFuncNary: " + flow2s(s[0]) + " = " + toString(s));
