@@ -1,0 +1,84 @@
+import term;
+
+export {
+    qbf2qdimacs(t : AlgTerm) -> string;
+}
+
+qbf2qdimacs(t : AlgTerm) -> string {
+    vars = map(set2array(algTerm2vars(t)), \v -> v.name);
+    var2int = fold(vars, Pair(makeTree(), 1), \acc, v -> 
+        Pair(setTree(acc.first, v, acc.second), acc.second + 1)
+    ).first;
+    v2i = \v -> i2s(lookupTreeDef(var2int, v, 10000000));
+    split = qbfSplit(t);
+    quants = map(split.first, \n -> {
+        i = strIndexOf(n, " ");
+        kind = substring(n, 0, i);
+        var = substring(n, i + 1, strlen(n) - i - 1);
+        QDimacsQuant(kind, var);
+    });
+    long_quants = quants2longQs(quants);
+    cnf = cast(split.second : AlgTerm -> AlgTermFunc);
+    lit2s = \lit -> {
+        switch (lit) {
+            AlgTermVar(v,__): v2i(v);
+            AlgTermFunc(n,args,__): {
+                if (n != "!") {
+                    println("wrong operation " + n + ", must be !");
+                }
+                var = cast(args[0] : AlgTerm -> AlgTermVar);
+                "-" + v2i(var.name);
+            }
+        }
+    }
+    "p cnf " + i2s(length(quants)) + " " + i2s(length(cnf.args)) + "\n" +
+    strGlue(map(long_quants, \qs -> toLowerCase(qs.kind) + " " + strGlue(map(qs.vars, v2i), " ") + " 0"), "\n") +
+    strGlue(map(cnf.args, \disj -> strGlue(map(cast(disj : AlgTerm -> AlgTermFunc).args, lit2s), " ") + " 0"), "\n");
+}
+
+QDimacsQuant(
+    kind : string,
+    var : string
+);
+
+QDimacsLongQuant(
+    kind : string,
+    vars: [string]
+);
+
+quants2longQs(quants : [QDimacsQuant]) -> [QDimacsLongQuant] {
+    fold(quants, [], \acc, q ->
+        if (length(acc) == 0) {
+            [QDimacsLongQuant(q.kind, [q.var])];
+        } else {
+            last = lastElement(acc, QDimacsLongQuant("", []));
+            if (q.kind == last.kind) {
+                replace(acc, length(acc) - 1, 
+                    QDimacsLongQuant(last.kind, concat(last.vars, [q.var]))
+                );
+            } else {
+                concat(acc, [QDimacsLongQuant(q.kind, [q.var])]);
+            }
+        }
+    );
+}
+
+qbfSplit(t : AlgTerm) -> Pair<[string], AlgTerm> {
+    doQbfSplit(Pair([], t), t);
+}
+
+doQbfSplit(acc : Pair<[string], AlgTerm>, t : AlgTerm) -> Pair<[string], AlgTerm> {
+    switch (t) {
+        AlgTermVar(__,__): acc;
+        AlgTermFunc(name, args, __): {
+            if (startsWith(name, "BA") || startsWith(t.name, "BE")) {
+                doQbfSplit(
+                    Pair(concat(acc.first, [name]), args[1]), 
+                    args[1]
+                );
+            } else {
+                acc;
+            }
+        }
+    }
+}
