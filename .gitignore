@@ -1,2 +1,6 @@
 /javagen/*
+<<<<<<< HEAD
 *.jar
+=======
+*.jar
+>>>>>>> d93d0f475f3857794b8673593ca68ccaccd34a3f
