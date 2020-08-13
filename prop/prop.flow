@@ -38,6 +38,8 @@ export {
     makeAndTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeNotTerm(arg : AlgTerm) -> AlgTermFunc;
+    makeLongBoolExistsTerm(vars : [string], terms : AlgTerm) -> AlgTermFunc;
+    makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
 
     makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
     makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
@@ -221,6 +223,14 @@ makeOrTerm(args : [AlgTerm]) -> AlgTermFunc {
 
 makeNotTerm(arg : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("!", [arg], boolType);
+}
+
+makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc {
+    fold(tail(vars), headList(vars), \v, acc -> AlgTermFunc("BA " + v, [acc], boolType))
+}
+
+makeLongBoolExistsTerm(vars : [string], terms : AlgTerm) -> AlgTermFunc {
+    fold(tail(vars), headList(vars), \v, acc -> AlgTermFunc("BE " + v, [acc], boolType))
 }
 
 makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc {
