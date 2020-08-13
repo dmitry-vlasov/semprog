@@ -1,5 +1,4 @@
 import prop/prop;
-//import ds/cart_prod;
 
 export {
     delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm;
@@ -20,7 +19,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
                     intArrayEquality2qbf(x, t, par);
                 }
                 else {
-                    undefTerm
+                    undefTermVar
                 }
             }
             AlgTermFunc(name, args, type) : {
@@ -34,7 +33,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
                     constEquality2qbf(x, t, par);
                 }
                 else {
-                    undefTerm
+                    undefTermVar
                 }
             }
 
@@ -67,7 +66,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
         sub2qbf(term, par);
     } 
     else {
-        undefTerm
+        undefTermVar
     }
 }
 
@@ -178,34 +177,68 @@ constEquality2qbf(x : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm
 
 exists2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
     x = cast(term.args[0] : AlgTerm -> AlgTermVar);
-    x1 = encodeVarAsBoolMatrix(x, par);
-    x1_lin = concatA(x1);
+    t = cast(term.args[1] : AlgTerm -> AlgTermFunc);
 
+    if (t.name == "in") {
+        x1 = encodeVarAsBoolVect(x, par);
 
-    cast(makeLongBoolExistsTerm(x1_lin, AlgTermFunc("->",
-        [
+        cast(makeLongBoolExistsTerm(x1, makeImplTerm(
             makeAndTerm([
                 makeMatrixAxiom(x, par), 
-                delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par)
+                delta2qbf(t, par)
             ]),
             delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
-        ], boolType
-    )) : AlgTerm -> AlgTermFunc)
+            )
+        ) : AlgTerm -> AlgTermFunc)
+    }
+    else if (t.name == "sub") {
+        x1 = encodeVarAsBoolMatrix(x, par);
+        x1_lin = concatA(x1);
+
+        cast(makeLongBoolExistsTerm(x1_lin, makeImplTerm(
+            makeAndTerm([
+                makeMatrixAxiom(x, par), 
+                delta2qbf(t, par)
+            ]),
+            delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
+            )
+        ) : AlgTerm -> AlgTermFunc)        
+    }
+    else {
+        undefTermFunc
+    }
+
 }
 
 forall2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
     x = cast(term.args[0] : AlgTerm -> AlgTermVar);
-    x1 = encodeVarAsBoolMatrix(x, par);
-    x1_lin = concatA(x1);
+    t = cast(term.args[1] : AlgTerm -> AlgTermFunc);
 
 
-    cast(makeLongBoolForallTerm(x1_lin, makeAndTerm(
-        [
-            makeMatrixAxiom(x, par), 
-            delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par),
-            delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
-        ] 
-    )) : AlgTerm -> AlgTermFunc)
+    if (t.name == "in") {
+        x1 = encodeVarAsBoolVect(x, par);
+        cast(makeLongBoolForallTerm(x1, makeAndTerm(
+            [
+                makeMatrixAxiom(x, par), 
+                delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par),
+                delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
+            ] 
+        )) : AlgTerm -> AlgTermFunc)
+    }
+    else if (t.name == "sub") {
+        x1 = encodeVarAsBoolMatrix(x, par);
+        x1_lin = concatA(x1);
+        cast(makeLongBoolForallTerm(x1_lin, makeAndTerm(
+            [
+                makeMatrixAxiom(x, par), 
+                delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par),
+                delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
+            ] 
+        )) : AlgTerm -> AlgTermFunc)
+    }
+    else {
+        undefTermFunc
+    }
 }
 
 sub2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc { 
@@ -217,7 +250,7 @@ sub2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
 
     makeAndTerm(
         map(zipWith(x1, y1, \a, b -> Pair(a, b)), \p -> makeAndTerm(
-                map(zipWith(p.first, p.second, \a, b -> Pair(a, b)), \l -> AlgTermFunc("->", [l.first, l.second], boolType))
+                map(zipWith(p.first, p.second, \a, b -> Pair(a, b)), \l -> makeImplTerm(l.first, l.second))
             )
         )
     );     
@@ -261,25 +294,20 @@ makeAndNotX(x : AlgTermVar, index : int,  par : TransParams) -> AlgTermFunc {
 makeMatrixAxiom(x : AlgTermVar, par : TransParams) -> AlgTermFunc {
     x1 = encodeVarAsBoolMatrix(x, par);
     
-    orX_j = \j -> makeOrTerm(map(par.praElems, \l -> AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(j), boolType)));
+    orX_j = \j -> makeOrTerm(map(par.praElems, \l -> x1[l][j]));
 
     andNotX_without_a = \a, j -> makeAndTerm(
         map(
             filter(par.praElems, \elem -> elem != a), 
-            \l -> makeNotTerm(AlgTermVar(x.name+"^"+i2s(l)+"_"+i2s(j), boolType))
+            \l -> makeNotTerm(x1[l][j])
         )
     );
 
     and_x_imp_andNotX_without_a = \j -> makeAndTerm(
         map(
             par.praElems,
-            \a -> AlgTermFunc("->",
-            [
-                AlgTermVar(x.name+"^"+i2s(a)+"_"+i2s(j), boolType),
-                andNotX_without_a(a, j)
-            ],
-            boolType)
-        )
+            \a -> makeImplTerm(x1[a][j], andNotX_without_a(a, j))
+        ) 
     );
 
     phi_1 = \k ->  makeAndTerm(map(enumFromTo(k, length(par.listPositions) - 1), \j -> makeAndNotX(x, j, par)));
