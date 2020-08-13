@@ -1,5 +1,6 @@
 import prop/prop;
 import arithm/arithm;
+import trans/pnf;
 
 export {
     testArithm() -> void;
@@ -17,8 +18,15 @@ testArithm() {
         //println(p.first + " 3= " + algTypedTerm2s(term));
         //println("");
         //println(p.first + " = " + prop_show(term));
+        eval = algebraEval(algebra).eval;
+        show = algebraShow(algebra).show;
         println("eval(" + p.first + ")[" + showValuation(p.second) + "] = " );
-        println(algebraEval(algebra).eval(term, p.second));
+        println(eval(term, p.second));
+
+        pnf = formula2pnf(term);
+        pnf_algebra = arithmeticsAlgebra(pnf);
+        show_pnf = algebraShow(pnf_algebra).show;
+        println("PNF:\n" + show_pnf(pnf) + "\n\n");
     });
 }
 

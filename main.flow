@@ -7,10 +7,10 @@ import test/trans;
 
 main() -> void {
     //testProp();
-    //testArithm();
+    testArithm();
     //testQBF();
     //testLongProp();
     //testAtom();
-    testTrans();
+    //testTrans();
     quit(0);
 }
