@@ -38,11 +38,11 @@ export {
     makeAndTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeNotTerm(arg : AlgTerm) -> AlgTermFunc;
-    makeLongBoolExistsTerm(vars : [string], terms : AlgTerm) -> AlgTermFunc;
-    makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
 
     makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
     makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolExistsTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
     getTermQuantVar(t : AlgTerm) -> string;
 }
 
