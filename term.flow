@@ -58,5 +58,5 @@ isBoolOper(name : string) -> bool {
 }
 
 isQuantifierOper(name : string) -> bool {
-    startsWith(name, "A ") || startsWith(name, "E ") || startsWith(name, "BA ") || startsWith(name, "BE ") || startsWith(name, "S ");
+    startsWith(name, "A ") || startsWith(name, "E ") || startsWith(name, "BA ") || startsWith(name, "BE ") || startsWith(name, "S ") || startsWith(name, "\\ ");
 }

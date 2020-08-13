@@ -39,8 +39,8 @@ export {
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeNotTerm(arg : AlgTerm) -> AlgTermFunc;
 
-    makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
-    makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
+    makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
     getTermQuantVar(t : AlgTerm) -> string;
 }
 
@@ -223,12 +223,12 @@ makeNotTerm(arg : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("!", [arg], boolType);
 }
 
-makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("BA " + v, [t], boolType);
+makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("BA " + v.name, [v, t], boolType);
 }
 
-makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("BE " + v, [t], boolType);
+makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("BE " + v.name, [v, t], boolType);
 }
 
 getTermQuantVar(t : AlgTerm) -> string {

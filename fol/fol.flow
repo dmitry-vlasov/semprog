@@ -9,8 +9,8 @@ export {
     makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper;
     makeFilter(v : string, t : Type) -> EvalOper;
 
-    makeForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
-    makeExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+    makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
 }
 
 makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
@@ -88,10 +88,10 @@ makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper {
     );
 }
 
-makeForallTerm(v : string, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("A " + v, [t], boolType);
+makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("A " + v.name, [v, t, phi], boolType);
 }
 
-makeExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("E " + v, [t], boolType);
+makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("E " + v.name, [v, t, phi], boolType);
 }
