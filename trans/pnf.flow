@@ -108,14 +108,17 @@ toCNF(t : AlgTerm) -> AlgTerm {
     }
 }
 
-
 AllBoundVarsDifferentEnv(
     counter : int,
-    renaming : Tree<string, string>
+    renaming : Tree<string, string>,
+    to_rename : Set<AlgTermVar>
 );
 
 makeAllBoundVarsDifferent(t : AlgTerm) -> AlgTerm {
-    doMakeAllBoundVarsDifferent(t, AllBoundVarsDifferentEnv(0, makeTree())).first;
+    to_rename = buildSet(filtermap(tree2pairs(algTermCountBoundVars(t)), \p -> 
+        if (p.second ==1) None() else Some(p.first)
+    ));
+    doMakeAllBoundVarsDifferent(t, AllBoundVarsDifferentEnv(0, makeTree(), to_rename)).first;
 }
 
 doMakeAllBoundVarsDifferent(t : AlgTerm, env : AllBoundVarsDifferentEnv) -> Pair<AlgTerm, AllBoundVarsDifferentEnv> {
@@ -131,19 +134,20 @@ doMakeAllBoundVarsDifferent(t : AlgTerm, env : AllBoundVarsDifferentEnv) -> Pair
             });
             new_args = p.first;
             new_env = p.second;
+            wrap = \ -> Pair(AlgTermFunc(t with args = new_args), new_env);
             if (isQuantifierOper(name)) {
                 var = getTermQuantVar(t);
-                new_var = var + "_fresh_" + i2s(new_env.counter);
-                new_env_1 = AllBoundVarsDifferentEnv(
-                    new_env.counter + 1,
-                    setTree(new_env.renaming, var, new_var)
-                );
-                Pair(applyRenaming2term(t, new_env_1.renaming), new_env_1);
+                if (!containsSet(env.to_rename, var)) wrap() else {
+                    new_var = var.name + "_fresh_" + i2s(new_env.counter);
+                    new_env_1 = AllBoundVarsDifferentEnv(
+                        new_env.counter + 1,
+                        setTree(new_env.renaming, var.name, new_var),
+                        new_env.to_rename
+                    );
+                    Pair(applyRenaming2term(t, new_env_1.renaming), new_env_1);
+                }
             } else {
-                Pair(
-                    AlgTermFunc(t with args = new_args), 
-                    new_env
-                );
+                wrap();
             }
         }
     }
@@ -162,7 +166,7 @@ applyRenaming2term(t : AlgTerm, renaming : Tree<string, string>) -> AlgTerm {
             renamed_args = map(args, \a -> applyRenaming2term(a, renaming));
             if (isQuantifierOper(name)) {
                 v = getTermQuantVar(t);
-                switch (lookupTree(renaming, v)) {
+                switch (lookupTree(renaming, v.name)) {
                     Some(w): {
                         AlgTermFunc(t with 
                             name = renameQuantifierVar(name, w),

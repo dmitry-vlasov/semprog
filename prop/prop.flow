@@ -242,14 +242,14 @@ makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("BE " + v, [t], boolType);
 }
 
-getTermQuantVar(t : AlgTerm) -> string {
+getTermQuantVar(t : AlgTerm) -> AlgTermVar {
     switch (t) {
-        AlgTermVar(__,__): "ERROR QUANT VAR";
+        AlgTermVar(__,__): AlgTermVar("ERROR QUANT VAR", undefType);
         AlgTermFunc(name, args, __): {
             if (isQuantifierOper(name)) {
-                cast(args[0] : AlgTerm -> AlgTermVar).name;
+                cast(args[0] : AlgTerm -> AlgTermVar);
             } else {
-                "ERROR QUANT VAR"
+                AlgTermVar("ERROR QUANT VAR", undefType);
             }
         }
     }

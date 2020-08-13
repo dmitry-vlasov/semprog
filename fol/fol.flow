@@ -11,6 +11,10 @@ export {
 
     makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
     makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+
+    algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar>;
+    algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar>;
+    algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int>;
 }
 
 makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
@@ -94,4 +98,43 @@ makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
 
 makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("E " + v.name, [v, t, phi], boolType);
+}
+
+algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar> {
+    doAlgTerm2freeVars(makeSet(), t);
+}
+
+doAlgTerm2freeVars(acc : Set<AlgTermVar>, t : AlgTerm) -> Set<AlgTermVar> {
+    switch (t) {
+        AlgTermVar(__,__): insertSet(acc, t);
+        AlgTermFunc(name, args, __): {
+            acc1 = fold(args, acc, doAlgTerm2freeVars);
+            if (!isVarBounderOper(name)) acc1 else {
+                removeSet(acc1, cast(args[0] : AlgTerm -> AlgTermVar));
+            }
+        }
+    }
+}
+
+algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar> {
+    free = algTerm2freeVars(t);
+    all = algTerm2vars(t);
+    differenceSets(all, free);
+}
+
+algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int> {
+    doAlgTermCountBoundVars(makeTree(), t);
+}
+
+doAlgTermCountBoundVars(acc : Tree<AlgTermVar, int>, t : AlgTerm) -> Tree<AlgTermVar, int> {
+    switch (t) {
+        AlgTermVar(__,__): acc; // setTree(acc, t, lookupTreeDef(acc, t, 0) + 1);
+        AlgTermFunc(name, args, __): {
+            acc1 = fold(args, acc, doAlgTermCountBoundVars);
+            if (!isVarBounderOper(name)) acc1 else {
+                v = cast(args[0] : AlgTerm -> AlgTermVar);
+                setTree(acc1, v, lookupTreeDef(acc, v, 0) + 1);
+            }
+        }
+    }
 }
