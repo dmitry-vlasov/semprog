@@ -1,4 +1,5 @@
 import term;
+import prop/prop;
 
 export {
     atomize(term : AlgTerm) -> AlgTerm;
@@ -27,11 +28,11 @@ doAtomize(e : AtomEnv) -> AtomEnv {
                         at_formula;
                     }
                     else {
-                        and_at_t = AlgTermFunc("/\\-"+i2s(length(at_t.extrTerm)), at_t.extrTerm, naryBoolFnType(length(at_t.extrTerm)));
+                        and_at_t = makeAndTerm(at_t.extrTerm);
                         AtomEnv(
                             AlgTermFunc(
                                 name, 
-                                [args[0], at_t.term, AlgTermFunc("/\\", [at_formula.term, and_at_t], binaryBoolFnType)],
+                                [args[0], at_t.term, makeAndTerm([at_formula.term, and_at_t])],
                                 type
                             ),
                             []
@@ -54,24 +55,30 @@ doAtomize(e : AtomEnv) -> AtomEnv {
                     at_1 = doAtomize(AtomEnv(args[0], []));
                     at_2 = doAtomize(AtomEnv(args[1], []));
                     at_1_op_at_2 = AlgTermFunc(name, [at_1.term , at_2.term], fnType([type, type], boolType));
-                    and_at_1 = AlgTermFunc("/\\-"+i2s(length(at_1.extrTerm)), at_1.extrTerm, naryBoolFnType(length(at_1.extrTerm)));
-                    and_at_2 = AlgTermFunc("/\\-"+i2s(length(at_2.extrTerm)), at_2.extrTerm, naryBoolFnType(length(at_2.extrTerm)));
+                    and_at_1 = makeAndTerm(at_1.extrTerm);
+                    and_at_2 = makeAndTerm(at_2.extrTerm);
                     
                     if (length(at_1.extrTerm) == 0) {
                         if (length(at_2.extrTerm) == 0) {
                             e
                         }
                         else {
-                            AtomEnv(AlgTermFunc("/\\", [at_1_op_at_2, and_at_2], binaryBoolFnType), [])
+                            AtomEnv(
+                                makeAndTerm([at_1_op_at_2, and_at_2]), 
+                                []
+                            )
                         }
                     }
                     else {
                         if (length(at_2.extrTerm) == 0) {
-                            AtomEnv(AlgTermFunc("/\\", [at_1_op_at_2, and_at_1], binaryBoolFnType), [])
+                            AtomEnv(
+                                makeAndTerm([at_1_op_at_2, and_at_1]), 
+                                []
+                            )
                         }
                         else {
                             AtomEnv(
-                                AlgTermFunc("/\\-3", [at_1_op_at_2, and_at_1, and_at_2], naryBoolFnType(3)), 
+                                makeAndTerm([at_1_op_at_2, and_at_1, and_at_2]), 
                                 []
                             );                            
                         }                    

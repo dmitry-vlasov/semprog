@@ -39,11 +39,12 @@ export {
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeNotTerm(arg : AlgTerm) -> AlgTermFunc;
     makeImplTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc;
+    makeEquivTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc;
 
     makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
     makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
-    makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTerm;
-    makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTerm;
+    makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc;
     
     getTermQuantVar(t : AlgTerm) -> AlgTermVar;
 }
@@ -231,13 +232,17 @@ makeImplTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("->", [arg1, arg2], boolType);
 }
 
-
-makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTerm {
-    fold(vars, t, \acc, v -> AlgTermFunc("BA " + v.name, [v, acc], boolType));
+makeEquivTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("<->", [arg1, arg2], boolType);
 }
 
-makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTerm {
-    fold(vars, t, \acc, v -> AlgTermFunc("BE " + v.name, [v, acc], boolType));
+
+makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc {
+    cast(fold(vars, t, \acc, v -> AlgTermFunc("BA " + v.name, [v, acc], boolType)) : AlgTerm -> AlgTermFunc);
+}
+
+makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc {
+    cast(fold(vars, t, \acc, v -> AlgTermFunc("BE " + v.name, [v, acc], boolType)) : AlgTerm -> AlgTermFunc);
 }
 
 makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
