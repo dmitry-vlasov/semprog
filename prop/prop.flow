@@ -41,10 +41,10 @@ export {
 
     makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
     makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
-    makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
-    makeLongBoolExistsTerm(vars : [string], t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTerm;
+    makeLongBoolExistsTerm(vars : [string], t : AlgTerm) -> AlgTerm;
     
-    getTermQuantVar(t : AlgTerm) -> string;
+    getTermQuantVar(t : AlgTerm) -> AlgTermVar;
 }
 
 // General boolean operators
@@ -226,11 +226,11 @@ makeNotTerm(arg : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("!", [arg], boolType);
 }
 
-makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTermFunc {
+makeLongBoolForallTerm(vars : [string], t : AlgTerm) -> AlgTerm {
     fold(vars, t, \acc, v -> AlgTermFunc("BA " + v, [acc], boolType));
 }
 
-makeLongBoolExistsTerm(vars : [string], terms : AlgTerm) -> AlgTermFunc {
+makeLongBoolExistsTerm(vars : [string], t : AlgTerm) -> AlgTerm {
     fold(vars, t, \acc, v -> AlgTermFunc("BE " + v, [acc], boolType));
 }
 
