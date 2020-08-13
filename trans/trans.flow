@@ -31,7 +31,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
                     concatEquality2qbf(x, t, par);
                 }
                 else if (isDigits(name)) {
-                    undefTerm
+                    constEquality2qbf(x, t, par);
                 }
                 else {
                     undefTerm
@@ -170,6 +170,12 @@ concatEquality2qbf(z : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTer
     )
 }
 
+constEquality2qbf(x : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTerm {
+    x1 = encodeVarAsBoolVect(x, par);
+    c = s2i(t.name);
+    x1[c];
+}
+
 exists2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
     x = cast(term.args[0] : AlgTerm -> AlgTermVar);
     x1 = encodeVarAsBoolMatrix(x, par);
@@ -218,8 +224,19 @@ sub2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
 }
 
 in2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
-    //undefTerm
-    AlgTermFunc("STUB", [], boolType);
+    x = cast(term.args[0] : AlgTerm -> AlgTermVar);
+    y = cast(term.args[1] : AlgTerm -> AlgTermVar);
+
+    x1 = encodeVarAsBoolVect(x, par);
+    y1 = encodeVarAsBoolMatrix(y, par);
+
+    makeOrTerm(map(par.praElems, \a -> 
+        makeImplTerm(
+            x1[a],
+            makeOrTerm(map(par.listPositions, \l -> y1[a][l]))
+        )
+    ))
+
 }   
 
 makeXequivY(x : [[AlgTermVar]], y : [[AlgTermVar]], andBoundIndex : int, par : TransParams) -> AlgTermFunc {
