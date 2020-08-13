@@ -92,7 +92,7 @@ arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra {
         makePredicate("<", [intType, intType], \args -> flow2i(args[0]) < flow2i(args[1])),
         makePredicate("<=", [intType, intType], \args -> flow2i(args[0]) <= flow2i(args[1])),
     ];
-    array_ops = [arrayConcat(intType), arrayAdd(intType), arrayTail(intType), arrayEmpty(intType), arrayFromTo()];
+    array_ops = concat(arrayBasicOpers(intType), [arrayFromTo()]);
     array_dims = fold(set2array(getArrayDims(f)), [], \acc, dim -> concat(acc, [arrayCreate(intType, dim)]));
     int_ops = [intInv, intAdd, intDiv, intProd, intSub];
     int_consts = fold(set2array(getIntConsts(f)), [], \acc, v -> concat(acc, [makeIntConst(i2s(v), v)]));

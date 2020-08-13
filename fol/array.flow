@@ -8,8 +8,23 @@ export {
     arrayTail(type : Type) -> EvalOper;
     arrayEmpty(type : Type) -> EvalOper;
     arrayGet(type : Type) -> EvalOper;
+    arraySublists(type : Type) -> EvalOper ;
     arrayCreate(type : Type, dim : int) -> EvalOper;
+
+    arrayBasicOpers(type : Type) -> [EvalOper];
+
     arrayFromTo() -> EvalOper;
+}
+
+arrayBasicOpers(type : Type) -> [EvalOper] {
+    [
+        arrayConcat(type),
+        arrayAdd(type),
+        arrayTail(type),
+        arrayEmpty(type),
+        arrayGet(type),
+        arraySublists(type),
+    ];
 }
 
 arrayConcat(type : Type) -> EvalOper {
@@ -75,6 +90,19 @@ arrayGet(type : Type) -> EvalOper {
             }
         },
         showDfEvalOper("get")
+    );
+}
+
+arraySublists(type : Type) -> EvalOper  {
+    EvalOper(
+        "sublists", fnType([arType(type)], arType(arType(type))),
+        \e, args, vals -> {
+            if (length(args) != 1) flow(undefVal) else {
+                a = cast(e.eval(args[0], vals) : flow -> [flow]);
+                flow(map(enumFromTo(0, length(a)), \l -> subrange(a, 0, l)));
+            }
+        },
+        showDfEvalOper("sublists")
     );
 }
 

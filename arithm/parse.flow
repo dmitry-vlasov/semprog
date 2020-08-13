@@ -48,6 +48,18 @@ parseArithm(str : string) -> AlgTerm {
                     //println("makeArrVar: " + flow2s(s[0]) + " = " + toString(s));
                     AlgTermVar(flow2s(s[0]), arType(intType))
                 }),
+            
+                Pair("makeArr2Var",  \s -> {
+                    //println("makeArrVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), arType(arType(intType)))
+                }),
+                Pair("makeArr2Func", \s -> {
+                    //println("makeArrFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    op1 = flow2s(s[0]);
+                    op = if (op1 == "+") "concat" else op1;
+                    AlgTermFunc(op, tail(s), arType(arType(intType)))
+                }),
+
                 Pair("makeQuantifier", \s -> { 
                     //println(s[1]);
                     var = cast(s[1] : flow -> AlgTermVar);
