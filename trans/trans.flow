@@ -171,34 +171,35 @@ concatEquality2qbf(z : AlgTermVar, t : AlgTermFunc, par : TransParams) -> AlgTer
 }
 
 exists2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
-    x = term.args[0];
-    x1 = encodeVarAsBoolMatrix(x);
-    x1_lin = concatA(x1);
+    x = cast(term.args[0] : AlgTerm -> AlgTermVar);
+    x1 = encodeVarAsBoolMatrix(x, par);
+    x1_lin = map(concatA(x1), \v -> v.name);
 
 
-    makeLongBoolExists(x1_lin, AlgTermFunc("->",
+    cast(makeLongBoolExistsTerm(x1_lin, AlgTermFunc("->",
         [
-            makeAndTerm([makeMatrixAxiom(x), delta2qbf(term.args[1], par)]),
-            delta2qbf(term.args[2], par)
-        ],
-        boolType
-
-    ))
+            makeAndTerm([
+                makeMatrixAxiom(x, par), 
+                delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par)
+            ]),
+            delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
+        ], boolType
+    )) : AlgTerm -> AlgTermFunc)
 }
 
 forall2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
-    x = term.args[0];
-    x1 = encodeVarAsBoolMatrix(x);
-    x1_lin = concatA(x1);
+    x = cast(term.args[0] : AlgTerm -> AlgTermVar);
+    x1 = encodeVarAsBoolMatrix(x, par);
+    x1_lin = map(concatA(x1), \v -> v.name);
 
 
-    makeLongBoolForall(x1_lin, makeAndTerm(
+    cast(makeLongBoolForallTerm(x1_lin, makeAndTerm(
         [
-            makeMatrixAxiom(x), 
-            delta2qbf(term.args[1], par),
-            delta2qbf(term.args[2], par)
+            makeMatrixAxiom(x, par), 
+            delta2qbf(cast(term.args[1] : AlgTerm -> AlgTermFunc), par),
+            delta2qbf(cast(term.args[2] : AlgTerm -> AlgTermFunc), par)
         ] 
-    ))
+    )) : AlgTerm -> AlgTermFunc)
 }
 
 sub2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc { 
@@ -217,7 +218,8 @@ sub2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
 }
 
 in2qbf(term : AlgTermFunc, par : TransParams) -> AlgTermFunc {
-    undefTerm
+    //undefTerm
+    AlgTermFunc("STUB", [], boolType);
 }   
 
 makeXequivY(x : [[AlgTermVar]], y : [[AlgTermVar]], andBoundIndex : int, par : TransParams) -> AlgTermFunc {
