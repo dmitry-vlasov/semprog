@@ -10,6 +10,14 @@ export {
     algTypedTerm2s(term : AlgTerm) -> string;
     algTerm2vars(term : AlgTerm) -> Set<AlgTermVar>;
     undefTerm = AlgTermVar("UNDEF", undefType);
+
+    // standard classes of operations
+
+    // /\, \/, !, <->, ->
+    isBoolOper(name : string) -> bool;
+
+    // A, E, BA, BE, S
+    isQuantifierOper(name : string) -> bool;
 }
 
 algTerm2s(term : AlgTerm) -> string {
@@ -43,4 +51,12 @@ doAlgTerm2s(acc : Set<AlgTermVar>, term : AlgTerm) -> Set<AlgTermVar> {
         AlgTermVar(__, __): insertSet(acc, term);
         AlgTermFunc(__, args, __): fold(args, acc, doAlgTerm2s);
     }
+}
+
+isBoolOper(name : string) -> bool {
+    startsWith(name, "\\/") || startsWith(name, "/\\") || name == "!" || name == "->" || name == "<->";
+}
+
+isQuantifierOper(name : string) -> bool {
+    startsWith(name, "A ") || startsWith(name, "E ") || startsWith(name, "BA ") || startsWith(name, "BE ") || startsWith(name, "S ");
 }

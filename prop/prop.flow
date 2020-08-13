@@ -26,14 +26,22 @@ export {
 
     // Propositional logic with n-ary conjunctions and disjunctions
     makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper;
-    makeLongOr(arity : int) -> EvalOper;
-    makeLongAnd(arity : int) -> EvalOper;
+    makeLongOrOper(arity : int) -> EvalOper;
+    makeLongAndOper(arity : int) -> EvalOper;
     makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra;
     getLongLogOpers(f : AlgTerm) -> [int];
 
     makeLongBoolOperation(name : string, args : [AlgTerm]) -> AlgTermFunc;
 
     makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra;
+
+    makeAndTerm(args : [AlgTerm]) -> AlgTermFunc;
+    makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
+    makeNotTerm(arg : AlgTerm) -> AlgTermFunc;
+
+    makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    getTermQuantVar(t : AlgTerm) -> string;
 }
 
 // General boolean operators
@@ -154,11 +162,11 @@ makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper {
     );
 }
 
-makeLongOr(arity : int) -> EvalOper {
+makeLongOrOper(arity : int) -> EvalOper {
     makeBoolNary("\\/", arity, any);
 }
 
-makeLongAnd(arity : int) -> EvalOper {
+makeLongAndOper(arity : int) -> EvalOper {
     makeBoolNary("/\\", arity, all);
 }
 
@@ -166,8 +174,8 @@ makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra {
     EvalAlgebra("Prop logic with long /\\ and \\/", 
         concat3(
             propLogic.opers, 
-            map(lens, \len -> makeLongOr(len)), 
-            map(lens, \len -> makeLongAnd(len))  
+            map(lens, \len -> makeLongOrOper(len)), 
+            map(lens, \len -> makeLongAndOper(len))  
         )
     );
 }
@@ -201,4 +209,37 @@ makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra {
     qbf_algebra = makeQBFAlgebra(vars);
     long_algebra = makeLongPropLogicAlgebra(lens);
     EvalAlgebra("QBFLongAlgebra", concat(qbf_algebra.opers, long_algebra.opers));
+}
+
+makeAndTerm(args : [AlgTerm]) -> AlgTermFunc {
+    makeLongBoolOperation("/\\", args);
+}
+
+makeOrTerm(args : [AlgTerm]) -> AlgTermFunc {
+    makeLongBoolOperation("\\/", args);
+}
+
+makeNotTerm(arg : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("!", [arg], boolType);
+}
+
+makeBoolForallTerm(v : string, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("BA " + v, [t], boolType);
+}
+
+makeBoolExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("BE " + v, [t], boolType);
+}
+
+getTermQuantVar(t : AlgTerm) -> string {
+    switch (t) {
+        AlgTermVar(__,__): "ERROR QUANT VAR";
+        AlgTermFunc(name, args, __): {
+            if (isQuantifierOper(name)) {
+                cast(args[0] : AlgTerm -> AlgTermVar).name;
+            } else {
+                "ERROR QUANT VAR"
+            }
+        }
+    }
 }

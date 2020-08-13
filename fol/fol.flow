@@ -8,6 +8,9 @@ export {
     makeNotEquality(t : Type) -> EvalOper ;
     makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper;
     makeFilter(v : string, t : Type) -> EvalOper;
+
+    makeForallTerm(v : string, t : AlgTerm) -> AlgTermFunc;
+    makeExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc;
 }
 
 makeQuantifier(Q : string, v : string, t : Type, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
@@ -83,4 +86,12 @@ makePredicate(name : string, types : [Type], p : ([flow]) -> bool) -> EvalOper {
         },
         showDfEvalOper(name)
     );
+}
+
+makeForallTerm(v : string, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("A " + v, [t], boolType);
+}
+
+makeExistsTerm(v : string, t : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("E " + v, [t], boolType);
 }
