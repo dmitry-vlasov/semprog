@@ -1,7 +1,7 @@
 form = ws (
     or | and | impl | neg | eq | true | false | 
     forall_in | exists_in | filter_in | 
-    forall_sub | exists_sub | filter_sub | 
+    //forall_sub | exists_sub | filter_sub | 
     in | sub | eq_int | eq_arr | neq_int | neq_arr | less_eq  | less);
 
 //form =   ws (or | and | impl | neg | eq | true | false | forall | exists | in | sub | less);
@@ -19,9 +19,9 @@ forall_in = "A" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v
 exists_in = "E" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
 filter_in = "S" $q ws var_int:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
 
-forall_sub = "A" $q ws var_arr:v ":" ws term_arr_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
-exists_sub = "E" $q ws var_arr:v ":" ws term_arr_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
-filter_sub = "S" $q ws var_arr:v ":" ws term_arr_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
+//forall_sub = "A" $q ws var_arr:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
+//exists_sub = "E" $q ws var_arr:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
+//filter_sub = "S" $q ws var_arr:v ":" ws term_arr:a form:f { makeQuantifier($q, :v, :a, :f)};
 
 in      = "(" ws term_int:l "in"  $op ws term_arr:r ")" ws { makeBoolFunc($op, :l, :r)};
 sub     = "(" ws term_arr:l "sub" $op ws term_arr:r ")" ws { makeBoolFunc($op, :l, :r)};
@@ -50,14 +50,14 @@ inv_int  = "-" $op ws term_int:x { makeIntFunc($op, :x)};
 
 // [int] - operations
 
-term_arr = conc1_arr | conc2_arr |tail_arr | add_arr | const_arr | get_arr | var_arr | from_to;
+term_arr = conc1_arr | conc2_arr |tail_arr | add_arr | const_arr | get_arr | from_to | sublists | var_arr ;
 
 conc1_arr = "(" ws term_arr:l "+" $op ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
 conc2_arr =  "concat" $op ws "(" ws term_arr:l "," ws term_arr:r ")" ws { makeArrFunc($op, :l, :r)};
 tail_arr   = "tail" $op ws "(" ws term_arr:l ")" ws         { makeArrFunc($op, :l)};
-add_arr    = "add" $op ws "(" ws term_int:l "," ws term_arr:r  ")" ws { makeArrFunc($op, :l, :r)};
+add_arr    = "add" $op ws "(" ws (term_int | term_arr):l "," ws term_arr:r  ")" ws { makeArrFunc($op, :l, :r)};
 const_arr  = "[" $op ws arr_term*:as "]" ws { makeArray($op, :as)};
-arr_term   = term_int:x (',' ws)? { :x };
+    arr_term   = (term_int | term_arr):x (',' ws)? { :x };
 get_arr    = "get" $op ws "." ws term_arr:a "[" ws term_int:i "]" ws { makeArrFunc($op, :a, :i)};
 from_to    = "[" ws term_int:from "..." $op ws term_int:to "]" ws { makeArrFromTo($op, :from, :to)};
 
@@ -65,13 +65,13 @@ from_to    = "[" ws term_int:from "..." $op ws term_int:to "]" ws { makeArrFromT
 
 // [[int]] - operations
 
-term_arr_arr = sublists | var_arr2;
+//term_arr_arr = sublists | var_arr;
 
-sublists = "sublists" $op ws "(" ws term_arr:t ")" ws { makeArr2Func($op, :t) } ;
+sublists = "sublists" $op ws "(" ws term_arr:t ")" ws { makeArrFunc($op, :t) } ;
 
 var_int  = letter+ $s ws { makeIntVar($s) };
 var_arr  = letter+ $s ws { makeArrVar($s) };
-var_arr2 = letter+ $s ws { makeArr2Var($s) };
+//var_arr2 = letter+ $s ws { makeArr2Var($s) };
 letter = 'a'-'z' | 'A'-'Z' | '_';
 
 const_int = digit+ $s ws { makeIntFunc($s) };

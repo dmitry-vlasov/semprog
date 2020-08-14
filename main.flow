@@ -6,11 +6,11 @@ import test/atom;
 import test/trans;
 
 main() -> void {
-    testProp();
+    //testProp();
     testArithm();
-    testQBF();
-    testLongProp();
-    testAtom();
-    testTrans();
+    //testQBF();
+    //testLongProp();
+    //testAtom();
+    //testTrans();
     quit(0);
 }
