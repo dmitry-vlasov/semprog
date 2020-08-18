@@ -3,18 +3,15 @@ import dynamic;
 
 export {
     // Array operations
-    arrayConcat : EvalOper ;
-    arrayAdd : EvalOper;
-    arrayTail : EvalOper;
-    arrayGet : EvalOper;
-    arraySublists :  EvalOper ;
-    arrayCreate : EvalOper;
-
     arrayBasicOpers : [EvalOper] = [
         arrayConcat,
+        arrayAdd,
+        arrayTail,
+        arrayGet,
+        arraySublists,
+        arrayCreate,
+        arrayFromTo
     ];
-
-    arrayFromTo() -> EvalOper;
 }
 
 arrayBasicOpers(type : Type) -> [EvalOper] {

@@ -15,9 +15,10 @@ export {
     );
 
     // The structure, which defines a sementics for an operation.
+    // Operation is polymorphic, i.e. may deal on different types of arguments.
     EvalOper(
         name : string, 
-        sign : ([Type]) -> Type, 
+        sign : TypeFunc, 
         sem  : (Eval, args : [AlgTerm], vals : Tree<string, flow>) -> flow,
         show : (Show, args : [AlgTerm]) -> string
     );
@@ -66,7 +67,12 @@ evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, [Eva
             }
             arg_types = map(args, \arg -> arg.type);
             eitherMap(lookupTree(opers, name), \ops -> {
-                fits = filter(ops, \op -> op.sign(arg_types) != undefType);
+                fits = filter(ops, \op -> 
+                    //op.sign(arg_types) != undefType
+                    isSome(fold(op.sign.args, Some(makeTree()), 
+                        \ac, 
+                    ))
+                );
                 if (length(fits) == 0) {
                     println("no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> type2s(t)), ", "));
                     undefVal;
