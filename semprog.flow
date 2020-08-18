@@ -1,0 +1,22 @@
+import net/url_parameter;
+import parser/parse;
+import typecheck;
+import arithm/arithm;
+
+main() -> void {
+    println("Semantic programming framework\n");
+    file = getUrlParameter("file");
+    if (!fileExists(file)) {
+        println("File: " + file  + " doesn't exist");
+    } else {
+        ext = getFileExt(file);
+        if (ext != ".sem") {
+            println("Extension: " + ext  + " mismatches the expected .sem");
+        } else {
+            src = getFileContent(file);
+            name = changeFileExt(src, "");
+            module = parseModule(src, name);
+        }
+    }
+    quit(0);
+}

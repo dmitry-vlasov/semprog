@@ -1,0 +1,107 @@
+import prop/prop;
+import arithm/parse;
+import fol/fol;
+import fol/array;
+import fol/int;
+import fol/lambda;
+
+export {
+    arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra;
+}
+
+getQuantifiers(f : AlgTerm) -> Set<AlgTermVar> {
+    doGetQuantifiers(makeSet(), f);
+}
+
+doGetQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
+   switch (f) {
+        AlgTermVar(var, type): acc;
+        AlgTermFunc(op, args, type): 
+            if (!(startsWith(op, "A ") || startsWith(op, "E ") || startsWith(op, "S ") )) {
+                fold(args, acc, doGetQuantifiers);
+            } else {
+                if (length(args) == 0) acc else {
+                    v = args[0];
+                    switch (v) {
+                        AlgTermVar(__,__): 
+                            fold(tail(args), insertSet(acc, v), doGetQuantifiers);
+                        AlgTermFunc(__,__,__): 
+                            fold(args, acc, doGetQuantifiers);
+                    }
+                }
+            }
+   } 
+}
+
+getIntConsts(f : AlgTerm) -> Set<int> {
+    doGetIntConsts(makeSet(), f);
+}
+
+doGetIntConsts(acc : Set<int>, f : AlgTerm) -> Set<int> {
+   switch (f) {
+        AlgTermVar(var, type): acc;
+        AlgTermFunc(op, args, type): 
+            if (isDigits(op)) {
+                insertSet(acc, s2i(op))
+            } else {
+                fold(args, acc, doGetIntConsts);
+            }
+   } 
+}
+
+getArrayDims(f : AlgTerm) -> Set<int> {
+    doGetArrayInts(makeSet(), f);
+}
+
+doGetArrayInts(acc : Set<int>, f : AlgTerm) -> Set<int> {
+   switch (f) {
+        AlgTermVar(var, type): acc;
+        AlgTermFunc(op, args, type): 
+            if (startsWith(op, "array-")) {
+                dim = substring(op, 6, strlen(op) - 6);
+                fold(args, insertSet(acc, s2i(dim)), doGetArrayInts);
+            } else {
+                fold(args, acc, doGetArrayInts);
+            }
+   } 
+}
+
+arithmeticsAlgebra(f : AlgTerm) -> EvalAlgebra {
+    quants = set2array(getQuantifiers(f));
+    forall_qs = fold(quants, [], \acc, v -> concat(acc, [makeQuantifier("A", v.name, v.type, forall)]));
+    exists_qs = fold(quants, [], \acc, v -> concat(acc, [makeQuantifier("E", v.name, v.type, exists)]));
+    filter_qs = fold(quants, [], \acc, v -> concat(acc, [makeFilter(v.name, v.type)]));
+    equalities = [
+        makeEquality(intType), 
+        makeEquality(arType(intType)), 
+        makeNotEquality(intType), 
+        makeNotEquality(arType(intType))
+    ];
+    predicates = [
+        makePredicate("in", [intType, arType(intType)], \args -> {
+            x = flow2i(args[0]);
+            a = cast(args[1] : flow -> [int]);
+            exists(a, \y -> y == x);
+        }),
+        makePredicate("sub", [arType(intType), arType(intType)], \args -> {
+            a1 = cast(args[0] : flow -> [int]);
+            a2 = cast(args[1] : flow -> [int]);
+            if (length(a1) > length(a2)) false else 
+            forall(zipWith(a1, a2, \x1, x2 -> Pair(x1, x2)), \p -> p.first == p.second);
+        }),
+        makePredicate("<", [intType, intType], \args -> flow2i(args[0]) < flow2i(args[1])),
+        makePredicate("<=", [intType, intType], \args -> flow2i(args[0]) <= flow2i(args[1])),
+    ];
+    array_ops = concat(arrayBasicOpers(intType), [arrayFromTo()]);
+    array_dims = fold(set2array(getArrayDims(f)), [], \acc, dim -> concat(acc, [arrayCreate(intType, dim)]));
+    int_ops = [intInv, intAdd, intDiv, intProd, intSub];
+    int_consts = fold(set2array(getIntConsts(f)), [], \acc, v -> concat(acc, [makeIntConst(i2s(v), v)]));
+    lens = getLongLogOpers(f);
+    EvalAlgebra("arithmetics", concatA([
+        makeLongPropLogicAlgebra(lens).opers,
+        forall_qs, exists_qs, filter_qs,
+        equalities, predicates, 
+        array_ops, array_dims,
+        int_ops, int_consts
+    ]));
+}

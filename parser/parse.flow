@@ -1,0 +1,76 @@
+import lingo/pegcode/driver;
+import module;
+
+export {
+    parseModule(str : string, name : string) -> Module;
+}
+
+parseModule(str : string, name : string) -> Module {
+    e_gr = "#include parser/module.lingo";
+	parsic(compilePegGrammar(e_gr), str, 
+        SemanticActions(
+            mergeTree(defaultPegActions.t,
+            pairs2tree([
+                Pair("makeModule", \s -> Module(name, cast(s[0] : flow -> [Def]))),
+                Pair("makeDef", \s -> Def(flow2s(s[0]), s[1], s[2])),
+                Pair("makeTypedVar", \s -> TypedVar(flow2s(s[0]), s[1])),
+                Pair("makeTypeConst", \s -> constType(flow2s(s[0]))),
+                Pair("makeTypeArray", \s -> arType(s[0])),
+                Pair("makeTypeFn", \s -> fnType(s[0], s[1])),
+                Pair("makeTypeProd", \s -> prType(s[0])),
+                Pair("makeTypeUnion", \s -> unType(s[0])),
+
+                Pair("makeTermFunc", \s -> {
+                    //println("makeBoolFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), tail(s), boolType)
+                }),
+                Pair("makeTermVar",  \s -> {
+                    //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), undefType)
+                }),
+
+                Pair("makeArrFunc", \s -> {
+                    //println("makeArrFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    op1 = flow2s(s[0]);
+                    op = if (op1 == "+") "concat" else op1;
+                    AlgTermFunc(op, tail(s), arType(intType))
+                }),
+                Pair("makeArrFuncNary", \s -> {
+                    //println("makeArrFuncNary: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), s[1], arType(intType))
+                }),
+                Pair("makeArray", \s -> {
+                    //println("makeArray: " + flow2s(s[0]) + " = " + toString(s));
+                    //println(s[1]);
+                    AlgTermFunc("array-" + i2s(length(s[1])), s[1], arType(intType))
+                }),
+                Pair("makeArrVar",  \s -> {
+                    //println("makeArrVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), arType(intType))
+                }),
+            
+                Pair("makeArr2Var",  \s -> {
+                    //println("makeArrVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVar(flow2s(s[0]), arType(arType(intType)))
+                }),
+                Pair("makeArr2Func", \s -> {
+                    //println("makeArrFunc: " + flow2s(s[0]) + " = " + toString(s));
+                    op1 = flow2s(s[0]);
+                    op = if (op1 == "+") "concat" else op1;
+                    AlgTermFunc(op, tail(s), arType(arType(intType)))
+                }),
+
+                Pair("makeQuantifier", \s -> { 
+                    //println(s[1]);
+                    var = cast(s[1] : flow -> AlgTermVar);
+                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]) + " " + var.name, tail(s), boolType)
+                }),
+                Pair("makeArrFromTo", \s -> { 
+                    //println("makeArrFromTo: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermFunc(flow2s(s[0]), tail(s), boolType)
+                }),
+            ]))
+        )
+    );
+}

@@ -48,11 +48,13 @@ export {
 }
 
 algebraEval(alg : EvalAlgebra) -> Eval {
-    opers = fold(alg.opers, makeTree(), \acc, op -> setTree(acc, op.name, op));
+    opers = fold(alg.opers, makeTree(), \acc, op -> 
+        setTree(acc, op.name, concat(lookupTreeDef(acc, op.name, []), [op]))
+    );
     Eval(\term, vals -> evalAlgTerm(term, vals, opers));
 }
 
-evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, EvalOper>) -> flow {
+evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, [EvalOper]>) -> flow {
     eval = Eval(\t, vs -> evalAlgTerm(t, vs, opers));
     //println("eval of: " + term.name);
     switch (term) {
@@ -63,7 +65,14 @@ evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, Eval
             if (!containsKeyTree(opers, name)) {
                 println("unknown operator: " + name);
             }
-            eitherMap(lookupTree(opers, name), \op -> op.sem(eval, args, vals), undefVal);
+            term_sign = fnType(map(args, \arg -> arg.type), type);
+            eitherMap(lookupTree(opers, name), \ops -> 
+                eitherMap(find(ops, \op -> op.sign == term_sign),
+                    \op -> op.sem(eval, args, vals),
+                    undefVal
+                ),
+                undefVal
+            );
         }
     }
 }

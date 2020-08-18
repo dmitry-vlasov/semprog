@@ -1,0 +1,30 @@
+import eval;
+
+export {
+    Module(name : string, defs : [Def]);
+
+    Def(
+        name : string,
+        vars : [TypedVar],
+        term : AlgTermFunc
+    );
+
+    TypedVar(name : string, type : Type);
+
+    makeDefOper(def : Def) -> EvalOper;
+}
+
+makeDefOper(def : Def) -> EvalOper {
+    EvalOper(
+        def.name,
+        fnType(map(def.vars, \v -> v.type), def.term.type),
+        \e, args, vals -> {
+            if (length(args) != length(def.vars)) {
+                flow(undefVal)
+            } else {
+                e.eval(def.term, foldi(def.vars, vals, \i, acc, var -> setTree(acc, var.name, args[i])));
+            }
+        },
+        showDfEvalOper(def.name)
+    );
+}
