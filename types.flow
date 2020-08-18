@@ -21,6 +21,10 @@ export {
     unType(args : [Type]) -> TypeFunc;
     prType(args : [Type]) -> TypeFunc;
 
+    // Function type: args and value
+    fnArgTypes(fn : TypeFunc) -> [Type];
+    fnValType(fn : TypeFunc) -> Type;
+
     // A special constant - undefined type.
     undefType = TypeFunc("", [], \__,__ -> "undef_type");
 
@@ -93,4 +97,12 @@ naryBoolFnType(n : int) -> TypeFunc {
 
 naryIntFnType(n : int) -> TypeFunc {
     fnType(map(enumFromTo(0, n - 1), \__ -> intType), intType);
+}
+
+fnArgTypes(fn : TypeFunc) -> [Type] {
+    if (fn.name != "fn") [undefType] else tail(fn.args);
+}
+
+fnValType(fn : TypeFunc) -> Type {
+    if (fn.name != "fn") undefType else fn.args[0];
 }

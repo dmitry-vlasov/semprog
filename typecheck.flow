@@ -1,0 +1,33 @@
+import term;
+
+export {
+    typecheck(term : AlgTerm, vars : Tree<string, Type>, signs : Tree<string, TypeFunc>) -> AlgTerm;
+}
+
+typecheck(term : AlgTerm, vars : Tree<string, Type>, signs : Tree<string, TypeFunc>) -> AlgTerm {
+    switch (term) {
+        AlgTermVar(name, __): {
+            AlgTermVar(term with 
+                type = lookupTreeDef(vars, name, undefType)
+            );
+        }
+        AlgTermFunc(name, args, __): {
+            typed_args = map(args, \arg -> typecheck(arg, vars, signs));
+            arg_types = map(typed_args, \arg -> arg.type);
+            val_type = 
+                if (exists(arg_types, \t -> t == undefType)) undefType else 
+                eitherMap(
+                    lookupTree(signs, name), 
+                    \sign ->
+                        if (sign.name != "fn") undefType else 
+                        if (fnArgTypes(sign) != arg_types) undefType else 
+                        fnValType(sign)
+                    , undefType
+                );
+            AlgTermFunc(term with 
+                type = val_type,
+                args = typed_args
+            );
+        }
+    }
+}
