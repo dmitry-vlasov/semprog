@@ -25,6 +25,9 @@ export {
     fnArgTypes(fn : TypeFunc) -> [Type];
     fnValType(fn : TypeFunc) -> Type;
 
+    // un-array type
+    unArType(type : Type) -> Type;
+
     // A special constant - undefined type.
     undefType = TypeFunc("", [], \__,__ -> "undef_type");
 
@@ -105,4 +108,13 @@ fnArgTypes(fn : TypeFunc) -> [Type] {
 
 fnValType(fn : TypeFunc) -> Type {
     if (fn.name != "fn") undefType else fn.args[0];
+}
+
+unArType(type : Type) -> Type {
+    switch (type) {
+        TypeVar(__): undefType;
+        TypeFunc(name, args, __): {
+            if (name == "ar" && length(args) == 1) args[0] else undefType;
+        }
+    }
 }

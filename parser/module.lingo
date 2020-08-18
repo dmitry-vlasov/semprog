@@ -34,9 +34,9 @@ neg  = "!" $op ws term:e { makeTermFunc(:op, :e)};
 true   = "True" $c ws { makeTermFunc($c) };
 false  = "False" $c ws { makeTermFunc($c) };
 
-forall = "A" $q ws var_int:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
-exists = "E" $q ws var_int:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
-filter = "F" $q ws var_int:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
+forall = "A" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
+exists = "E" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
+filter = "F" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
 
 in      = "(" ws term:l "in"  $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
@@ -62,7 +62,7 @@ inv  = "-" $op ws term:x { makeTermFunc($op, :x)};
 
 // Array operations
 
-array_term = concat_arr | tail_arr | add_arr | const_arr | get_arr | from_to | sublists | var_arr ;
+array_term = concat_arr | tail_arr | add_arr | const_arr | get_arr | from_to | sublists;
 
 concat_arr = "concat" $op ws "(" ws term:l "," ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 tail_arr   = "tail" $op ws "(" ws term:l ")" ws         { makeTermFunc($op, :l)};
@@ -71,11 +71,6 @@ const_arr  = "[" $op ws arr_term*:as "]" ws { makeArray($op, :as)};
     arr_term   = (term | term):x (',' ws)? { :x };
 get_arr    = "get" $op ws "." ws term:a "[" ws term:i "]" ws { makeTermFunc($op, :a, :i)};
 from_to    = "[" ws term:from "..." $op ws term:to "]" ws { makeArrFromTo($op, :from, :to)};
-
-
-
-// [[int]] - operations
-
 sublists = "sublists" $op ws "(" ws term:t ")" ws { makeTermFunc($op, :t) } ;
 
 var  = letter+ $s ws { makeVar($s) };

@@ -19,7 +19,8 @@ export {
 }
 
 makeIntConst(name : string, val : int) -> EvalOper {
-    EvalOper(name, intType, 
+    EvalOper(name, 
+        \types -> if (types == []) intType else undefType, 
         \e, args, vals -> {
             if (length(args) != 0) flow(undefVal) else {
                 val;
@@ -30,7 +31,8 @@ makeIntConst(name : string, val : int) -> EvalOper {
 }
 
 makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
-    EvalOper(name, unaryIntFnType, 
+    EvalOper(name, 
+        \types -> if (types == [intType]) intType else undefType, 
         \e, args, vals -> {
             if (length(args) != 1) flow(undefVal) else {
                 op(flow2i(e.eval(args[0], vals)));
@@ -41,7 +43,8 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
 }
 
 makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
-    EvalOper(name, binaryIntFnType,
+    EvalOper(name, 
+        \types -> if (types == [intType, intType]) intType else undefType,
         \e, args, vals -> {
             if (length(args) != 2) flow(undefVal) else {
                 op(flow2i(e.eval(args[0], vals)), flow2i(e.eval(args[1], vals)));

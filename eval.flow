@@ -17,7 +17,7 @@ export {
     // The structure, which defines a sementics for an operation.
     EvalOper(
         name : string, 
-        sign : TypeFunc, 
+        sign : ([Type]) -> Type, 
         sem  : (Eval, args : [AlgTerm], vals : Tree<string, flow>) -> flow,
         show : (Show, args : [AlgTerm]) -> string
     );
@@ -56,7 +56,6 @@ algebraEval(alg : EvalAlgebra) -> Eval {
 
 evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, [EvalOper]>) -> flow {
     eval = Eval(\t, vs -> evalAlgTerm(t, vs, opers));
-    //println("eval of: " + term.name);
     switch (term) {
         AlgTermVar(name, type): {
             lookupTreeDef(vals, name, undefVal);
@@ -65,14 +64,19 @@ evalAlgTerm(term : AlgTerm, vals : Tree<string, flow>, opers : Tree<string, [Eva
             if (!containsKeyTree(opers, name)) {
                 println("unknown operator: " + name);
             }
-            term_sign = fnType(map(args, \arg -> arg.type), type);
-            eitherMap(lookupTree(opers, name), \ops -> 
-                eitherMap(find(ops, \op -> op.sign == term_sign),
-                    \op -> op.sem(eval, args, vals),
-                    undefVal
-                ),
-                undefVal
-            );
+            arg_types = map(args, \arg -> arg.type);
+            eitherMap(lookupTree(opers, name), \ops -> {
+                fits = filter(ops, \op -> op.sign(arg_types) != undefType);
+                if (length(fits) == 0) {
+                    println("no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> type2s(t)), ", "));
+                    undefVal;
+                } else if (length(fits) > 1) {
+                    println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> type2s(t)), ", "));
+                    undefVal;
+                } else {
+                    fits[0].sem(eval, args, vals);
+                }
+            }, undefVal);
         }
     }
 }
@@ -97,7 +101,7 @@ showAlgTerm(term : AlgTerm, opers : Tree<string, EvalOper>) -> string {
 
 evalAlgebra2s(alg : EvalAlgebra) -> string {
     "Algebra " + alg.name + ":\n"+ 
-    strGlue(map(alg.opers, \op -> "\t" + op.name + " : " + type2s(op.sign) + "\n"),  "");
+    strGlue(map(alg.opers, \op -> "\t" + op.name + "\n"),  "");
 }
 
 showDfEvalOper(name : string) -> (Show, args : [AlgTerm]) -> string {

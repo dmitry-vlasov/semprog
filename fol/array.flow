@@ -3,15 +3,16 @@ import dynamic;
 
 export {
     // Array operations
-    arrayConcat(type : Type) -> EvalOper ;
-    arrayAdd(type : Type) -> EvalOper;
-    arrayTail(type : Type) -> EvalOper;
-    arrayEmpty(type : Type) -> EvalOper;
-    arrayGet(type : Type) -> EvalOper;
-    arraySublists(type : Type) -> EvalOper ;
-    arrayCreate(type : Type, dim : int) -> EvalOper;
+    arrayConcat : EvalOper ;
+    arrayAdd : EvalOper;
+    arrayTail : EvalOper;
+    arrayGet : EvalOper;
+    arraySublists :  EvalOper ;
+    arrayCreate : EvalOper;
 
-    arrayBasicOpers(type : Type) -> [EvalOper];
+    arrayBasicOpers : [EvalOper] = [
+        arrayConcat,
+    ];
 
     arrayFromTo() -> EvalOper;
 }
@@ -27,9 +28,16 @@ arrayBasicOpers(type : Type) -> [EvalOper] {
     ];
 }
 
-arrayConcat(type : Type) -> EvalOper {
+arrayConcat : EvalOper =
     EvalOper(
-        "concat", fnType([arType(type), arType(type)], arType(type)),
+        "concat", 
+        \types -> {
+            if (length(types) == 0) undefType else {
+                unared = map(types, unArType);
+                tp = unared[0];
+                if (tp !=undefType  && forall(unared, \t -> t == tp)) arType(tp);
+            }
+        },
         \e, args, vals -> {
             if (length(args) != 2) flow(undefVal) else {
                 concat(
@@ -40,7 +48,6 @@ arrayConcat(type : Type) -> EvalOper {
         },
         showDfEvalOper("concat")
     );
-}
 
 arrayAdd(type : Type) -> EvalOper {
     EvalOper(
