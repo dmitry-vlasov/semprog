@@ -54,6 +54,8 @@ export {
     UndefVal();
     undefVal = UndefVal();
     showValuation(v : Tree<string, flow>) -> string;
+
+    evalAlgTerms(e : Eval, terms : [AlgTerm], vals : Tree<string, flow>, acc : flow) -> flow;
 }
 
 algebraEval(alg : EvalAlgebra) -> Eval {
@@ -69,7 +71,16 @@ algebraEval(alg : EvalAlgebra) -> Eval {
     Eval(\term, vals -> evalAlgTerm(term, vals, opers, consts));
 }
 
-cycle_counter = ref 0;
+//cycle_counter = ref 0;
+
+evalAlgTerms(e : Eval, terms : [AlgTerm], vals : Tree<string, flow>, acc : flow) -> flow {
+    if (acc == undefVal || terms == []) acc else {
+        val = e.eval(terms[0], vals);
+        if (val == undefVal) flow(undefVal) else {
+            evalAlgTerms(e, tail(terms), vals, flow(concat(cast(acc : flow -> [flow]), [val])));
+        }
+    }
+}
 
 evalAlgTerm(
     term : AlgTerm, 
@@ -77,6 +88,7 @@ evalAlgTerm(
     opers : Tree<string, [EvalOper]>,
     consts : Tree<AlgTypeFunc, EvalConst>
 ) -> flow {
+    //println("about to eval: " + algTerm2s(term) + " ... ");
     eval = Eval(\t, vs -> evalAlgTerm(t, vs, opers, consts));
     switch (term) {
         AlgTermVar(name, type): {
@@ -96,10 +108,11 @@ evalAlgTerm(
                         println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                         flow(undefVal);
                     } else {
-                        cycle_counter := ^cycle_counter + 1;
+                        /*cycle_counter := ^cycle_counter + 1;
                         if (^cycle_counter > 64) {
+                            println("CYCLES: " + i2s(^cycle_counter));
                             quit(0);
-                        }
+                        }*/
                         flow(fits[0].eval(eval, args, vals));
                     }
                 }, 

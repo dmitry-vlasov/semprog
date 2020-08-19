@@ -13,21 +13,34 @@ export {
     intConst : EvalConst;
 }
 
+// evalAlgTerms(e : Eval, terms : [AlgTerm], vals : Tree<string, flow>, acc : flow) -> flow
+
 intOpers = [
     makeIntUnary("-", \x -> -x),
     EvalOper("+",
         funcAlgType([variadicAlgType(intType)], intType),
         \e, args, vals -> {
-            arg_vals = map(args, \arg -> e.eval(args[0], vals));
-            if (exists(arg_vals, \val -> val == undefVal)) flow(undefVal) else {
+            arg_vals = evalAlgTerms(e, args, vals, []);
+            if (arg_vals == undefVal) flow(undefVal) else {
                 flow(fold(
-                    map(arg_vals, flow2i), 0, \acc, i -> acc + i
+                    map(cast(arg_vals : flow -> [flow]), flow2i), 0, \acc, i -> acc + i
                 ));
             }
         },
         showVariadicEvalOper("+")
     ),
-    makeIntBinary("*", \x, y -> x * y),
+    EvalOper("*",
+        funcAlgType([variadicAlgType(intType)], intType),
+        \e, args, vals -> {
+            arg_vals = evalAlgTerms(e, args, vals, []);
+            if (arg_vals == undefVal) flow(undefVal) else {
+                flow(fold(
+                    map(cast(arg_vals : flow -> [flow]), flow2i), 1, \acc, i -> acc * i
+                ));
+            }
+        },
+        showVariadicEvalOper("*")
+    ),
     makeIntBinary("/", \x, y -> x / y),
     makeIntBinary("-", \x, y -> x - y)
 ];

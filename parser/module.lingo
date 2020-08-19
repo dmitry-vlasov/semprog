@@ -56,8 +56,10 @@ func = id $n ws "(" ws (func_arg)*:as ")" ws  { makeTermFuncNary($n, :as) };
 
 arithm_term = add | prod | min | div | inv | const_int; 
 
-add  = "(" ws term:l "+" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
-prod = "(" ws term:l "*" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
+add  = "(" ws term:f "+" $op ws (add_arg)+:as ")" ws { makeTermFuncNary1($op, :f, :as) };
+    add_arg = term:t ("+" ws)? { :t };
+prod = "(" ws term:f "*" $op ws (prod_arg)+:as ")" ws { makeTermFuncNary1($op, :f, :as) };
+    prod_arg = term:t ("*" ws)? { :t };
 min  = "(" ws term:l "-" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 div  = "(" ws term:l "/" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 inv  = "-" $op ws term:x { makeTermFunc($op, :x)};

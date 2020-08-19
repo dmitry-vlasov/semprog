@@ -38,6 +38,12 @@ parseModule(str : string, name : string) -> Module {
                     args = cast(s[1] : flow -> [flow]);
                     AlgTermFunc(id, args, undefAlgType);
                 }),
+                Pair("makeTermFuncNary1", \s -> {
+                    id = flow2s(s[0]);
+                    arg = s[1];
+                    args = cast(s[2] : flow -> [flow]);
+                    AlgTermFunc(id, concat([arg], args), undefAlgType);
+                }),
                 Pair("makeTermVar",  \s -> {
                     //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
                     AlgTermVar(flow2s(s[0]), undefAlgType)

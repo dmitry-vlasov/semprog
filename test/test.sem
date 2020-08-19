@@ -34,7 +34,7 @@ def x_in_set_one_two (x : int) : bool {
 */
 
 def fact (x : int) : int {
-    ((x = 0) ? 1 : (x * fact((x - 1))))
+    ((x = 0) ? 1 : (1 * x * 1 * fact((x - 1))))
 }
 
 def fact_five() : int {

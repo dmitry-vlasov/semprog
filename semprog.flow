@@ -34,6 +34,11 @@ main() -> void {
 
             //module = parseModule(src, name);
             println("Module:\n" + module2s(module, show) + "\n\n");
+            /*iter(module.defs, \def -> println(def2s(def, show1)));
+            iter(module.defs, \def -> {
+                println("about to eval: " + algTypedTerm2s(def.term) + " ...");
+                println(eval1.eval(def.term, makeTree()))
+            });*/
             println(
                 strGlue(map(module.defs, \def -> 
                     //algTypedTerm2s(def.term) + "\n" +
