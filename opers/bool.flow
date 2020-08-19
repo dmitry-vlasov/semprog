@@ -1,39 +1,16 @@
 import eval;
 import dynamic;
 import math/math;
+import common_types;
 
 export {
     // The definition of semantics for a classical propositional logic.
     makeBoolConst(name : string, v : bool) -> EvalOper;
-    boolTrue = makeBoolConst("T", true);
-    boolFalse = makeBoolConst("F", false);
-
     makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper;
-    lnot = makeBoolUnary("!", \v -> !v);
-
     makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper;
-    lor = makeBoolBinary("\\/", \v1, v2 -> v1 || v2);
-    land = makeBoolBinary("/\\", \v1, v2 -> v1 && v2);
-    limpl = makeBoolBinary("->", \v1, v2 -> !v1 || v2);
-    leq = makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2));
-    
-    propLogic = EvalAlgebra("propositioal logic", [boolTrue, boolFalse, lnot, land, limpl, leq, lor]);
+    makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper;
 
-    // QBF algebra
-    makeBoolQuantifier(BQ : string, v : string) -> EvalOper;
-    makeQBFAlgebra(vars : [string]) -> EvalAlgebra;
-    getBoolQuantifiers(f : AlgTerm) -> [string];
-
-    // Propositional logic with n-ary conjunctions and disjunctions
-    makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper;
-    makeLongOrOper(arity : int) -> EvalOper;
-    makeLongAndOper(arity : int) -> EvalOper;
-    makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra;
-    getLongLogOpers(f : AlgTerm) -> [int];
-
-    makeLongBoolOperation(name : string, args : [AlgTerm]) -> AlgTermFunc;
-
-    makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra;
+    boolOpers : [EvalOper];
 
     makeAndTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
@@ -48,6 +25,18 @@ export {
     
     getTermQuantVar(t : AlgTerm) -> AlgTermVar;
 }
+
+boolOpers = [
+    makeBoolConst("T", true),
+    makeBoolConst("F", false),
+    makeBoolUnary("!", \v -> !v),
+    makeBoolNary("\\/", any),
+    makeBoolNary("/\\", all),
+    makeBoolBinary("->", \v1, v2 -> !v1 || v2),
+    makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2)),
+    makeBoolQuantifier("BA"),
+    makeBoolQuantifier("BE")
+];
 
 // General boolean operators
 
@@ -85,44 +74,39 @@ makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
     );
 }
 
-
-// QBF stuff
-
-makeQBFAlgebra(vars : [string]) -> EvalAlgebra {
-    EvalAlgebra("QBF logic", 
-        concat3(
-            propLogic.opers, 
-            map(vars, \v -> makeBoolQuantifier("BA", v)), 
-            map(vars, \v -> makeBoolQuantifier("BE", v))  
-        )
+makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
+    EvalOper(name, 
+        funcAlgType([variadicAlgType(boolType)], boolType),
+        \e, args, vals ->
+            flow(op(map(args, \arg -> flow2b(e.eval(arg, vals))))),
+        showVariadicEvalOper(name)
     );
 }
 
-makeBoolQuantifier(BQ : string, v : string) -> EvalOper {
-    EvalOper(BQ + " " + v,
-        fnType([boolType] , boolType),
+makeBoolQuantifier(BQ : string) -> EvalOper {
+    EvalOper(BQ,
+        funcAlgType([stringType, boolType] , boolType),
         \e, args, vals -> {
             if (length(args) != 2) {
                 flow(undefVal)
             } else {
+                v = flow2s(args[0]);
                 if (BQ == "BA") {
-                    flow( 
-                        flow2b(e.eval(args[1], setTree(vals, v, true))) 
-                        && 
+                    flow(
+                        flow2b(e.eval(args[1], setTree(vals, v, true))) && 
                         flow2b(e.eval(args[1], setTree(vals, v, false)))
-                        );
+                    );
                 } else {
-                    flow( 
-                        flow2b(e.eval(args[1], setTree(vals, v, true))) 
-                        || 
+                    flow(
+                        flow2b(e.eval(args[1], setTree(vals, v, true))) || 
                         flow2b(e.eval(args[1], setTree(vals, v, false)))
-                        );
+                    );
                 }
             }
         },
         \s, args -> {
             if (length(args) != 2) "broken term" else
-            BQ + " " + v + " " + s.show(args[1]);
+            BQ + " " + s.show(args[0]) + " " + s.show(args[1]);
         }
     ); 
 }
@@ -155,65 +139,15 @@ doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
 
 // Long /\ and \/ stuff
 
-makeBoolNary(name : string, arity : int, op: ([bool]) -> bool) -> EvalOper {
-    EvalOper(name + "-" + i2s(arity), 
-        naryBoolFnType(arity),
-        \e, args, vals -> {
-            if (length(args) != arity) flow(undefVal) else {
-                flow(op(map(args, \arg -> flow2b(e.eval(arg, vals)))));
-            }
-        },
-        showNaryEvalOper(name, arity)
-    );
-}
 
-makeLongOrOper(arity : int) -> EvalOper {
-    makeBoolNary("\\/", arity, any);
-}
 
-makeLongAndOper(arity : int) -> EvalOper {
-    makeBoolNary("/\\", arity, all);
-}
-
-makeLongPropLogicAlgebra(lens : [int]) -> EvalAlgebra {
-    EvalAlgebra("Prop logic with long /\\ and \\/", 
-        concat3(
-            propLogic.opers, 
-            map(lens, \len -> makeLongOrOper(len)), 
-            map(lens, \len -> makeLongAndOper(len))  
-        )
-    );
-}
-
-getLongLogOpers(f : AlgTerm) -> [int] {
-     set2array(doGetLongLogOpers(makeSet(), f));
-}
-
-doGetLongLogOpers(acc : Set<int>, f : AlgTerm) -> Set<int> {
-   switch (f) {
-        AlgTermVar(var, type): acc;
-        AlgTermFunc(op, args, type): {
-            if (!(startsWith(op, "/\\-") || startsWith(op, "\\/-"))) {
-                fold(args, acc, doGetLongLogOpers);
-            } else {
-                fold(args, insertSet(acc, length(args)), doGetLongLogOpers);
-            }
-        }
-   } 
-}
 
 makeLongBoolOperation(name : string, args : [AlgTerm]) -> AlgTermFunc {
     if (length(args) < 1) {
         println("000000 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 000000");
     }
     
-    AlgTermFunc(name + "-" + i2s(length(args)), args, boolType);
-}
-
-makeQBFLongAlgebra(vars : [string], lens : [int]) -> EvalAlgebra {
-    qbf_algebra = makeQBFAlgebra(vars);
-    long_algebra = makeLongPropLogicAlgebra(lens);
-    EvalAlgebra("QBFLongAlgebra", concat(qbf_algebra.opers, long_algebra.opers));
+    AlgTermFunc(name, args, boolType);
 }
 
 makeAndTerm(args : [AlgTerm]) -> AlgTermFunc {
@@ -246,21 +180,21 @@ makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc {
 }
 
 makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("BA " + v.name, [v, t], boolType);
+    AlgTermFunc("BA", [AlgTermFunc(v.name, [], stringType), t], boolType);
 }
 
 makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
-    AlgTermFunc("BE " + v.name, [v, t], boolType);
+    AlgTermFunc("BE", [AlgTermFunc(v.name, [], stringType), t], boolType);
 }
 
 getTermQuantVar(t : AlgTerm) -> AlgTermVar {
     switch (t) {
-        AlgTermVar(__,__): AlgTermVar("ERROR QUANT VAR", undefType);
+        AlgTermVar(__,__): AlgTermVar("ERROR QUANT VAR", undefAlgType);
         AlgTermFunc(name, args, __): {
             if (isQuantifierOper(name)) {
                 cast(args[0] : AlgTerm -> AlgTermVar);
             } else {
-                AlgTermVar("ERROR QUANT VAR", undefType);
+                AlgTermVar("ERROR QUANT VAR", undefAlgType);
             }
         }
     }

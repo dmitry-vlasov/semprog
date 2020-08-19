@@ -1,4 +1,6 @@
 import eval;
+import string_utils;
+import typecheck;
 
 export {
     Module(name : string, defs : [Def]);
@@ -6,18 +8,21 @@ export {
     Def(
         name : string,
         vars : [TypedVar],
-        term : AlgTermFunc
+        type : AlgType,
+        term : AlgTerm
     );
 
-    TypedVar(name : string, type : Type);
+    TypedVar(name : string, type : AlgType);
 
     makeDefOper(def : Def) -> EvalOper;
+    module2s(module : Module, show : Show) -> string;
+    typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
 makeDefOper(def : Def) -> EvalOper {
     EvalOper(
         def.name,
-        fnType(map(def.vars, \v -> v.type), def.term.type),
+        funcAlgType(map(def.vars, \v -> v.type), def.term.type),
         \e, args, vals -> {
             if (length(args) != length(def.vars)) {
                 flow(undefVal)
@@ -27,4 +32,39 @@ makeDefOper(def : Def) -> EvalOper {
         },
         showDfEvalOper(def.name)
     );
+}
+
+module2s(module : Module, show : Show) -> string {
+    strGlue(map(module.defs, \def -> def2s(def, show)), "\n");
+}
+
+def2s(def : Def, s : Show) -> string {
+    "def " +  def.name + 
+    " (" + strGlue(map(def.vars, typedVar2s), ", ") + ")" + 
+    " : " + algType2s(def.type) + "\n" +
+     strIndent(s.show(def.term)) + "\n";
+}
+
+typedVar2s(var : TypedVar) -> string {
+    var.name + " : " + algType2s(var.type);
+}
+
+typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
+    alg_signs = fold(algebra.opers, makeTree(), \acc, oper ->
+        setTree(acc, oper.name, concat(lookupTreeDef(acc, oper.name, []), [oper.sign]))
+    );
+    signs = fold(module.defs, alg_signs, \acc, def ->
+        setTree(acc, def.name, concat(lookupTreeDef(acc, def.name, []), [defSign(def)]))
+    );
+    Module(module with 
+        defs = map(module.defs, \def -> {
+            //println("typechecking: " + def.name);
+            vars = fold(def.vars, makeTree(), \acc, var -> setTree(acc, var.name, var.type));
+            Def(def with term = typecheck(def.term, vars, signs));
+        })
+    );
+}
+
+defSign(def : Def) -> AlgTypeFunc {
+    funcAlgType(map(def.vars, \v -> v.type), def.type);
 }

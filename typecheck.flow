@@ -1,32 +1,46 @@
 import term;
 
 export {
-    typecheck(term : AlgTerm, vars : Tree<string, Type>, signs : Tree<string, [TypeFunc]>) -> AlgTerm;
+    typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm;
 }
 
-typecheck(term : AlgTerm, vars : Tree<string, Type>, signs : Tree<string, [TypeFunc]>) -> AlgTerm {
-    switch (term) {
+typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm {
+    ret = switch (term) {
         AlgTermVar(name, __): {
             AlgTermVar(term with 
-                type = lookupTreeDef(vars, name, undefType)
+                type = lookupTreeDef(vars, name, undefAlgType)
             );
         }
-        AlgTermFunc(name, args, __): {
+        AlgTermFunc(name, args, type): {
             typed_args = map(args, \arg -> typecheck(arg, vars, signs));
             arg_types = map(typed_args, \arg -> arg.type);
             val_type = 
-                if (exists(arg_types, \t -> t == undefType)) undefType else 
+                if (exists(arg_types, \t -> t == undefAlgType)) {
+                    println("untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") );
+                    undefAlgType;
+                } else 
                 eitherMap(lookupTree(signs, name), 
-                    \sign_arr ->
-                        eitherMap(
-                            find(sign_arr, \sign -> arg_types == fnArgTypes(sign)),
-                            \sign -> 
-                                if (sign.name != "fn") undefType else 
-                                if (fnArgTypes(sign) != arg_types) undefType else 
-                                fnValType(sign),
-                            undefType
-                        )
-                    , undefType
+                    \ops -> {
+                        fits = filtermap(ops, \op -> 
+                            maybeMap(
+                                matchTypes(funcArgTypes(op), arg_types, makeTree()),
+                                \sub -> Pair(op, sub)
+                            )
+                        );
+                        if (length(fits) == 0) {
+                            println("(B) no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+                            println("ops: " + strGlue(map(ops, \op -> algType2s(op)), ", "));
+                            undefAlgType;
+                        } else if (length(fits) > 1) {
+                            println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+                            undefAlgType;
+                        } else {
+                            op = fits[0].first;
+                            sub = fits[0].second;
+                            if (op.name != "fn") undefAlgType else
+                            instantiateType(funcValType(op), sub);
+                        }
+                    }, type
                 );
             AlgTermFunc(term with 
                 type = val_type,
@@ -34,4 +48,6 @@ typecheck(term : AlgTerm, vars : Tree<string, Type>, signs : Tree<string, [TypeF
             );
         }
     }
+    //println("typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
+    ret
 }

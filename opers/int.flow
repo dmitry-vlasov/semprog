@@ -1,5 +1,7 @@
 import eval;
 import dynamic;
+import common_types;
+import math/math;
 
 export {
     // Integer operations
@@ -7,23 +9,34 @@ export {
     makeIntUnary(name : string, op : (int) -> int) -> EvalOper;
     makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper;
 
-    intInv = makeIntUnary("-", \x -> -x);
-    intAdd = makeIntBinary("+", \x, y -> x + y);
-    intProd = makeIntBinary("*", \x, y -> x * y);
-    intDiv = makeIntBinary("/", \x, y -> x / y);
-    intSub = makeIntBinary("-", \x, y -> x - y);
-
-    intZero = makeIntConst("0", 0);
-    intOne = makeIntConst("1", 1);
-    intTwo = makeIntConst("2", 2);
+    intOpers : [EvalOper];
+    intConst : EvalConst;
 }
 
+intOpers = [
+    makeIntUnary("-", \x -> -x),
+    makeIntBinary("+", \x, y -> x + y),
+    makeIntBinary("*", \x, y -> x * y),
+    makeIntBinary("/", \x, y -> x / y),
+    makeIntBinary("-", \x, y -> x - y)
+];
+
+intConst = EvalConst(
+    intType, 
+    \n -> if (isDigits(n)) {
+        flow(s2i(n));
+    } else {
+        println("wrong integer format: " + n);
+        flow(undefVal);
+    }
+);
+
 makeIntConst(name : string, val : int) -> EvalOper {
-    EvalOper(name, 
-        \types -> if (types == []) intType else undefType, 
+    EvalOper(name,
+        funcAlgType([], intType),
         \e, args, vals -> {
             if (length(args) != 0) flow(undefVal) else {
-                val;
+                flow(val);
             }
         },
         showConstEvalOper(name)
@@ -32,10 +45,10 @@ makeIntConst(name : string, val : int) -> EvalOper {
 
 makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
     EvalOper(name, 
-        \types -> if (types == [intType]) intType else undefType, 
+        funcAlgType([intType], intType),
         \e, args, vals -> {
             if (length(args) != 1) flow(undefVal) else {
-                op(flow2i(e.eval(args[0], vals)));
+                flow(op(flow2i(e.eval(args[0], vals))));
             }
         },
         showUnaryEvalOper(name)
@@ -44,10 +57,13 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
 
 makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
     EvalOper(name, 
-        \types -> if (types == [intType, intType]) intType else undefType,
+        funcAlgType([intType, intType], intType),
         \e, args, vals -> {
             if (length(args) != 2) flow(undefVal) else {
-                op(flow2i(e.eval(args[0], vals)), flow2i(e.eval(args[1], vals)));
+                flow(op(
+                    flow2i(e.eval(args[0], vals)), 
+                    flow2i(e.eval(args[1], vals))
+                ));
             }
         },
         showBinaryEvalOper(name)

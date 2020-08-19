@@ -1,7 +1,9 @@
 import net/url_parameter;
+import fs/filesystem;
 import parser/parse;
 import typecheck;
-import arithm/arithm;
+import module;
+import algebra;
 
 main() -> void {
     println("Semantic programming framework\n");
@@ -13,9 +15,20 @@ main() -> void {
         if (ext != ".sem") {
             println("Extension: " + ext  + " mismatches the expected .sem");
         } else {
+            println(evalAlgebra2s(fullAlgebra));
+            show = algebraShow(fullAlgebra);
+            eval = algebraEval(fullAlgebra);
             src = getFileContent(file);
             name = changeFileExt(src, "");
-            module = parseModule(src, name);
+            module = typecheckModule(parseModule(src, name), fullAlgebra);
+            //module = parseModule(src, name);
+            println(module2s(module, show));
+            println(
+                strGlue(map(module.defs, \def -> 
+                    algTypedTerm2s(def.term) + "\n" + show.show(def.term) + "\n" +
+                    toString(eval.eval(def.term, makeTree()))
+                ), "\n")
+            );
         }
     }
     quit(0);

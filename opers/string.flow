@@ -1,0 +1,23 @@
+import eval;
+import dynamic;
+import common_types;
+
+export {
+    // String operations
+    makeStringConst(name : string) -> EvalOper;
+    stringConst : EvalConst;
+}
+
+stringConst = EvalConst(stringType, idfn);
+
+makeStringConst(name : string) -> EvalOper {
+    EvalOper(name, 
+        funcAlgType([], stringType), 
+        \e, args, vals -> {
+            if (length(args) != 0) flow(undefVal) else {
+                flow(name);
+            }
+        },
+        showConstEvalOper(name)
+    )
+}

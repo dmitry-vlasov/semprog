@@ -1,0 +1,16 @@
+
+
+def one_less_two () : bool 
+    (1 < 2) 
+
+def two_less_one () : bool 
+    (2 < 1) 
+
+//def one_in_emptyset () : bool 
+//    (1 in [])
+
+//def x_in_emptyset (x : int) : bool 
+//    (x in [])
+
+def x_in_set_one_two (x : int) : bool 
+    (x in [1, 2])

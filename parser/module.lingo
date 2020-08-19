@@ -1,6 +1,6 @@
 module = ws (def)*:ds { makeModule(:ds) };
 
-def = "def" ws id $n ws "(" ws (def_var)*:vs ")" ws term:t { makeDef(:n, :vs, :t)};
+def = "def" ws id $n ws "(" ws (def_var)*:vs ")" ws ":" ws type:tp term:t { makeDef(:n, :vs, :tp, :t)};
 def_var = id $n ws ":" ws type:t ("," ws)? { makeTypedVar(:n, :t) };
 
 // Types
@@ -21,7 +21,7 @@ type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
 term = 
     or | and | impl | neg | eq | true | false | 
     forall | exists | filter |   
-    in | sub | eq | neq | neq_arr | less_eq  | less | 
+    in | sub | eq | neq | less_eq  | less | 
     arithm_term | array_term |
     func | var;
 
@@ -31,7 +31,7 @@ impl = "(" ws term:l "->"  $op ws term:r ")" ws { makeTermFunc(:op, :l, :r)};
 eq   = "(" ws term:l "<->" $op ws term:r ")" ws { makeTermFunc(:op, :l, :r)};
 neg  = "!" $op ws term:e { makeTermFunc(:op, :e)};
 
-true   = "True" $c ws { makeTermFunc($c) };
+true   = "True" $c ws  { makeTermFunc($c) };
 false  = "False" $c ws { makeTermFunc($c) };
 
 forall = "A" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f)};
@@ -43,10 +43,11 @@ sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 less    = "(" ws term:l "<"   $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 less_eq = "(" ws term:l "<="  $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 
-eq  = "(" ws term:l "=" $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
+eq  = "(" ws term:l "=" $op ws term:r ")" ws  { makeTermFunc($op, :l, :r)};
 neq = "(" ws term:l "!=" $op ws term:r ")" ws { makeTermFunc($op, :l, :r)};
 
-func = id $n ws "(" ws (func_arg)*:as ")" ws { makeTermFunc($n, :as) };
+func = id $n ws "(" ws (func_arg)*:as ")" ws  { makeTermFunc($n, :as) };
+    func_arg = term:t ("," ws)?  { :t };
 
 // Arithmetics operations
 
@@ -64,16 +65,16 @@ inv  = "-" $op ws term:x { makeTermFunc($op, :x)};
 
 array_term = concat_arr | tail_arr | add_arr | const_arr | get_arr | from_to | sublists;
 
-concat_arr = "concat" $op ws "(" ws term:l "," ws term:r ")" ws { makeTermFunc($op, :l, :r)};
-tail_arr   = "tail" $op ws "(" ws term:l ")" ws         { makeTermFunc($op, :l)};
+concat_arr = "concat" $op ws "(" ws term:l "," ws term:r ")" ws        { makeTermFunc($op, :l, :r)};
+tail_arr   = "tail" $op ws "(" ws term:l ")" ws                        { makeTermFunc($op, :l)};
 add_arr    = "add" $op ws "(" ws (term | term):l "," ws term:r  ")" ws { makeTermFunc($op, :l, :r)};
-const_arr  = "[" $op ws arr_term*:as "]" ws { makeArray($op, :as)};
+const_arr  = "[" $op ws arr_term*:as "]" ws                            { makeArray($op, :as)};
     arr_term   = (term | term):x (',' ws)? { :x };
-get_arr    = "get" $op ws "." ws term:a "[" ws term:i "]" ws { makeTermFunc($op, :a, :i)};
-from_to    = "[" ws term:from "..." $op ws term:to "]" ws { makeArrFromTo($op, :from, :to)};
-sublists = "sublists" $op ws "(" ws term:t ")" ws { makeTermFunc($op, :t) } ;
+get_arr    = "get" $op ws "." ws term:a "[" ws term:i "]" ws           { makeTermFunc($op, :a, :i)};
+from_to    = "[" ws term:from "..." $op ws term:to "]" ws              { makeArrFromTo($op, :from, :to)};
+sublists = "sublists" $op ws "(" ws term:t ")" ws                      { makeTermFunc($op, :t) } ;
 
-var  = letter+ $s ws { makeVar($s) };
+var  = letter+ $s ws { makeTermVar($s) };
 id   = letter+;
 letter = 'a'-'z' | 'A'-'Z' | '_';
 
@@ -81,4 +82,8 @@ const_int = digit+ $s ws { makeTermFunc($s) };
 digit = '0'-'9';
 
 ws = ws_*;
-ws_ = ' ' | '\t' | '\n' | '\r';
+ws_ = ' ' | '\t' | '\n' | '\r' | scomment | mcomment;
+
+scomment = "//" (!'\n' char_)* '\n' ws;
+mcomment = "/*" (!"*/" char_)* "*/" ws;
+char_ = '\u0000'-'\uFFFF';

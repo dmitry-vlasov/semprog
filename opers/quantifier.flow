@@ -1,0 +1,163 @@
+import eval;
+import dynamic;
+import opers/string;
+
+export {
+    // Basic first order logic construcitons: restricted quantifier, equality and predicates.
+    makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper;
+    makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper;
+
+    folOpers : [EvalOper];
+
+    makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+    makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+
+    algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar>;
+    algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar>;
+    algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int>;
+}
+
+folOpers = [
+    EvalOper("=", 
+        funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 2) flow(undefVal) else {
+                flow(e.eval(args[0], vals) == e.eval(args[1], vals));
+            }
+        },
+        showBinaryEvalOper("=")
+    ),
+    EvalOper("!=", 
+        funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 2) flow(undefVal) else {
+                flow(e.eval(args[0], vals) != e.eval(args[1], vals));
+            }
+        },
+        showBinaryEvalOper("!=")
+    ),
+    EvalOper("F",
+        funcAlgType(
+            [stringType, arrayAlgType(AlgTypeVar("T")), boolType] , 
+            arrayAlgType(AlgTypeVar("T"))
+        ),
+        \e, args, vals -> {
+            if (length(args) != 3) {
+                flow(undefVal)
+            } else {
+                v = flow2s(args[0]);
+                flow(filter(
+                    cast(e.eval(args[1], vals) : flow -> [flow]),
+                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                ));
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            "F " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
+        }
+    ),
+    makeQuantifier("A", forall),
+    makeQuantifier("E", exists),
+    makePredicate("in", 
+        [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
+        \args -> {
+            if (args[0] == undefVal || args[1] == undefVal) flow(undefVal) else {
+                x = args[0];
+                a = cast(args[1] : flow -> [flow]);
+                flow(exists(a, \y -> y == x));
+            }
+        }
+    ),
+    makePredicate("sub", 
+        [arrayAlgType(AlgTypeVar("T")), arrayAlgType(AlgTypeVar("T"))], 
+        \args -> {
+            a1 = cast(args[0] : flow -> [flow]);
+            a2 = cast(args[1] : flow -> [flow]);
+            if (length(a1) > length(a2)) false else 
+            forall(zipWith(a1, a2, \x1, x2 -> Pair(x1, x2)), \p -> p.first == p.second);
+        }
+    ),
+    makePredicate("<", [intType, intType], \args -> flow2i(args[0]) < flow2i(args[1])),
+    makePredicate("<=", [intType, intType], \args -> flow2i(args[0]) <= flow2i(args[1])),
+];
+
+makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
+    EvalOper(Q,
+        funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 3) {
+                flow(undefVal)
+            } else {
+                v = flow2s(args[0]);
+                flow(quant(
+                    cast(e.eval(args[1], vals) : flow -> [?]),
+                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                ));
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            Q + " " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
+        }
+    ); 
+}
+
+makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper {
+    EvalOper(name, 
+        funcAlgType(types, boolType),
+        \e, args, vals -> {
+            if (length(args) != length(types)) flow(undefVal) else {
+                flow(p(map(args, \arg -> e.eval(arg, vals))))
+            }
+        },
+        showDfEvalOper(name)
+    );
+}
+
+makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("A", [AlgTermFunc(v.name, [], stringType), t, phi], boolType);
+}
+
+makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+    AlgTermFunc("E", [AlgTermFunc(v.name, [], stringType), t, phi], boolType);
+}
+
+algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar> {
+    doAlgTerm2freeVars(makeSet(), t);
+}
+
+doAlgTerm2freeVars(acc : Set<AlgTermVar>, t : AlgTerm) -> Set<AlgTermVar> {
+    switch (t) {
+        AlgTermVar(__,__): insertSet(acc, t);
+        AlgTermFunc(name, args, __): {
+            acc1 = fold(args, acc, doAlgTerm2freeVars);
+            if (!isVarBounderOper(name)) acc1 else {
+                removeSet(acc1, cast(args[0] : AlgTerm -> AlgTermVar));
+            }
+        }
+    }
+}
+
+algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar> {
+    free = algTerm2freeVars(t);
+    all = algTerm2vars(t);
+    differenceSets(all, free);
+}
+
+algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int> {
+    doAlgTermCountBoundVars(makeTree(), t);
+}
+
+doAlgTermCountBoundVars(acc : Tree<AlgTermVar, int>, t : AlgTerm) -> Tree<AlgTermVar, int> {
+    switch (t) {
+        AlgTermVar(__,__): acc; // setTree(acc, t, lookupTreeDef(acc, t, 0) + 1);
+        AlgTermFunc(name, args, __): {
+            acc1 = fold(args, acc, doAlgTermCountBoundVars);
+            if (!isVarBounderOper(name)) acc1 else {
+                v = cast(args[0] : AlgTerm -> AlgTermVar);
+                setTree(acc1, v, lookupTreeDef(acc, v, 0) + 1);
+            }
+        }
+    }
+}

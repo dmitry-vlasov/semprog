@@ -1,16 +1,16 @@
-import types;
+import type;
 
 export {
     // General form of an algebraic term: variable or an operation over other terms.
     AlgTerm ::= AlgTermVar, AlgTermFunc;
-    AlgTermVar(name : string, type : Type);
-    AlgTermFunc(name : string, args : [AlgTerm], type : Type);
+    AlgTermVar(name : string, type : AlgType);
+    AlgTermFunc(name : string, args : [AlgTerm], type : AlgType);
 
     algTerm2s(term : AlgTerm) -> string;
     algTypedTerm2s(term : AlgTerm) -> string;
     algTerm2vars(term : AlgTerm) -> Set<AlgTermVar>;
-    undefTermVar = AlgTermVar("UNDEF-VAR", undefType);
-    undefTermFunc = AlgTermFunc("UNDEF-FUNC", [], undefType)
+    undefTermVar = AlgTermVar("UNDEF-VAR", undefAlgType);
+    undefTermFunc = AlgTermFunc("UNDEF-FUNC", [], undefAlgType)
 
     // standard classes of operations
 
@@ -37,10 +37,10 @@ algTerm2s(term : AlgTerm) -> string {
 
 algTypedTerm2s(term : AlgTerm) -> string {
     switch (term) {
-        AlgTermVar(name, type): name + " : " + type2s(type);
+        AlgTermVar(name, type): name + " : " + algType2s(type);
         AlgTermFunc(name, args, type): {
             if (length(args) == 0) name else {
-                    name + " : " + type2s(type) +  " (" + strGlue(map(args, algTypedTerm2s), ", ") + ")";
+                    name + " : " + algType2s(type) +  " (" + strGlue(map(args, algTypedTerm2s), ", ") + ")";
             }
         }
     }

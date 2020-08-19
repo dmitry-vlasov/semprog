@@ -1,0 +1,221 @@
+import ds/tree;
+import ds/set;
+import string;
+
+export {
+    // General algebraic types: type variables and type constructors.
+    AlgType ::= AlgTypeVar, AlgTypeFunc;
+
+    // Type variable (polymorphic) - a variable for a type.
+    AlgTypeVar(name : string);
+
+    // General form of an algebraic type: a function on types.
+    AlgTypeFunc(
+        name : string, 
+        args : [AlgType]
+    );
+
+    algType2s(type : AlgType) -> string;
+
+    // -- A set of common algebraic type operators -- 
+
+    // Basic types like 'int', 'bool', 'float', etc.
+    constAlgType(name : string) -> AlgTypeFunc;
+
+    // Array (sequence) type: [type]
+    arrayAlgType(type : AlgType) -> AlgTypeFunc;
+
+    // Functional type: (arg_1, ... , arg_k) -> val
+    funcAlgType(args : [AlgType], val : AlgType) -> AlgTypeFunc;
+
+    // Union type: (type_1 U type_2 U ... U type_k)
+    unionAlgType(args : [AlgType]) -> AlgTypeFunc;
+
+    // Product type: (type_1 x type_2 x ... x type_k)
+    prodAlgType(args : [AlgType]) -> AlgTypeFunc;
+
+    // Variadic type: () or (type) or (type, type) or ... (type, ... , type)
+    variadicAlgType(arg : AlgType) -> AlgTypeFunc;
+
+    // Function type: args and value
+    funcArgTypes(fn : AlgTypeFunc) -> [AlgType];
+    funcValType(fn : AlgTypeFunc) -> AlgType;
+
+    // Make an n-ary function over a type 
+    makeFuncType(n : int, type : AlgType) -> AlgTypeFunc;
+
+    // un-array type
+    unwrapArrayAlgType(type : AlgType) -> AlgType;
+
+    // A special constant - undefined type.
+    undefAlgType : AlgType = AlgTypeFunc("__undef_type", []);
+
+    // Substitute type variables with approptiate values from 'sub'
+    instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType;
+
+    // Match a pattern with a type: try to instantiate type variables properly
+    matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+
+    // Matching a pattern with respect to variadic type 
+    matchTypes(pattern : [AlgType], tp : [AlgType], ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+}
+
+algType2s(type : AlgType) -> string {
+    switch (type) {
+        AlgTypeVar(name): name;
+        AlgTypeFunc(name, args): {
+            if (name == "ar") "[" + algType2s(args[0]) + "]" else 
+            if (name == "fn") "(" + strGlue(map(tail(args), algType2s), ", ") + ") -> " + algType2s(args[0]) else
+            if (name == "U")  strGlue(map(args, algType2s), "U") else
+            if (name == "x")  strGlue(map(args, algType2s), "x") else
+            if (name == "...") algType2s(args[0]) + ", ... ," + algType2s(args[0]) else 
+            name + (if (length(args) == 0) "" else 
+            "(" + strGlue(map(args, algType2s), ", ") + ")");
+        }
+    }
+}
+
+constAlgType(name : string) -> AlgTypeFunc {
+    AlgTypeFunc(name, []);
+}
+
+arrayAlgType(type : AlgType) -> AlgTypeFunc {
+    AlgTypeFunc("ar", [type]);
+}
+
+funcAlgType(args : [AlgType], val : AlgType) -> AlgTypeFunc {
+    AlgTypeFunc("fn", concat([val], args));
+}
+
+unionAlgType(args : [AlgType]) -> AlgTypeFunc {
+    AlgTypeFunc("U", args);
+}
+
+prodAlgType(args : [AlgType]) -> AlgTypeFunc {
+    AlgTypeFunc("X", args);
+}
+
+variadicAlgType(arg : AlgType) -> AlgTypeFunc {
+    AlgTypeFunc("...", [arg]);
+}
+
+funcArgTypes(fn : AlgTypeFunc) -> [AlgType] {
+    if (fn.name != "fn") [undefAlgType] else tail(fn.args);
+}
+
+funcValType(fn : AlgTypeFunc) -> AlgType {
+    if (fn.name != "fn") undefAlgType else fn.args[0];
+}
+
+makeFuncType(n : int, type : AlgType) -> AlgTypeFunc {
+    funcAlgType(map(enumFromTo(0, n - 1), \__ -> type), type);
+}
+
+unwrapArrayAlgType(type : AlgType) -> AlgType {
+    switch (type) {
+        AlgTypeVar(__): undefAlgType;
+        AlgTypeFunc(name, args): {
+            if (name == "ar" && length(args) == 1) args[0] else undefAlgType;
+        }
+    }
+}
+
+instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType {
+    switch (tp) {
+        AlgTypeVar(v): lookupTreeDef(sub, v, tp);
+        AlgTypeFunc(__, as): {
+            AlgTypeFunc(tp with args = map(as, \a -> instantiateType(a, sub)));
+        }
+    }
+}
+
+matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+    ret = switch (pattern) {
+        AlgTypeVar(v): {
+            switch (lookupTree(ac, v)) {
+                Some(t): if (t == tp) Some(ac) else None();
+                None(): Some(setTree(ac, v, tp));
+            }
+        }
+        AlgTypeFunc(name, args): {
+            switch (tp) {
+                AlgTypeVar(__): None();
+                AlgTypeFunc(n, as): {
+                    if (name != n) None()
+                    else matchTypes(args, as, ac);
+                }
+            }
+        }
+    }
+    /*println(
+        "(A) matching: " + algType2s(pattern) + 
+        " with: " + algType2s(tp) + 
+        " ret: " + toString(ret)
+    );*/
+    ret;
+}
+
+unwrapVariadicAlgType(type : AlgType) -> AlgType {
+    switch (type) {
+        AlgTypeVar(__): undefAlgType;
+        AlgTypeFunc(name, args): {
+            if (name == "..." && length(args) == 1) {
+                args[0];
+            } else {
+                undefAlgType;
+            }
+        }
+    }
+}
+
+matchTypes(patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+
+    ret = if (length(patterns) == 0) {
+        if (length(tps) == 0) {
+            Some(acc);
+        } else {
+            None();
+        }
+    } else {
+        if (length(tps) == 0) {
+            None();
+        } else {
+            variadic_pattern = unwrapVariadicAlgType(patterns[0]);
+            if (variadic_pattern == undefAlgType) {
+                maybeBind(
+                    matchType(patterns[0], tps[0], acc),
+                    \sub -> matchTypes(tail(patterns), tail(tps), sub)
+                );
+            } else {
+                //println("variafic pattern: " + algType2s(variadic_pattern));
+                maybeBind(
+                    matchType(variadic_pattern, tps[0], acc),
+                    \sub -> {
+                        variadic_type = instantiateType(variadic_pattern, sub);
+                        //println("variadic_type: " + algType2s(variadic_type));
+                        matchVariadicTypes(variadic_type, tail(patterns), tail(tps), sub);
+                    }
+                );
+            }
+        }
+    }
+
+    /*println(
+        "(B) matching: " + strGlue(map(patterns, algType2s), ", ") + 
+        " with: " + strGlue(map(tps, algType2s), ", ") + 
+        " ret: " + toString(ret)
+    );*/
+    ret;
+}
+
+matchVariadicTypes(variadic : AlgType, patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+    if (length(tps) == 0) {
+        Some(acc);
+    } else {
+        if (tps[0] == variadic) {
+            matchVariadicTypes(variadic, patterns, tail(tps), acc);
+        } else {
+            matchTypes(patterns, tps, acc);
+        }
+    }
+}

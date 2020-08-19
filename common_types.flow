@@ -1,0 +1,16 @@
+import type;
+
+export {
+    // Common const type: boolean
+    boolType = constAlgType("bool");
+    unaryBoolFnType = makeFuncType(1, boolType);
+    binaryBoolFnType = makeFuncType(2, boolType);
+
+    // Common const type: integer
+    intType = constAlgType("int");
+    unaryIntFnType = makeFuncType(1, intType);
+    binaryIntFnType = makeFuncType(2, intType);
+
+    // Common const type: string
+    stringType = constAlgType("string");
+}

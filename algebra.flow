@@ -1,0 +1,25 @@
+import opers/array;
+import opers/bool;
+import opers/int;
+import opers/quantifier;
+import opers/string;
+
+export {
+    fullAlgebra : EvalAlgebra;
+    allOpers : [EvalOper];
+    allConsts : [EvalConst];
+}
+
+fullAlgebra = EvalAlgebra("Algebra", allOpers, allConsts);
+
+allOpers = concatA([
+    arrayOpers,
+    boolOpers,
+    intOpers,
+    folOpers
+]);
+
+allConsts = [
+    intConst,
+    stringConst
+];
