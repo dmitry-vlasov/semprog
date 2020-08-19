@@ -21,12 +21,25 @@ main() -> void {
             src = getFileContent(file);
             name = changeFileExt(src, "");
             module = typecheckModule(parseModule(src, name), fullAlgebra);
+
+            algebra1 = EvalAlgebra("module algebra", 
+                fold(module.defs, fullAlgebra.opers, \acc, def -> 
+                    concat(acc, [makeDefOper(def)])
+                ),
+                fullAlgebra.consts
+            );
+
+            show1 = algebraShow(algebra1);
+            eval1 = algebraEval(algebra1);
+
             //module = parseModule(src, name);
-            println(module2s(module, show));
+            println("Module:\n" + module2s(module, show) + "\n\n");
             println(
                 strGlue(map(module.defs, \def -> 
-                    algTypedTerm2s(def.term) + "\n" + show.show(def.term) + "\n" +
-                    toString(eval.eval(def.term, makeTree()))
+                    //algTypedTerm2s(def.term) + "\n" +
+                    //def2s(def, show1)
+                    "eval[" + algTypedTerm2s(def.term) + "] = " +
+                    toString(eval1.eval(def.term, makeTree()))
                 ), "\n")
             );
         }

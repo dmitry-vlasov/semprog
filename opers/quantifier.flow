@@ -80,6 +80,40 @@ folOpers = [
     ),
     makePredicate("<", [intType, intType], \args -> flow2i(args[0]) < flow2i(args[1])),
     makePredicate("<=", [intType, intType], \args -> flow2i(args[0]) <= flow2i(args[1])),
+    EvalOper(
+        "if", 
+        funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
+        \e, args, vals -> {
+            if (length(args) != 3) flow(undefVal) else {
+                if (flow2b(e.eval(args[0], vals))) {
+                    e.eval(args[1], vals);
+                } else {
+                    e.eval(args[2], vals);
+                }
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            "(if " + s.show(args[0]) + " then " + s.show(args[1]) + " else " + s.show(args[2]) + ")";
+        }
+    ),
+    EvalOper(
+        "?", 
+        funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
+        \e, args, vals -> {
+            if (length(args) != 3) flow(undefVal) else {
+                if (flow2b(e.eval(args[0], vals))) {
+                    e.eval(args[1], vals);
+                } else {
+                    e.eval(args[2], vals);
+                }
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            "(" + s.show(args[0]) + " ? " + s.show(args[1]) + " : " + s.show(args[2]) + ")";
+        }
+    ),
 ];
 
 makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {

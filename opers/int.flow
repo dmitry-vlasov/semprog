@@ -15,7 +15,18 @@ export {
 
 intOpers = [
     makeIntUnary("-", \x -> -x),
-    makeIntBinary("+", \x, y -> x + y),
+    EvalOper("+",
+        funcAlgType([variadicAlgType(intType)], intType),
+        \e, args, vals -> {
+            arg_vals = map(args, \arg -> e.eval(args[0], vals));
+            if (exists(arg_vals, \val -> val == undefVal)) flow(undefVal) else {
+                flow(fold(
+                    map(arg_vals, flow2i), 0, \acc, i -> acc + i
+                ));
+            }
+        },
+        showVariadicEvalOper("+")
+    ),
     makeIntBinary("*", \x, y -> x * y),
     makeIntBinary("/", \x, y -> x / y),
     makeIntBinary("-", \x, y -> x - y)
@@ -48,7 +59,10 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
         funcAlgType([intType], intType),
         \e, args, vals -> {
             if (length(args) != 1) flow(undefVal) else {
-                flow(op(flow2i(e.eval(args[0], vals))));
+                arg_val = e.eval(args[0], vals);
+                if (arg_val == undefVal) flow(undefVal) else {
+                    flow(op(flow2i(arg_val)));
+                }
             }
         },
         showUnaryEvalOper(name)
@@ -60,10 +74,13 @@ makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
         funcAlgType([intType, intType], intType),
         \e, args, vals -> {
             if (length(args) != 2) flow(undefVal) else {
-                flow(op(
-                    flow2i(e.eval(args[0], vals)), 
-                    flow2i(e.eval(args[1], vals))
-                ));
+                arg1_val = e.eval(args[0], vals);
+                if (arg1_val == undefVal) flow(undefVal) else {
+                    arg2_val = e.eval(args[1], vals);
+                    if (arg2_val == undefVal) flow(undefVal) else {
+                        flow(op(flow2i(arg1_val), flow2i(arg2_val)));
+                    }
+                }
             }
         },
         showBinaryEvalOper(name)

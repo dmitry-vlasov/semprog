@@ -69,6 +69,8 @@ algebraEval(alg : EvalAlgebra) -> Eval {
     Eval(\term, vals -> evalAlgTerm(term, vals, opers, consts));
 }
 
+cycle_counter = ref 0;
+
 evalAlgTerm(
     term : AlgTerm, 
     vals : Tree<string, flow>, 
@@ -94,6 +96,10 @@ evalAlgTerm(
                         println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                         flow(undefVal);
                     } else {
+                        cycle_counter := ^cycle_counter + 1;
+                        if (^cycle_counter > 64) {
+                            quit(0);
+                        }
                         flow(fits[0].eval(eval, args, vals));
                     }
                 }, 
@@ -155,17 +161,18 @@ showAlgTerm(
                     } else {
                         fits[0].show(show, args);
                     }
-                },
+                }, 
                 if (length(args) != 0) {
-                    "undefVal"
+                    name + "(" + strGlue(map(args, \arg -> showAlgTerm(arg, opers, consts)), ", ") + ")"
                 } else {
-                    switch (lookupTree(consts, type)) {
+                    name
+                    /*switch (lookupTree(consts, type)) {
                         Some(__): name;
                         None(): {
                             println("constant: " + name + " of type " + toString(type) +  " is uniterpreted");
                             "undefVal"
                         }
-                    }
+                    }*/
                 }
             );
         }

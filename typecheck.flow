@@ -5,6 +5,8 @@ export {
 }
 
 typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm {
+    //println("(A) typechecking: " + toString(term) + " ...");
+    //println("(B) typechecking: " + algTerm2s(term) + " ...");
     ret = switch (term) {
         AlgTermVar(name, __): {
             AlgTermVar(term with 
@@ -30,6 +32,7 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
                         if (length(fits) == 0) {
                             println("(B) no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                             println("ops: " + strGlue(map(ops, \op -> algType2s(op)), ", "));
+                            println("term: " + algTerm2s(term));
                             undefAlgType;
                         } else if (length(fits) > 1) {
                             println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
@@ -48,6 +51,6 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
             );
         }
     }
-    //println("typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
+    //println("DONE typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
     ret
 }

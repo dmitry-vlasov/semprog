@@ -1,16 +1,43 @@
 
-
-def one_less_two () : bool 
+/*
+def one_less_two () : bool {
     (1 < 2) 
+}
 
-def two_less_one () : bool 
+def two_less_one () : bool {
     (2 < 1) 
+}
 
-//def one_in_emptyset () : bool 
+//def one_in_emptyset () : bool  {
 //    (1 in [])
+//}
 
-//def x_in_emptyset (x : int) : bool 
+//def x_in_emptyset (x : int) : bool {
 //    (x in [])
+//}
 
-def x_in_set_one_two (x : int) : bool 
+def mult (x : int, y : int) : int {
+    (x * y)
+}
+
+def minus (x : int, y : int) : int {
+    (x - y)
+}
+
+def min (x : int) : bool {
+    ((x = 0) ? 75 : (x - 1 ) )
+}
+
+def x_in_set_one_two (x : int) : bool {
     (x in [1, 2])
+}
+*/
+
+def fact (x : int) : int {
+    ((x = 0) ? 1 : (x * fact((x - 1))))
+}
+
+def fact_five() : int {
+    fact(5)
+}
+

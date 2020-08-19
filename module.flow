@@ -16,6 +16,7 @@ export {
 
     makeDefOper(def : Def) -> EvalOper;
     module2s(module : Module, show : Show) -> string;
+    def2s(def : Def, s : Show) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
@@ -27,7 +28,13 @@ makeDefOper(def : Def) -> EvalOper {
             if (length(args) != length(def.vars)) {
                 flow(undefVal)
             } else {
-                e.eval(def.term, foldi(def.vars, vals, \i, acc, var -> setTree(acc, var.name, args[i])));
+                arg_vals = map(args, \arg -> e.eval(arg, vals));
+                e.eval(
+                    def.term, 
+                    foldi(def.vars, vals, \i, acc, var -> 
+                        setTree(acc, var.name, arg_vals[i])
+                    )
+                );
             }
         },
         showDfEvalOper(def.name)
@@ -60,7 +67,11 @@ typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
         defs = map(module.defs, \def -> {
             //println("typechecking: " + def.name);
             vars = fold(def.vars, makeTree(), \acc, var -> setTree(acc, var.name, var.type));
-            Def(def with term = typecheck(def.term, vars, signs));
+            typechecked = typecheck(def.term, vars, signs);
+            if (typechecked.type == undefAlgType) {
+                println("Term " + algTerm2s(def.term) + " was not typed");
+            }
+            Def(def with term = typechecked);
         })
     );
 }
