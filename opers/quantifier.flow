@@ -83,8 +83,8 @@ folOpers = [
     ),
     makeQuantifier("A", forall),
     makeQuantifier("E", exists),
-    makeListQuantifier("A", forall),
-    makeListQuantifier("E", exists),
+    makeListQuantifier("SA", forall),
+    makeListQuantifier("SE", exists),
     makePredicate("in", 
         [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
         \args -> {

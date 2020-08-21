@@ -59,6 +59,14 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
     else if (term.name == "A") {
         forall2qbf(term, par);
     }
+    else if (term.name == "SE") {
+        // TODO
+        undefTermVar
+    }
+    else if (term.name == "SA") {
+        // TODO
+        undefTermVar
+    }
     else if (term.name == "in") {
         in2qbf(term, par);
     }
