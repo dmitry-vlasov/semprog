@@ -20,7 +20,8 @@ type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
 
 term = 
     or | and | impl | neg | eq | true | false | 
-    forall | exists | filter |   
+    forall | exists | filter | 
+    sforall | sexists | sfilter | 
     in | sub | equal | neq | less_eq  | less | 
     arithm_term | array_term | if | tern |
     func | var;
@@ -40,6 +41,10 @@ false  = "False" $c ws { makeTermFunc($c) };
 forall = "A" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 exists = "E" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 filter = "F" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+
+sforall = "SA" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+sexists = "SE" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+sfilter = "SF" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 
 in      = "(" ws term:l "in"  $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
