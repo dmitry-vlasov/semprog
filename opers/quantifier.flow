@@ -5,6 +5,7 @@ import opers/string;
 export {
     // Basic first order logic construcitons: restricted quantifier, equality and predicates.
     makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper;
+    makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOper;
     makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper;
 
     folOpers : [EvalOper];
@@ -59,6 +60,8 @@ folOpers = [
     ),
     makeQuantifier("A", forall),
     makeQuantifier("E", exists),
+    makeListQuantifier("A", forall),
+    makeListQuantifier("E", exists),
     makePredicate("in", 
         [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
         \args -> {
@@ -136,6 +139,30 @@ makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
         }
     ); 
 }
+
+makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOper {
+    EvalOper(Q,
+        funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
+        \e, args, vals -> {
+            if (length(args) != 3) {
+                flow(undefVal)
+            } else {
+                v = flow2s(args[0]);
+                a = cast(e.eval(args[1], vals) : flow -> [flow]);
+                sublists = map(enumFromTo(0, length(a)), \l -> subrange(a, 0, l));
+                flow(quant(
+                    sublists,
+                    \sl -> flow2b(e.eval(args[2], setTree(vals, v, sl)))
+                ));
+            }
+        },
+        \s, args -> {
+            if (length(args) != 3) "broken term" else
+            Q + " " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
+        }
+    ); 
+}
+
 
 makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper {
     EvalOper(name, 
