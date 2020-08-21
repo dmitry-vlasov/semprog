@@ -1,6 +1,5 @@
 import ds/cart_prod;
-import prop/prop;
-import fol/fol;
+import algebra;
 
 export {
     formula2pnf(term : AlgTerm) -> AlgTerm;
@@ -45,30 +44,40 @@ tightNegations(t : AlgTerm) -> AlgTerm {
                 switch (args[0]) {
                     AlgTermVar(__,__): t;
                     AlgTermFunc(fn, as, __): {
-                        if (startsWith(fn, "\\/")) {
+                        if (fn == "\\/") {
                             makeAndTerm(map(as, \a -> tightNegations(makeNotTerm(a))));
-                        } else if ((startsWith(fn, "/\\"))) {
+                        } else if (fn == "/\\") {
                             makeOrTerm(map(as, \a -> tightNegations(makeNotTerm(a))));
-                        } else if ((startsWith(fn, "!"))) {
+                        } else if (fn == "!") {
                             tightNegations(as[0]);
-                        } else if (startsWith(fn, "A ")) {
+                        } else if (fn == "A") {
                             makeExistsTerm(
                                 cast(as[0] : AlgTerm -> AlgTermVar),
                                 tightNegations(as[1]),
                                 tightNegations(makeNotTerm(as[2]))
                             );
-                        } else if (startsWith(fn, "E ")) {
+                        } else if (fn == "E") {
                             makeForallTerm(
                                 cast(as[0] : AlgTerm -> AlgTermVar),
                                 tightNegations(as[1]),
                                 tightNegations(makeNotTerm(as[2]))
                             );
-                        } else if (startsWith(fn, "BA ")) {
+                        } else if (fn == "BA") {
                             makeBoolExistsTerm(
                                 cast(as[0] : AlgTerm -> AlgTermVar), 
                                 tightNegations(makeNotTerm(as[1]))
                             );
-                        } else if (startsWith(fn, "BE ")) {
+                        } else if (fn == "BE") {
+                            makeBoolForallTerm(
+                                cast(as[0] : AlgTerm -> AlgTermVar), 
+                                tightNegations(makeNotTerm(as[1]))
+                            );
+                        } else if (fn == "SA") {
+                            makeBoolExistsTerm(
+                                cast(as[0] : AlgTerm -> AlgTermVar), 
+                                tightNegations(makeNotTerm(as[1]))
+                            );
+                        } else if (fn == "SE") {
                             makeBoolForallTerm(
                                 cast(as[0] : AlgTerm -> AlgTermVar), 
                                 tightNegations(makeNotTerm(as[1]))
@@ -92,9 +101,9 @@ toCNF(t : AlgTerm) -> AlgTerm {
         AlgTermVar(__,__): wrap();
         AlgTermFunc(name, args, __): {
             cnf_args = map(args, toCNF);
-            if (startsWith(name, "/\\")) {
+            if (name ==  "/\\") {
                 makeAndTerm(concatA(map(cnf_args, \a -> cast(a : AlgTerm -> AlgTermFunc).args)));
-            } else if (startsWith(name, "\\/")) {
+            } else if (name == "\\/") {
                 makeAndTerm(
                     mapCartProd(
                         CartProd(map(cnf_args, \cnf -> cast(cnf : AlgTerm -> AlgTermFunc).args)), 

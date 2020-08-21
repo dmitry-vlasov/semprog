@@ -1,4 +1,4 @@
-import prop/prop;
+import algebra;
 
 export {
     delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm;
@@ -15,7 +15,7 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
                 if (type == intType) {
                     intEquality2qbf(x, t, par);
                 }
-                else if (type == arType(intType)) {
+                else if (type == arrayAlgType(intType)) {
                     intArrayEquality2qbf(x, t, par);
                 }
                 else {
@@ -53,10 +53,10 @@ delta2qbf(term : AlgTermFunc, par : TransParams) -> AlgTerm {
             boolType
         );
     }
-    else if (startsWith(term.name, "E ")) {
+    else if (term.name == "E") {
         exists2qbf(term, par);
     }
-    else if (startsWith(term.name, "A ")) {
+    else if (term.name == "A") {
         forall2qbf(term, par);
     }
     else if (term.name == "in") {
@@ -305,5 +305,5 @@ encodeVarAsBoolMatrix(x : AlgTermVar, par : TransParams) -> [[AlgTermVar]] {
 }
 
 checkLogicOperationName(term : AlgTerm) -> bool {
-    startsWith(term.name, "\\/") || startsWith(term.name, "/\\") || term.name == "!" || term.name == "->" || term.name == "<->" 
+    term.name == "\\/" || term.name == "/\\" || term.name == "!" || term.name == "->" || term.name == "<->" 
 }

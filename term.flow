@@ -17,10 +17,10 @@ export {
     // /\, \/, !, <->, ->
     isBoolOper(name : string) -> bool;
 
-    // A, E, BA, BE, S
+    // A, E, F, SA, SE, BA, BE
     isQuantifierOper(name : string) -> bool;
 
-     // A, E, BA, BE, S, \
+     // A, E, F, SA, SE, BA, BE
     isVarBounderOper(name : string) -> bool;
 }
 
@@ -58,13 +58,13 @@ doAlgTerm2s(acc : Set<AlgTermVar>, term : AlgTerm) -> Set<AlgTermVar> {
 }
 
 isBoolOper(name : string) -> bool {
-    startsWith(name, "\\/") || startsWith(name, "/\\") || name == "!" || name == "->" || name == "<->";
+    name == "\\/" || name == "/\\" || name == "!" || name == "->" || name == "<->";
 }
 
 isQuantifierOper(name : string) -> bool {
-    startsWith(name, "A ") || startsWith(name, "E ") || startsWith(name, "BA ") || startsWith(name, "BE ") || startsWith(name, "S ");
+    name == "A" || name == "E" || name == "F" || name == "BA" || name == "BE" || name == "SA" || name == "SE" || name == "SF";
 }
 
 isVarBounderOper(name : string) -> bool {
-    startsWith(name, "A ") || startsWith(name, "E ") || startsWith(name, "BA ") || startsWith(name, "BE ") || startsWith(name, "S ") || startsWith(name, "\\ ");
+    name == "A" || name == "E" || name == "F" || name == "BA" || name == "BE" || name == "SA" || name == "SE" || name == "SF" || name == "\\";
 }
