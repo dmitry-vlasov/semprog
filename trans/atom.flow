@@ -117,7 +117,7 @@ makeNewVariable(type : AlgType) -> AlgTermVar {
 }
 
 checkQuantor(name : string) -> bool {
-    startsWith(name, "E ") || startsWith(name, "A ") || startsWith(name, "S ")
+    startsWith(name, "E ") || startsWith(name, "A ") || startsWith(name, "SA ") || startsWith(name, "SE ")
 }
 
 checkLogicOperation(name : string) -> bool {
