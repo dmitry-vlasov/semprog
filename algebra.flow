@@ -16,7 +16,8 @@ allOpers = concatA([
     arrayOpers,
     boolOpers,
     intOpers,
-    folOpers
+    folOpers,
+    stringOpers
 ]);
 
 allConsts = [

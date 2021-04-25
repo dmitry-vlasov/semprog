@@ -13,32 +13,26 @@ export {
     intConst : EvalConst;
 }
 
-// evalAlgTerms(e : Eval, terms : [AlgTerm], vals : Tree<string, flow>, acc : flow) -> flow
-
 intOpers = [
     makeIntUnary("-", \x -> -x),
     EvalOper("+",
         funcAlgType([variadicAlgType(intType)], intType),
-        \e, args, vals -> {
-            arg_vals = evalAlgTerms(e, args, vals, []);
-            if (arg_vals == undefVal) flow(undefVal) else {
-                flow(fold(
-                    map(cast(arg_vals : flow -> [flow]), flow2i), 0, \acc, i -> acc + i
-                ));
-            }
-        },
+        \args -> Eval(\vals, conf -> {
+            arg_vals = evalArgs(args, vals, conf);
+            flow(fold(
+                map(arg_vals, flow2i), 0, \acc, i -> acc + i
+            ));
+        }),
         showVariadicEvalOper("+")
     ),
     EvalOper("*",
         funcAlgType([variadicAlgType(intType)], intType),
-        \e, args, vals -> {
-            arg_vals = evalAlgTerms(e, args, vals, []);
-            if (arg_vals == undefVal) flow(undefVal) else {
-                flow(fold(
-                    map(cast(arg_vals : flow -> [flow]), flow2i), 1, \acc, i -> acc * i
-                ));
-            }
-        },
+        \args -> Eval(\vals, conf -> {
+            arg_vals = evalArgs(args, vals, conf);
+            flow(fold(
+                map(arg_vals, flow2i), 1, \acc, i -> acc * i
+            ));
+        }),
         showVariadicEvalOper("*")
     ),
     makeIntBinary("/", \x, y -> x / y),
@@ -47,7 +41,7 @@ intOpers = [
 
 intConst = EvalConst(
     intType, 
-    \n -> if (isDigits(n)) {
+    \n, conf -> if (isDigits(n)) {
         flow(s2i(n));
     } else {
         println("wrong integer format: " + n);
@@ -58,11 +52,11 @@ intConst = EvalConst(
 makeIntConst(name : string, val : int) -> EvalOper {
     EvalOper(name,
         funcAlgType([], intType),
-        \e, args, vals -> {
+        \args -> Eval(\__,conf ->
             if (length(args) != 0) flow(undefVal) else {
                 flow(val);
             }
-        },
+        ),
         showConstEvalOper(name)
     )
 }
@@ -70,14 +64,14 @@ makeIntConst(name : string, val : int) -> EvalOper {
 makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
     EvalOper(name, 
         funcAlgType([intType], intType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf -> 
             if (length(args) != 1) flow(undefVal) else {
-                arg_val = e.eval(args[0], vals);
+                arg_val = args[0].eval(vals, conf);
                 if (arg_val == undefVal) flow(undefVal) else {
                     flow(op(flow2i(arg_val)));
                 }
             }
-        },
+        ),
         showUnaryEvalOper(name)
     )
 }
@@ -85,17 +79,17 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
 makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
     EvalOper(name, 
         funcAlgType([intType, intType], intType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf -> 
             if (length(args) != 2) flow(undefVal) else {
-                arg1_val = e.eval(args[0], vals);
+                arg1_val = args[0].eval(vals, conf);
                 if (arg1_val == undefVal) flow(undefVal) else {
-                    arg2_val = e.eval(args[1], vals);
+                    arg2_val = args[1].eval(vals, conf);
                     if (arg2_val == undefVal) flow(undefVal) else {
                         flow(op(flow2i(arg1_val), flow2i(arg2_val)));
                     }
                 }
             }
-        },
+        ),
         showBinaryEvalOper(name)
     );
 }

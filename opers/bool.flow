@@ -42,34 +42,34 @@ boolOpers = [
 
 makeBoolConst(name : string, v : bool) -> EvalOper {
     EvalOper(name, boolType, 
-        \__, args, __ -> {
+        \args -> Eval(\__, conf ->
             if (length(args) != 0) flow(undefVal) else flow(v)
-        },
-        \__,__ -> name
+        ),
+        \__ -> Show(\-> name)
     );
 }
 
 makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper {
     EvalOper(name, unaryBoolFnType, 
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 1) flow(undefVal) else {
-                flow(op(flow2b(e.eval(args[0], vals))));
+                flow(op(flow2b(args[0].eval(vals, conf))));
             }
-        },
+        ),
         showUnaryEvalOper(name)
     )
 }
 
 makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
     EvalOper(name, binaryBoolFnType,
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
                 flow(op(
-                    flow2b(e.eval(args[0], vals)), 
-                    flow2b(e.eval(args[1], vals))
+                    flow2b(args[0].eval(vals, conf)), 
+                    flow2b(args[1].eval(vals, conf))
                 ));
             }
-        },
+        ),
         showBinaryEvalOper(name)
     );
 }
@@ -77,8 +77,9 @@ makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
 makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
     EvalOper(name, 
         funcAlgType([variadicAlgType(boolType)], boolType),
-        \e, args, vals ->
-            flow(op(map(args, \arg -> flow2b(e.eval(arg, vals))))),
+        \args -> Eval(\vals, conf ->
+            flow(op(map(args, \arg -> flow2b(arg.eval(vals, conf)))))
+        ),
         showVariadicEvalOper(name)
     );
 }
@@ -86,28 +87,28 @@ makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
 makeBoolQuantifier(BQ : string) -> EvalOper {
     EvalOper(BQ,
         funcAlgType([stringType, boolType] , boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) {
                 flow(undefVal)
             } else {
-                v = flow2s(args[0]);
+                v = flow2s(args[0].eval(vals, conf));
                 if (BQ == "BA") {
                     flow(
-                        flow2b(e.eval(args[1], setTree(vals, v, true))) && 
-                        flow2b(e.eval(args[1], setTree(vals, v, false)))
+                        flow2b(args[1].eval(setTree(vals, v, true), conf)) && 
+                        flow2b(args[1].eval(setTree(vals, v, false), conf))
                     );
                 } else {
                     flow(
-                        flow2b(e.eval(args[1], setTree(vals, v, true))) || 
-                        flow2b(e.eval(args[1], setTree(vals, v, false)))
+                        flow2b(args[1].eval(setTree(vals, v, true), conf)) || 
+                        flow2b(args[1].eval(setTree(vals, v, false), conf))
                     );
                 }
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 2) "broken term" else
-            BQ + " " + s.show(args[0]) + " " + s.show(args[1]);
-        }
+            BQ + " " + args[0].show() + " " + args[1].show()
+        )
     ); 
 }
 
@@ -119,6 +120,7 @@ getBoolQuantifiers(f : AlgTerm) -> [string] {
 doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
    switch (f) {
         AlgTermVar(var, type): acc;
+        AlgTermVarDecl(var, type): acc;
         AlgTermFunc(op, args, type): {
             if (!(startsWith(op, "BA ") || startsWith(op, "BE "))) {
                 fold(args, acc, doGetBoolQuantifiers);
@@ -127,6 +129,8 @@ doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
                     v = args[0];
                     switch (v) {
                         AlgTermVar(__,__): 
+                            fold(tail(args), insertSet(acc, v), doGetBoolQuantifiers);
+                        AlgTermVarDecl(__,__): 
                             fold(tail(args), insertSet(acc, v), doGetBoolQuantifiers);
                         AlgTermFunc(__,__,__): 
                             fold(args, acc, doGetBoolQuantifiers);
@@ -190,6 +194,7 @@ makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
 getTermQuantVar(t : AlgTerm) -> AlgTermVar {
     switch (t) {
         AlgTermVar(__,__): AlgTermVar("ERROR QUANT VAR", undefAlgType);
+        AlgTermVarDecl(__,__): AlgTermVar("ERROR QUANT VAR", undefAlgType);
         AlgTermFunc(name, args, __): {
             if (isQuantifierOper(name)) {
                 cast(args[0] : AlgTerm -> AlgTermVar);

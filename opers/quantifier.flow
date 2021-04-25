@@ -21,20 +21,20 @@ export {
 folOpers = [
     EvalOper("=", 
         funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
-                flow(e.eval(args[0], vals) == e.eval(args[1], vals));
+                flow(args[0].eval(vals, conf) == args[1].eval(vals, conf));
             }
-        },
+        ),
         showBinaryEvalOper("=")
     ),
     EvalOper("!=", 
         funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
-                flow(e.eval(args[0], vals) != e.eval(args[1], vals));
+                flow(args[0].eval(vals, conf) != args[1].eval(vals, conf));
             }
-        },
+        ),
         showBinaryEvalOper("!=")
     ),
     EvalOper("F",
@@ -42,44 +42,44 @@ folOpers = [
             [stringType, arrayAlgType(AlgTypeVar("T")), boolType] , 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 3) {
                 flow(undefVal)
             } else {
-                v = flow2s(args[0]);
+                v = flow2s(args[0].eval(vals, conf));
                 flow(filter(
-                    cast(e.eval(args[1], vals) : flow -> [flow]),
-                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                    cast(args[1].eval(vals, conf) : flow -> [flow]),
+                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
                 ));
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            "F " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
-        }
+            "F " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
+        )
     ),
     EvalOper("SF",
         funcAlgType(
             [stringType, arrayAlgType(AlgTypeVar("T")), boolType] , 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 3) {
                 flow(undefVal)
             } else {
-                v = flow2s(args[0]);
-                a = cast(e.eval(args[1], vals) : flow -> [flow]);
+                v = flow2s(args[0].eval(vals, conf));
+                a = cast(args[1].eval(vals, conf) : flow -> [flow]);
                 sublists = map(enumFromTo(0, length(a)), \l -> subrange(a, 0, l));
                 flow(filter(
                     sublists,
-                    \sl -> flow2b(e.eval(args[2], setTree(vals, v, sl)))
+                    \sl -> flow2b(args[2].eval(setTree(vals, v, sl), conf))
                 ));
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\-> 
             if (length(args) != 3) "broken term" else
-            "SF " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
-        }
+            "SF " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
+        )
     ),
     makeQuantifier("A", forall),
     makeQuantifier("E", exists),
@@ -109,80 +109,108 @@ folOpers = [
     EvalOper(
         "if", 
         funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 3) flow(undefVal) else {
-                if (flow2b(e.eval(args[0], vals))) {
-                    e.eval(args[1], vals);
+                if (flow2b(args[0].eval(vals, conf))) {
+                    args[1].eval(vals, conf);
                 } else {
-                    e.eval(args[2], vals);
+                    args[2].eval(vals, conf);
                 }
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            "(if " + s.show(args[0]) + " then " + s.show(args[1]) + " else " + s.show(args[2]) + ")";
-        }
+            "(if " + args[0].show() + " then " + args[1].show() + " else " + args[2].show() + ")"
+        )
     ),
     EvalOper(
         "?", 
         funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 3) flow(undefVal) else {
-                if (flow2b(e.eval(args[0], vals))) {
-                    e.eval(args[1], vals);
+                cond = args[0].eval(vals, conf);
+                if (flow2b(cond)) {
+                    args[1].eval(vals, conf);
                 } else {
-                    e.eval(args[2], vals);
+                    args[2].eval(vals, conf);
                 }
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            "(" + s.show(args[0]) + " ? " + s.show(args[1]) + " : " + s.show(args[2]) + ")";
-        }
+            "(" + args[0].show() + " ? " + args[1].show() + " : " + args[2].show() + ")"
+        )
     ),
+    EvalOper(
+        "lambda", 
+        funcAlgType([AlgTypeVar("A"), AlgTypeVar("V")], funcAlgType([AlgTypeVar("A")], AlgTypeVar("V"))),
+        \args -> Eval(\vals, conf -> {
+            v_raw = args[0].eval(vals, conf);
+            println("v_raw: " + toString(v_raw));
+            v = flow2s(args[0].eval(vals, conf));
+            //t = cast(args[1].eval(vals, conf) : flow -> AlgType);
+            flow(\x -> args[1].eval(setTree(vals, v, x), conf));
+        }),
+        \args -> Show(\-> {
+            //var_type = cast(args[1].eval(vals, conf) : flow -> AlgType);
+            "lambda " + args[0].show() + " " + args[1].show()
+        })
+    ),
+    EvalOper(
+        "call", 
+        funcAlgType([funcAlgType([AlgTypeVar("A")], AlgTypeVar("V")), AlgTypeVar("A")], AlgTypeVar("V")),
+        \args -> Eval(\vals, conf -> {
+            fn = cast(args[0].eval(vals, conf) : flow -> (flow) -> flow);
+            ar = args[1].eval(vals, conf);
+            fn(ar);
+        }),
+        \args -> Show(\->
+            args[0].show() + "(" + args[1].show() + ")"
+        )
+    )
 ];
 
 makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
-    EvalOper("S" +  Q,
+    EvalOper(Q,
         funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 3) {
                 flow(undefVal)
             } else {
-                v = flow2s(args[0]);
+                v = flow2s(args[0].eval(vals, conf));
                 flow(quant(
-                    cast(e.eval(args[1], vals) : flow -> [?]),
-                    \a -> flow2b(e.eval(args[2], setTree(vals, v, a)))
+                    cast(args[1].eval(vals, conf) : flow -> [?]),
+                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
                 ));
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            "S" + Q + " " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
-        }
+            Q + " " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
+        )
     ); 
 }
 
 makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOper {
     EvalOper(Q,
         funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf -> 
             if (length(args) != 3) {
                 flow(undefVal)
             } else {
-                v = flow2s(args[0]);
-                a = cast(e.eval(args[1], vals) : flow -> [flow]);
+                v = flow2s(args[0].eval(vals, conf));
+                a = cast(args[1].eval(vals, conf) : flow -> [flow]);
                 sublists = map(enumFromTo(0, length(a)), \l -> subrange(a, 0, l));
                 flow(quant(
                     sublists,
-                    \sl -> flow2b(e.eval(args[2], setTree(vals, v, sl)))
+                    \sl -> flow2b(args[2].eval(setTree(vals, v, sl), conf))
                 ));
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            Q + " " + s.show(args[0]) + " : " + s.show(args[1]) + " " + s.show(args[2]);
-        }
+            Q + " " + args[0].show() + " : " + args[0].show() + " " + args[2].show()
+        )
     ); 
 }
 
@@ -190,11 +218,11 @@ makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOp
 makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper {
     EvalOper(name, 
         funcAlgType(types, boolType),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != length(types)) flow(undefVal) else {
-                flow(p(map(args, \arg -> e.eval(arg, vals))))
+                flow(p(evalArgs(args, vals, conf)))
             }
-        },
+        ),
         showDfEvalOper(name)
     );
 }
@@ -214,6 +242,7 @@ algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar> {
 doAlgTerm2freeVars(acc : Set<AlgTermVar>, t : AlgTerm) -> Set<AlgTermVar> {
     switch (t) {
         AlgTermVar(__,__): insertSet(acc, t);
+        AlgTermVarDecl(__,__): acc;
         AlgTermFunc(name, args, __): {
             acc1 = fold(args, acc, doAlgTerm2freeVars);
             if (!isVarBounderOper(name)) acc1 else {
@@ -236,6 +265,7 @@ algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int> {
 doAlgTermCountBoundVars(acc : Tree<AlgTermVar, int>, t : AlgTerm) -> Tree<AlgTermVar, int> {
     switch (t) {
         AlgTermVar(__,__): acc; // setTree(acc, t, lookupTreeDef(acc, t, 0) + 1);
+        AlgTermVarDecl(__,__): acc; 
         AlgTermFunc(name, args, __): {
             acc1 = fold(args, acc, doAlgTermCountBoundVars);
             if (!isVarBounderOper(name)) acc1 else {

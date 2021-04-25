@@ -1,5 +1,5 @@
 
-/*
+
 def one_less_two () : bool {
     (1 < 2) 
 }
@@ -31,7 +31,7 @@ def min (x : int) : bool {
 def x_in_set_one_two (x : int) : bool {
     (x in [1, 2])
 }
-*/
+
 
 def fact (x : int) : int {
     ((x = 0) ? 1 : (1 * x * 1 * fact((x - 1))))
@@ -39,5 +39,24 @@ def fact (x : int) : int {
 
 def fact_five() : int {
     fact(5)
+}
+
+def main() : unit {
+    println(
+        ("5! = " + i2s(fact_five())),
+        ("7! = " + i2s(fact(7))),
+        ("lambda x : int (x = 2)(2)" + b2s(
+            call(lambda x : int (x = 2), 2)
+        )),
+        ("lambda x : int (x = 2)(3)" + b2s(
+            call(lambda x : int (x = 2), 3)
+        ))
+        //("E x : [2, 3] (x = 2)" + b2s(E x : [2, 3] (x = 2)))
+        /*("E x : [2, 3] E y : [(x + 1), (x * 2)] (((x * 2) + 1) = y)" + 
+            b2s(
+                E x : [2, 3] E y : [(x + 1), (x * 2)] (((x * 2) + 1) = y)
+            )
+        )*/
+    )
 }
 

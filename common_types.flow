@@ -1,6 +1,10 @@
 import type;
 
 export {
+    // Unit type: has only one value UnitVal.
+    unitType = constAlgType("unit");
+    UnitVal();
+
     // Common const type: boolean
     boolType = constAlgType("bool");
     unaryBoolFnType = makeFuncType(1, boolType);

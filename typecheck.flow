@@ -9,12 +9,22 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
     //println("(B) typechecking: " + algTerm2s(term) + " ...");
     ret = switch (term) {
         AlgTermVar(name, __): {
-            AlgTermVar(term with 
-                type = lookupTreeDef(vars, name, undefAlgType)
-            );
+            AlgTermVar(term with type = lookupTreeDef(vars, name, undefAlgType));
+        }
+        AlgTermVarDecl(name, type): {
+            term;
         }
         AlgTermFunc(name, args, type): {
-            typed_args = map(args, \arg -> typecheck(arg, vars, signs));
+            typed_args = fold(args, Pair([], vars), \acc, arg -> {
+                typed = typecheck(arg, acc.second, signs);
+                Pair(
+                    concat(acc.first, [typed]),
+                    switch (arg) {
+                        AlgTermVarDecl(nm, tp): setTree(acc.second, nm, typed.type);
+                        default: acc.second;
+                    }
+                );
+            }).first;
             arg_types = map(typed_args, \arg -> arg.type);
             val_type = 
                 if (exists(arg_types, \t -> t == undefAlgType)) {

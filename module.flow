@@ -14,42 +14,44 @@ export {
 
     TypedVar(name : string, type : AlgType);
 
-    makeDefOper(def : Def) -> EvalOper;
-    module2s(module : Module, show : Show) -> string;
-    def2s(def : Def, s : Show) -> string;
+    makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper;
+    module2s(module : Module, shower : (AlgTerm) -> Show) -> string;
+    def2s(def : Def, shower : (AlgTerm) -> Show) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
-makeDefOper(def : Def) -> EvalOper {
+makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper {
     EvalOper(
         def.name,
         funcAlgType(map(def.vars, \v -> v.type), def.term.type),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf -> 
             if (length(args) != length(def.vars)) {
+                println("Function " + def.name + " arity " + i2s(length(def.vars)) + " mismatch arguments length " + i2s(length(args)));
                 flow(undefVal)
             } else {
-                arg_vals = map(args, \arg -> e.eval(arg, vals));
-                e.eval(
-                    def.term, 
-                    foldi(def.vars, vals, \i, acc, var -> 
-                        setTree(acc, var.name, arg_vals[i])
-                    )
+                arg_vals = evalArgs(args, vals, conf);
+                if (conf.trace) {
+                     println(strIndentMany("calling func " + def.name + " with args " + toString(arg_vals), ^(conf.callDepth)));
+                }
+                vals1 = foldi(def.vars, vals, \i, acc, var -> 
+                    setTree(acc, var.name, arg_vals[i])
                 );
+                ^evaluator(def.term).eval(vals1, conf);
             }
-        },
+        ),
         showDfEvalOper(def.name)
     );
 }
 
-module2s(module : Module, show : Show) -> string {
-    strGlue(map(module.defs, \def -> def2s(def, show)), "\n");
+module2s(module : Module, shower : (AlgTerm) -> Show) -> string {
+    strGlue(map(module.defs, \def -> def2s(def, shower)), "\n");
 }
 
-def2s(def : Def, s : Show) -> string {
+def2s(def : Def, shower : (AlgTerm) -> Show) -> string {
     "def " +  def.name + 
     " (" + strGlue(map(def.vars, typedVar2s), ", ") + ")" + 
     " : " + algType2s(def.type) + "\n" +
-     strIndent(s.show(def.term)) + "\n";
+     strIndent(shower(def.term).show()) + "\n";
 }
 
 typedVar2s(var : TypedVar) -> string {

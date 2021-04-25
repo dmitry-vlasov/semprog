@@ -20,8 +20,8 @@ type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
 
 term = 
     or | and | impl | neg | eq | true | false | 
-    forall | exists | filter | 
-    sforall | sexists | sfilter | 
+    forall | exists | filter | string |
+    sforall | sexists | sfilter | lambda |
     in | sub | equal | neq | less_eq  | less | 
     arithm_term | array_term | if | tern |
     func | var;
@@ -45,6 +45,10 @@ filter = "F" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) }
 sforall = "SA" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 sexists = "SE" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 sfilter = "SF" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+
+string = '"' (!'"' char_)* $s '"' ws { makeStringConst($s) };
+lambda = "lambda" ws var:v ":" ws type:tp term:body { makeLambda(:v, :tp, :body) };
+lambda = "call" ws "(" ws term:fn "," ws term:ar ")" ws { makeCall(:fn, :ar) };
 
 in      = "(" ws term:l "in"  $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
@@ -85,7 +89,7 @@ from_to    = "[" ws term:from "..." $op ws term:to "]" ws              { makeArr
 sublists = "sublists" $op ws "(" ws term:t ")" ws                      { makeTermFunc($op, :t) } ;
 
 var  = letter+ $s ws { makeTermVar($s) };
-id   = letter+;
+id   = letter (letter | digit)*;
 letter = 'a'-'z' | 'A'-'Z' | '_';
 
 const_int = digit+ $s ws { makeTermFunc($s) };

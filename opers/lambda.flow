@@ -3,40 +3,41 @@ import dynamic;
 
 export {
     // Recursion, lambda and conditional operators
-    makeIf(type : Type) -> EvalOper;
-    makeLambda(v : string, t : Type, type : Type) -> EvalOper;
-    makeRecursion(n : Type, arg_types : [Type], val : Type) -> EvalOper;
+    makeIf(type : AlgType) -> EvalOper;
+    makeLambda(var_type : AlgType, val_type : AlgType) -> EvalOper;
+    makeRecursion(n : AlgType, arg_types : [AlgType], val : AlgType) -> EvalOper;
 }
 
-makeIf(type : Type) -> EvalOper {
+makeIf(type : AlgType) -> EvalOper {
     EvalOper(
-        "if", fnType([boolType, type, type], type),
-        \e, args, vals -> {
+        "if", funcAlgType([boolType, type, type], type),
+        \args -> Eval(\vals, conf -> 
             if (length(args) != 3) flow(undefVal) else {
-                if (flow2b(e.eval(args[0], vals))) {
-                    e.eval(args[1], vals);
+                if (flow2b(args[0].eval(vals, conf))) {
+                    args[1].eval(vals, conf);
                 } else {
-                    e.eval(args[2], vals);
+                    args[2].eval(vals, conf);
                 }
             }
-        },
-        \s, args -> {
+        ),
+        \args -> Show(\->
             if (length(args) != 3) "broken term" else
-            "(if " + s.show(args[0]) + " then " + s.show(args[1]) + " else " + s.show(args[2]) + ")";
-        }
+            "(if " + args[0].show() + " then " + args[1].show() + " else " + args[2].show() + ")"
+        )
     );
 }
 
-makeLambda(v : string, t : Type, type : Type) -> EvalOper {
+makeLambda(var_type : AlgType, body : AlgType) -> EvalOper {
     EvalOper(
-        "\\ " + v + ".", 
-        fnType([t, type], fnType([t], type)),
-        \e, args, vals -> {
-            \x -> e.eval(args[0], setTree(vals, v, x))
-        },
-        \s, args -> {
-            "\\ " + v + " : " + type2s(t) + " " + s.show(args[0])
-        }
+        "lambda", 
+        funcAlgType([var_type, val_type], funcAlgType([var_type], val_type)),
+        \args -> Eval(\vals, conf -> {
+            v = flow2s(args[0].eval(vals, conf));
+            \x -> args[0].eval(setTree(vals, v, x), conf)
+        }),
+        \args -> Show(\->
+            "lambda " + args[0].show() + " : " + algType2s(var_type) + " " + args[0].show()
+        )
     );
 }
 
@@ -66,24 +67,24 @@ recursion(
     \args -> doRecursion(f_0, f_1, g, p, args);
 }
 
-makeRecursion(n : Type, arg_types : [Type], val : Type) -> EvalOper {
+makeRecursion(n : AlgType, arg_types : [AlgType], val : AlgType) -> EvalOper {
     EvalOper("rec", 
-        fnType(
+        funcAlgType(
             [
-                fnType(concat([n], arg_types), val),       // f_0
-                fnType(concat([val, n], arg_types), val),  // f_1
-                fnType(concat([n], arg_types), n),         // g
-                fnType(concat([n], arg_types), boolType),  // p
+                funcAlgType(concat([n], arg_types), val),       // f_0
+                funcAlgType(concat([val, n], arg_types), val),  // f_1
+                funcAlgType(concat([n], arg_types), n),         // g
+                funcAlgType(concat([n], arg_types), boolType),  // p
             ],
-            fnType(concat([n], arg_types), val)
+            funcAlgType(concat([n], arg_types), val)
         ),
-        \e, args, vals -> {
-            f_0 = cast(e.eval(args[0], vals): flow -> ([flow]) -> flow);
-            f_1 = cast(e.eval(args[1], vals): flow -> ([flow]) -> flow);
-            g   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
-            p   = cast(e.eval(args[2], vals): flow -> ([flow]) -> flow);
+        \args -> Eval(\vals, conf -> {
+            f_0 = cast(args[0].eval(vals, conf): flow -> ([flow]) -> flow);
+            f_1 = cast(args[1].eval(vals, conf): flow -> ([flow]) -> flow);
+            g   = cast(args[2].eval(vals, conf): flow -> ([flow]) -> flow);
+            p   = cast(args[3].eval(vals, conf): flow -> ([flow]) -> flow);
             recursion(f_0, f_1, g, p);
-        },
+        }),
         showDfEvalOper("rec")
     );
 }

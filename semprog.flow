@@ -15,38 +15,53 @@ main() -> void {
         if (ext != ".sem") {
             println("Extension: " + ext  + " mismatches the expected .sem");
         } else {
+            conf = makeConf();
             println(evalAlgebra2s(fullAlgebra));
             show = algebraShow(fullAlgebra);
             eval = algebraEval(fullAlgebra);
             src = getFileContent(file);
-            name = changeFileExt(src, "");
+            name = changeFileExt(file, "");
             module = typecheckModule(parseModule(src, name), fullAlgebra);
+
+            eval1 = ref eval;
 
             algebra1 = EvalAlgebra("module algebra", 
                 fold(module.defs, fullAlgebra.opers, \acc, def -> 
-                    concat(acc, [makeDefOper(def)])
+                    concat(acc, [makeDefOper(def, eval1)])
                 ),
                 fullAlgebra.consts
             );
 
             show1 = algebraShow(algebra1);
-            eval1 = algebraEval(algebra1);
+            eval1 := algebraEval(algebra1);
 
             //module = parseModule(src, name);
-            println("Module:\n" + module2s(module, show) + "\n\n");
+            println("Module:\n" + module2s(module, show1) + "\n\n");
             /*iter(module.defs, \def -> println(def2s(def, show1)));
             iter(module.defs, \def -> {
                 println("about to eval: " + algTypedTerm2s(def.term) + " ...");
                 println(eval1.eval(def.term, makeTree()))
             });*/
-            println(
+            /*println(
                 strGlue(map(module.defs, \def -> 
                     //algTypedTerm2s(def.term) + "\n" +
                     //def2s(def, show1)
                     "eval[" + algTypedTerm2s(def.term) + "] = " +
-                    toString(eval1.eval(def.term, makeTree()))
+                    toString(
+                        ^eval1(AlgTermVar(def.name, def.type)).eval(makeTree(), conf)
+                    )
                 ), "\n")
-            );
+            );*/
+
+            ^eval1(AlgTermFunc("main", [], unitType)).eval(conf.opts, conf);
+            {}
+
+            /*println(
+                "eval[" + algTypedTerm2s(test1) + "] = " +
+                toString(
+                    ^eval1(test1).eval(makeTree(), conf)
+                )
+            );*/
         }
     }
     quit(0);

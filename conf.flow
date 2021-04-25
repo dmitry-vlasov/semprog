@@ -1,0 +1,49 @@
+import ds/tree;
+import ds/set;
+import string;
+import math/math;
+import net/url_parameter;
+import string_utils;
+
+export {
+    Conf(
+        opts : Tree<string, string>,
+        trace : bool,
+        callDepth : ref int,
+        verbose : int
+    );
+
+    opts2conf(opts : Tree<string, string>) -> Conf;
+    urlParams2opts(params : [[string]]) -> Tree<string, string>;
+    makeConf() -> Conf;
+    strIndentMany(s : string, n : int) -> string;
+}
+
+opts2conf(opts : Tree<string, string>) -> Conf {
+    trace = lookupTreeDef(opts, "trace", "") == "1";
+    verbose = s2i(lookupTreeDef(opts, "verb", "0"));
+    Conf(
+        removeFromTree(removeFromTree(opts, "trace"), "verb"),
+        trace,
+        ref 0,
+        verbose
+    );
+}
+
+urlParams2opts(params : [[string]]) -> Tree<string, string> {
+    fold(params, makeTree(), \acc, param ->
+        if (length(param) != 2) acc else {
+            setTree(acc, param[0], param[1]);
+        }
+    );
+}
+
+makeConf() -> Conf {
+    opts2conf(urlParams2opts(getAllUrlParametersArray()));
+}
+
+strIndentMany(s : string, n : int) -> string {
+    if (n == 0) s else {
+        strIndent(strIndentMany(s, n - 1));
+    }
+}

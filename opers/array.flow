@@ -14,13 +14,13 @@ arrayOpers = [
             [variadicAlgType(arrayAlgType(AlgTypeVar("T")))], 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
                 flow(concatA(
-                    map(args, \arg -> cast(e.eval(arg, vals) : flow -> [flow]))
+                    map(args, \arg -> cast(arg.eval(vals, conf) : flow -> [flow]))
                 ));
             }
-        },
+        ),
         showDfEvalOper("concat")
     ),
     EvalOper("add", 
@@ -28,14 +28,14 @@ arrayOpers = [
             [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
                 flow(concat(
-                    [e.eval(args[0], vals)], 
-                    cast(e.eval(args[1], vals) : flow -> [flow])
+                    [args[0].eval(vals, conf)], 
+                    cast(args[1].eval(vals, conf) : flow -> [flow])
                 ));
             }
-        },
+        ),
         showDfEvalOper("add")
     ),
     EvalOper("tail", 
@@ -43,11 +43,11 @@ arrayOpers = [
             [arrayAlgType(AlgTypeVar("T"))], 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 1) flow(undefVal) else {
-                tail(cast(e.eval(args[1], vals) : flow -> [flow]));
+                tail(cast(args[1].eval(vals, conf) : flow -> [flow]));
             }
-        },
+        ),
         showDfEvalOper("tail")
     ),
     EvalOper("get", 
@@ -55,13 +55,13 @@ arrayOpers = [
             [arrayAlgType(AlgTypeVar("T")), intType], 
             AlgTypeVar("T")
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
-                a = cast(e.eval(args[1], vals) : flow -> [flow]);
-                i = flow2i(e.eval(args[1], vals));
+                a = cast(args[0].eval(vals, conf) : flow -> [flow]);
+                i = flow2i(args[1].eval(vals, conf));
                 if (i < length(a)) a[i] else flow(undefVal);
             }
-        },
+        ),
         showDfEvalOper("get")
     ),
     EvalOper("sublists", 
@@ -69,33 +69,33 @@ arrayOpers = [
             [arrayAlgType(AlgTypeVar("T"))], 
             arrayAlgType(arrayAlgType(AlgTypeVar("T")))
         ),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 1) flow(undefVal) else {
-                a = cast(e.eval(args[0], vals) : flow -> [flow]);
+                a = cast(args[0].eval(vals, conf) : flow -> [flow]);
                 flow(map(enumFromTo(0, length(a)), \l -> subrange(a, 0, l)));
             }
-        },
+        ),
         showDfEvalOper("sublists")
     ),
     EvalOper(
         "array",
         funcAlgType(
-            [variadicAlgType(AlgTypeVar("T"))], 
+            [variadicAlgType(AlgTypeVar("T"))],
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \e, args, vals -> map(args, \arg -> e.eval(arg, vals)),
+        \args -> Eval(\vals, conf -> map(args, \arg -> arg.eval(vals, conf))),
         showBracketEvalOper("[", "]", ",")
     ),
     EvalOper(
         "...", 
         funcAlgType([intType, intType], arrayAlgType(intType)),
-        \e, args, vals -> {
+        \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
-                low = flow2i(e.eval(args[0], vals));
-                hi  = flow2i(e.eval(args[1], vals));
+                low = flow2i(args[0].eval(vals, conf));
+                hi  = flow2i(args[1].eval(vals, conf));
                 enumFromTo(low, hi);
             }
-        },
+        ),
         showBracketEvalOper("[", "]", "...")
     )
 ];
