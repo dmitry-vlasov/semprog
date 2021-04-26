@@ -18,12 +18,12 @@ export {
     makeImplTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc;
     makeEquivTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc;
 
-    makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
-    makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc;
-    makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc;
-    makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc;
+    makeBoolForallTerm(v : AlgTermVarUse, t : AlgTerm) -> AlgTermFunc;
+    makeBoolExistsTerm(v : AlgTermVarUse, t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolForallTerm(vars : [AlgTermVarUse], t : AlgTerm) -> AlgTermFunc;
+    makeLongBoolExistsTerm(vars : [AlgTermVarUse], t : AlgTerm) -> AlgTermFunc;
     
-    getTermQuantVar(t : AlgTerm) -> AlgTermVar;
+    getTermQuantVar(t : AlgTerm) -> AlgTermVarUse;
 }
 
 boolOpers = [
@@ -45,7 +45,7 @@ makeBoolConst(name : string, v : bool) -> EvalOper {
         \args -> Eval(\__, conf ->
             if (length(args) != 0) flow(undefVal) else flow(v)
         ),
-        \__ -> Show(\-> name)
+        \__ -> Show(\conf -> name)
     );
 }
 
@@ -105,9 +105,9 @@ makeBoolQuantifier(BQ : string) -> EvalOper {
                 }
             }
         ),
-        \args -> Show(\->
+        \args -> Show(\conf ->
             if (length(args) != 2) "broken term" else
-            BQ + " " + args[0].show() + " " + args[1].show()
+            BQ + " " + args[0].show(conf) + " " + args[1].show(conf)
         )
     ); 
 }
@@ -117,9 +117,9 @@ getBoolQuantifiers(f : AlgTerm) -> [string] {
     set2array (mapSet(vs, \v -> v.name))
 }
 
-doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
+doGetBoolQuantifiers(acc : Set<AlgTermVarUse>, f : AlgTerm) -> Set<AlgTermVarUse> {
    switch (f) {
-        AlgTermVar(var, type): acc;
+        AlgTermVarUse(var, type): acc;
         AlgTermVarDecl(var, type): acc;
         AlgTermFunc(op, args, type): {
             if (!(startsWith(op, "BA ") || startsWith(op, "BE "))) {
@@ -128,7 +128,7 @@ doGetBoolQuantifiers(acc : Set<AlgTermVar>, f : AlgTerm) -> Set<AlgTermVar> {
                 if (length(args) == 0) acc else {
                     v = args[0];
                     switch (v) {
-                        AlgTermVar(__,__): 
+                        AlgTermVarUse(__,__): 
                             fold(tail(args), insertSet(acc, v), doGetBoolQuantifiers);
                         AlgTermVarDecl(__,__): 
                             fold(tail(args), insertSet(acc, v), doGetBoolQuantifiers);
@@ -175,31 +175,31 @@ makeEquivTerm(arg1 : AlgTerm, arg2 : AlgTerm) -> AlgTermFunc {
 }
 
 
-makeLongBoolForallTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc {
+makeLongBoolForallTerm(vars : [AlgTermVarUse], t : AlgTerm) -> AlgTermFunc {
     cast(fold(vars, t, \acc, v -> AlgTermFunc("BA " + v.name, [v, acc], boolType)) : AlgTerm -> AlgTermFunc);
 }
 
-makeLongBoolExistsTerm(vars : [AlgTermVar], t : AlgTerm) -> AlgTermFunc {
+makeLongBoolExistsTerm(vars : [AlgTermVarUse], t : AlgTerm) -> AlgTermFunc {
     cast(fold(vars, t, \acc, v -> AlgTermFunc("BE " + v.name, [v, acc], boolType)) : AlgTerm -> AlgTermFunc);
 }
 
-makeBoolForallTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
+makeBoolForallTerm(v : AlgTermVarUse, t : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("BA", [AlgTermFunc(v.name, [], stringType), t], boolType);
 }
 
-makeBoolExistsTerm(v : AlgTermVar, t : AlgTerm) -> AlgTermFunc {
+makeBoolExistsTerm(v : AlgTermVarUse, t : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("BE", [AlgTermFunc(v.name, [], stringType), t], boolType);
 }
 
-getTermQuantVar(t : AlgTerm) -> AlgTermVar {
+getTermQuantVar(t : AlgTerm) -> AlgTermVarUse {
     switch (t) {
-        AlgTermVar(__,__): AlgTermVar("ERROR QUANT VAR", undefAlgType);
-        AlgTermVarDecl(__,__): AlgTermVar("ERROR QUANT VAR", undefAlgType);
+        AlgTermVarUse(__,__): AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
+        AlgTermVarDecl(__,__): AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
         AlgTermFunc(name, args, __): {
             if (isQuantifierOper(name)) {
-                cast(args[0] : AlgTerm -> AlgTermVar);
+                cast(args[0] : AlgTerm -> AlgTermVarUse);
             } else {
-                AlgTermVar("ERROR QUANT VAR", undefAlgType);
+                AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
             }
         }
     }

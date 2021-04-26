@@ -8,10 +8,17 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
     //println("(A) typechecking: " + toString(term) + " ...");
     //println("(B) typechecking: " + algTerm2s(term) + " ...");
     ret = switch (term) {
-        AlgTermVar(name, __): {
-            AlgTermVar(term with type = lookupTreeDef(vars, name, undefAlgType));
+        AlgTermVarUse(name, type): {
+			resolved = lookupTreeDef(vars, name, type);
+			if (resolved == undefAlgType) {
+				println("UNDEF RESOLVED TYPE FOR: " + algTerm2s(term));
+			}
+            AlgTermVarUse(term with type = resolved);
         }
         AlgTermVarDecl(name, type): {
+			if (type == undefAlgType) {
+				println("UNDEF DECLARED TYPE FOR: " + algTerm2s(term));
+			}
             term;
         }
         AlgTermFunc(name, args, type): {
@@ -28,11 +35,14 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
             arg_types = map(typed_args, \arg -> arg.type);
             val_type = 
                 if (exists(arg_types, \t -> t == undefAlgType)) {
-                    println("untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") );
+                    println(
+						"untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") + "\n" +
+						"\t" + algTerm2s(term)
+					);
                     undefAlgType;
                 } else 
-                eitherMap(lookupTree(signs, name), 
-                    \ops -> {
+                switch (lookupTree(signs, name))  {
+                    Some(ops): {
                         fits = filtermap(ops, \op -> 
                             maybeMap(
                                 matchTypes(funcArgTypes(op), arg_types, makeTree()),
@@ -50,17 +60,33 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
                         } else {
                             op = fits[0].first;
                             sub = fits[0].second;
-                            if (op.name != "fn") undefAlgType else
-                            instantiateType(funcValType(op), sub);
+                            if (op.name != "fn") {
+								println("NOT fn: " + op.name);
+								undefAlgType 
+							} else {
+								ret = instantiateType(funcValType(op), sub);
+								if (ret == undefAlgType) {
+									println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
+								}
+								ret;
+							}
                         }
-                    }, type
-                );
+                    }
+					None(): {
+						if (type == undefAlgType) {
+							println("unknown oprator: " + name);
+						}
+						type
+					}
+				};
             AlgTermFunc(term with 
                 type = val_type,
                 args = typed_args
             );
         }
     }
-    //println("DONE typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
+	if (ret.type == undefAlgType) {
+    	println("NOT typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
+	}
     ret
 }

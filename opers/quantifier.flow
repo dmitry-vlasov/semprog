@@ -10,12 +10,12 @@ export {
 
     folOpers : [EvalOper];
 
-    makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
-    makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+    makeForallTerm(v : AlgTermVarUse, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
+    makeExistsTerm(v : AlgTermVarUse, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc;
 
-    algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar>;
-    algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar>;
-    algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int>;
+    algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVarUse>;
+    algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVarUse>;
+    algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVarUse, int>;
 }
 
 folOpers = [
@@ -39,7 +39,7 @@ folOpers = [
     ),
     EvalOper("F",
         funcAlgType(
-            [stringType, arrayAlgType(AlgTypeVar("T")), boolType] , 
+            [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , 
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf ->
@@ -53,14 +53,18 @@ folOpers = [
                 ));
             }
         ),
-        \args -> Show(\->
-            if (length(args) != 3) "broken term" else
-            "F " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = "F " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
+				if (strlen(long) <= conf.foldLen) long else {
+					"F " + args[0].show(conf) + " in " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
+				}
+			}
         )
     ),
     EvalOper("SF",
         funcAlgType(
-            [stringType, arrayAlgType(AlgTypeVar("T")), boolType] , 
+            [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , 
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf ->
@@ -76,9 +80,13 @@ folOpers = [
                 ));
             }
         ),
-        \args -> Show(\-> 
-            if (length(args) != 3) "broken term" else
-            "SF " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
+        \args -> Show(\conf -> 
+            if (length(args) != 3) "broken term" else {
+            	long = "SF " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
+				if (strlen(long) <= conf.foldLen) long else {
+					"SF " + args[0].show(conf) + " in " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
+				}
+			}
         )
     ),
     makeQuantifier("A", forall),
@@ -118,9 +126,13 @@ folOpers = [
                 }
             }
         ),
-        \args -> Show(\->
-            if (length(args) != 3) "broken term" else
-            "(if " + args[0].show() + " then " + args[1].show() + " else " + args[2].show() + ")"
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = "(if " + args[0].show(conf) + " then " + args[1].show(conf) + " else " + args[2].show(conf) + ")";
+				if (strlen(long) <= conf.foldLen) long else {
+					"(if " + args[0].show(conf) + " then\n" + strIndent(args[1].show(conf)) + "\nelse\n" + strIndent(args[2].show(conf)) + "\n)";
+				}
+			}
         )
     ),
     EvalOper(
@@ -136,43 +148,198 @@ folOpers = [
                 }
             }
         ),
-        \args -> Show(\->
-            if (length(args) != 3) "broken term" else
-            "(" + args[0].show() + " ? " + args[1].show() + " : " + args[2].show() + ")"
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = "(" + args[0].show(conf) + " ? " + args[1].show(conf) + " : " + args[2].show(conf) + ")";
+				if (strlen(long) <= conf.foldLen) long else {
+					"(\n" + strIndent(args[0].show(conf)) + " ?\n" + strIndent(args[1].show(conf)) + " :\n" + strIndent(args[2].show(conf)) + "\n)"
+				}
+			}
         )
     ),
     EvalOper(
-        "lambda", 
+        "lambda0", 
+        funcAlgType([AlgTypeVar("V")], funcAlgType([], AlgTypeVar("V"))),
+        \args -> Eval(\vals, conf -> {
+            flow(\-> args[0].eval(vals, conf));
+        }),
+        \args -> Show(\conf -> {
+			long = "lambda0 " + args[0].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"lambda0\n" + strIndent(args[0].show(conf));
+			}
+		})
+    ),
+	EvalOper(
+        "lambda1", 
         funcAlgType([AlgTypeVar("A"), AlgTypeVar("V")], funcAlgType([AlgTypeVar("A")], AlgTypeVar("V"))),
         \args -> Eval(\vals, conf -> {
-            v_raw = args[0].eval(vals, conf);
-            println("v_raw: " + toString(v_raw));
             v = flow2s(args[0].eval(vals, conf));
-            //t = cast(args[1].eval(vals, conf) : flow -> AlgType);
             flow(\x -> args[1].eval(setTree(vals, v, x), conf));
         }),
-        \args -> Show(\-> {
-            //var_type = cast(args[1].eval(vals, conf) : flow -> AlgType);
-            "lambda " + args[0].show() + " " + args[1].show()
-        })
+        \args -> Show(\conf -> {
+            long = "lambda1 " + args[0].show(conf) + " " + args[1].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"lambda1 " + args[0].show(conf) + "\n" + strIndent(args[1].show(conf));
+			}
+		})
+    ),
+	EvalOper(
+        "lambda2", 
+        funcAlgType(
+			[AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("V")], 
+			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V"))
+		),
+        \args -> Eval(\vals, conf -> {
+            v1 = flow2s(args[0].eval(vals, conf));
+			v2 = flow2s(args[1].eval(vals, conf));
+            flow(\x, y -> args[2].eval(setTree(setTree(vals, v1, x), v2, y), conf));
+        }),
+        \args -> Show(\conf -> {
+            long = "lambda2 " + args[0].show(conf) + ", " + args[1].show(conf) + " " + args[2].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"lambda2 " + args[0].show(conf) + ", " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
+			}
+		})
+    ),
+	EvalOper(
+        "lambda3", 
+        funcAlgType(
+			[AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3"), AlgTypeVar("V")], 
+			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))
+		),
+        \args -> Eval(\vals, conf -> {
+            v1 = flow2s(args[0].eval(vals, conf));
+			v2 = flow2s(args[1].eval(vals, conf));
+			v3 = flow2s(args[2].eval(vals, conf));
+            flow(\x, y, z -> args[3].eval(setTree(setTree(setTree(vals, v1, x), v2, y), v3, z), conf));
+        }),
+        \args -> Show(\conf -> {
+            long = "lambda3 " + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + " " + args[3].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"lambda3 " + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + "\n" + strIndent(args[3].show(conf));
+			}
+		})
+    ),
+	EvalOper(
+        "call0", 
+        funcAlgType(
+			[funcAlgType([], AlgTypeVar("V"))], 
+			AlgTypeVar("V")
+		),
+        \args -> Eval(\vals, conf -> {
+            fn = cast(args[0].eval(vals, conf) : flow -> () -> flow);
+            fn();
+        }),
+        \args -> Show(\conf -> {
+			long = "call0(" + args[0].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"call0(\n" + strIndent(args[0].show(conf)) + "\n)";
+			}
+		})
     ),
     EvalOper(
-        "call", 
-        funcAlgType([funcAlgType([AlgTypeVar("A")], AlgTypeVar("V")), AlgTypeVar("A")], AlgTypeVar("V")),
+        "call1", 
+        funcAlgType(
+			[
+				funcAlgType([AlgTypeVar("A")], AlgTypeVar("V")), 
+				AlgTypeVar("A")
+			], 
+			AlgTypeVar("V")
+		),
         \args -> Eval(\vals, conf -> {
             fn = cast(args[0].eval(vals, conf) : flow -> (flow) -> flow);
             ar = args[1].eval(vals, conf);
             fn(ar);
         }),
-        \args -> Show(\->
-            args[0].show() + "(" + args[1].show() + ")"
-        )
-    )
+        \args -> Show(\conf -> {
+            long = "call1(" + args[0].show(conf) + ", " + args[1].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"call1(\n" + 
+					strIndent(args[0].show(conf)) + ",\n" + 
+					strIndent(args[1].show(conf)) + 
+				"\n)";
+			}
+		})
+    ),
+	EvalOper(
+        "call2", 
+        funcAlgType(
+			[
+				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V")), 
+				AlgTypeVar("A1"), AlgTypeVar("A2")
+			], 
+			AlgTypeVar("V")
+		),
+        \args -> Eval(\vals, conf -> {
+            fn = cast(args[0].eval(vals, conf) : flow -> (flow, flow) -> flow);
+            a_1 = args[1].eval(vals, conf);
+			a_2 = args[2].eval(vals, conf);
+            fn(a_1, a_2);
+        }),
+        \args -> Show(\conf -> {
+            long = "call2(" + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"call2(\n" + 
+					strIndent(args[0].show(conf)) + ",\n" + 
+					strIndent(args[1].show(conf)) + ",\n" + 
+					strIndent(args[2].show(conf)) + 
+				"\n)";
+			}
+		})
+    ),
+	EvalOper(
+        "call3", 
+        funcAlgType(
+			[
+				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V")), 
+				AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")
+			], 
+			AlgTypeVar("V")
+		),
+        \args -> Eval(\vals, conf -> {
+            fn = cast(args[0].eval(vals, conf) : flow -> (flow, flow, flow) -> flow);
+            a_1 = args[1].eval(vals, conf);
+			a_2 = args[2].eval(vals, conf);
+			a_3 = args[3].eval(vals, conf);
+            fn(a_1, a_2, a_3);
+        }),
+        \args -> Show(\conf -> {
+            long = "call3(" + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + ", " + args[3].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"call3(\n" + 
+					strIndent(args[0].show(conf)) + ",\n" + 
+					strIndent(args[1].show(conf)) + ",\n" + 
+					strIndent(args[2].show(conf)) + ",\n" + 
+					strIndent(args[3].show(conf)) + 
+				"\n)";
+			}
+		})
+    ),
+	EvalOper(
+        "rec1", 
+        funcAlgType(
+			[funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))], 
+			funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))
+		),
+        \args -> Eval(\vals, conf -> {
+            fn = args[0].eval(vals, conf);
+			flow(\n -> 
+				cast(fn : flow -> ((flow, flow, flow) -> flow))(n, 1, fn)
+			);
+        }),
+        \args -> Show(\conf -> {
+            long = "rec1(" + args[0].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"rec1(\n" + strIndent(args[0].show(conf)) + "\n)";
+			}
+		})
+    ),
 ];
 
 makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
     EvalOper(Q,
-        funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
+        funcAlgType([AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
         \args -> Eval(\vals, conf ->
             if (length(args) != 3) {
                 flow(undefVal)
@@ -184,16 +351,20 @@ makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
                 ));
             }
         ),
-        \args -> Show(\->
-            if (length(args) != 3) "broken term" else
-            Q + " " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
-        )
+        \args -> Show(\conf -> 
+            if (length(args) != 3) "broken term" else {
+            	long = Q + " " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
+				if (strlen(long) < conf.foldLen) long else {
+					Q + " " + args[0].show(conf) + " in " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
+				}
+			}
+		)
     ); 
 }
 
 makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOper {
     EvalOper(Q,
-        funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
+        funcAlgType([AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
         \args -> Eval(\vals, conf -> 
             if (length(args) != 3) {
                 flow(undefVal)
@@ -207,13 +378,16 @@ makeListQuantifier(Q : string, quant : ([[?]], ([?]) -> bool) -> bool) -> EvalOp
                 ));
             }
         ),
-        \args -> Show(\->
-            if (length(args) != 3) "broken term" else
-            Q + " " + args[0].show() + " : " + args[0].show() + " " + args[2].show()
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = Q + " " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
+				if (strlen(long) < conf.foldLen) long else {
+					Q + " " + args[0].show(conf) + " in " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
+				}
+			}
         )
     ); 
 }
-
 
 makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper {
     EvalOper(name, 
@@ -227,49 +401,49 @@ makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOpe
     );
 }
 
-makeForallTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+makeForallTerm(v : AlgTermVarUse, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("A", [AlgTermFunc(v.name, [], stringType), t, phi], boolType);
 }
 
-makeExistsTerm(v : AlgTermVar, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
+makeExistsTerm(v : AlgTermVarUse, t : AlgTerm, phi : AlgTerm) -> AlgTermFunc {
     AlgTermFunc("E", [AlgTermFunc(v.name, [], stringType), t, phi], boolType);
 }
 
-algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVar> {
+algTerm2freeVars(t : AlgTerm) -> Set<AlgTermVarUse> {
     doAlgTerm2freeVars(makeSet(), t);
 }
 
-doAlgTerm2freeVars(acc : Set<AlgTermVar>, t : AlgTerm) -> Set<AlgTermVar> {
+doAlgTerm2freeVars(acc : Set<AlgTermVarUse>, t : AlgTerm) -> Set<AlgTermVarUse> {
     switch (t) {
-        AlgTermVar(__,__): insertSet(acc, t);
+        AlgTermVarUse(__,__): insertSet(acc, t);
         AlgTermVarDecl(__,__): acc;
         AlgTermFunc(name, args, __): {
             acc1 = fold(args, acc, doAlgTerm2freeVars);
             if (!isVarBounderOper(name)) acc1 else {
-                removeSet(acc1, cast(args[0] : AlgTerm -> AlgTermVar));
+                removeSet(acc1, cast(args[0] : AlgTerm -> AlgTermVarUse));
             }
         }
     }
 }
 
-algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVar> {
+algTerm2boundVars(t : AlgTerm) -> Set<AlgTermVarUse> {
     free = algTerm2freeVars(t);
     all = algTerm2vars(t);
     differenceSets(all, free);
 }
 
-algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVar, int> {
+algTermCountBoundVars(t : AlgTerm) -> Tree<AlgTermVarUse, int> {
     doAlgTermCountBoundVars(makeTree(), t);
 }
 
-doAlgTermCountBoundVars(acc : Tree<AlgTermVar, int>, t : AlgTerm) -> Tree<AlgTermVar, int> {
+doAlgTermCountBoundVars(acc : Tree<AlgTermVarUse, int>, t : AlgTerm) -> Tree<AlgTermVarUse, int> {
     switch (t) {
-        AlgTermVar(__,__): acc; // setTree(acc, t, lookupTreeDef(acc, t, 0) + 1);
+        AlgTermVarUse(__,__): acc; // setTree(acc, t, lookupTreeDef(acc, t, 0) + 1);
         AlgTermVarDecl(__,__): acc; 
         AlgTermFunc(name, args, __): {
             acc1 = fold(args, acc, doAlgTermCountBoundVars);
             if (!isVarBounderOper(name)) acc1 else {
-                v = cast(args[0] : AlgTerm -> AlgTermVar);
+                v = cast(args[0] : AlgTerm -> AlgTermVarUse);
                 setTree(acc1, v, lookupTreeDef(acc, v, 0) + 1);
             }
         }

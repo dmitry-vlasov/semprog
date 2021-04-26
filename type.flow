@@ -15,6 +15,9 @@ export {
         args : [AlgType]
     );
 
+	// Special universal type: anything
+    anyType = constAlgType("any");
+
     algType2s(type : AlgType) -> string;
 
     // -- A set of common algebraic type operators -- 
@@ -133,7 +136,11 @@ matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<
     ret = switch (pattern) {
         AlgTypeVar(v): {
             switch (lookupTree(ac, v)) {
-                Some(t): if (t == tp) Some(ac) else None();
+                Some(t): if (t == tp) Some(ac) else {
+					if (t != anyType) None() else {
+						Some(setTree(ac, v, tp));
+					}
+				}
                 None(): Some(setTree(ac, v, tp));
             }
         }

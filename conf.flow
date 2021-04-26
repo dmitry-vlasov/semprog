@@ -7,43 +7,69 @@ import string_utils;
 
 export {
     Conf(
-        opts : Tree<string, string>,
+		file : string,
         trace : bool,
         callDepth : ref int,
-        verbose : int
+        verbose : int,
+		foldLen : int, // length of a string, when it's folded
+		opts : Tree<string, string>,
     );
 
     opts2conf(opts : Tree<string, string>) -> Conf;
     urlParams2opts(params : [[string]]) -> Tree<string, string>;
     makeConf() -> Conf;
     strIndentMany(s : string, n : int) -> string;
+	conf2s(conf : Conf) -> string;
 }
 
 opts2conf(opts : Tree<string, string>) -> Conf {
     trace = lookupTreeDef(opts, "trace", "") == "1";
     verbose = s2i(lookupTreeDef(opts, "verb", "0"));
+	foldLen = s2i(lookupTreeDef(opts, "fold-len", "48"));
+	file0 = foldTree(opts, "", \key, val, acc -> if (val == "") key else acc);
+	file = lookupTreeDef(opts, "file", file0);
     Conf(
-        removeFromTree(removeFromTree(opts, "trace"), "verb"),
+		file, 
         trace,
         ref 0,
-        verbose
+        verbose,
+		foldLen,
+		removeFromTree(removeFromTree(removeFromTree(opts, "trace"), "verb"), "file")
     );
 }
 
 urlParams2opts(params : [[string]]) -> Tree<string, string> {
     fold(params, makeTree(), \acc, param ->
-        if (length(param) != 2) acc else {
+        if (length(param) == 2) {
             setTree(acc, param[0], param[1]);
-        }
+        } else if (length(param) == 1) {
+			setTree(acc, param[0], "");
+		} else {
+			acc;
+		}
     );
 }
 
 makeConf() -> Conf {
-    opts2conf(urlParams2opts(getAllUrlParametersArray()));
+	params = getAllUrlParametersArray();
+    opts2conf(urlParams2opts(params));
 }
 
 strIndentMany(s : string, n : int) -> string {
     if (n == 0) s else {
         strIndent(strIndentMany(s, n - 1));
     }
+}
+
+conf2s(conf : Conf) -> string {
+	fields_arr = filtermap([
+		if (conf.file == "") None() else Some("file=" + conf.file),
+		if (!conf.trace) None() else Some("trace=" + conf.file),
+		if (^(conf.callDepth) == 0) None() else Some("callDepth=" + i2s(^(conf.callDepth))),
+		if (conf.verbose == 0) None() else Some("verbose=" + i2s(conf.verbose)),
+	], idfn);
+	opts_arr = map(tree2pairs(conf.opts), \p -> 
+		if (p.second == "") p.first else p.first + "=" + p.second
+	);
+	strGlue(concat(fields_arr, opts_arr), "\n");
 }

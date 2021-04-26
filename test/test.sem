@@ -41,22 +41,47 @@ def fact_five() : int {
     fact(5)
 }
 
-def main() : unit {
+/*
+println(
+		(\rec ->
+			\n ->
+				rec(n, 1, rec)
+		)
+		(\i, p, fn : flow ->
+			if (i > 1) {
+				fn(i - 1, p * i, fn);
+			} else {
+				p;
+			}
+		)
+		(6)
+	);
+*/
+
+def main() : void {
     println(
         ("5! = " + i2s(fact_five())),
         ("7! = " + i2s(fact(7))),
-        ("lambda x : int (x = 2)(2)" + b2s(
-            call(lambda x : int (x = 2), 2)
+        ("lambda1 x : int (x = 2)(2): " + b2s(
+            call1(lambda1 x : int (x = 2), 2)
         )),
-        ("lambda x : int (x = 2)(3)" + b2s(
-            call(lambda x : int (x = 2), 3)
-        ))
-        //("E x : [2, 3] (x = 2)" + b2s(E x : [2, 3] (x = 2)))
-        /*("E x : [2, 3] E y : [(x + 1), (x * 2)] (((x * 2) + 1) = y)" + 
+        ("lambda1 x : int (x = 2)(3): " + b2s(
+            call1(lambda1 x : int (x = 2), 3)
+        )),
+		("5!(rec1): " + i2s(
+            call1(
+				rec1(lambda3 i : int, acc : int, fn : (int, int, any) -> int
+					((i = 1) ? acc : call3(fn, (i - 1), (acc * i), fn))
+				), 
+				5
+			)
+        )),
+        ("E x : int in [2, 3] (x = 2): " + b2s(E x : int in [2, 3] (x = 2))),
+        ("E x : int in [2, 3] E y : int in [(x + 1), (x * 2)] (((x * 2) + 1) = y): " + 
             b2s(
-                E x : [2, 3] E y : [(x + 1), (x * 2)] (((x * 2) + 1) = y)
+                E x : int in [2, 3] E y : int in [(x + 1), (x * 2)] (((x * 2) + 1) = y)
             )
-        )*/
+        )
     )
 }
 

@@ -9,7 +9,7 @@ export {
         eval : (vals : Tree<string, flow>, conf : Conf) -> flow
     );
     Show(
-        show : () -> string
+        show : (conf : Conf) -> string
     );
 
     // The structure, which defines a sementics for an operation.
@@ -51,6 +51,9 @@ export {
     showValuation(v : Tree<string, flow>) -> string;
 
     evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow];
+
+	// A trivial eval function, which doesn't evaluate anything.
+	undefEval = Eval(\vals, conf -> undefVal);
 }
 
 algebraEval(alg : EvalAlgebra) -> (AlgTerm) -> Eval {
@@ -66,34 +69,13 @@ algebraEval(alg : EvalAlgebra) -> (AlgTerm) -> Eval {
     \term -> evalAlgTerm(term, opers, consts);
 }
 
-forall_quant =  EvalOper("Forall",
-        funcAlgType([stringType, arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
-        \args -> {
-            Eval(\vals, conf -> {
-                if (length(args) != 3) {
-                    flow(undefVal)
-                } else {
-                    v = flow2s(args[0].eval(vals, conf));
-                    flow(forall(
-                        cast(args[1].eval(vals, conf) : flow -> [?]),
-                        \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
-                    ));
-                }
-            })
-        },
-        \args -> Show(\-> 
-            if (length(args) != 3) "broken term" else
-            "Forall " + args[0].show() + " : " + args[1].show() + " " + args[2].show()
-        )
-    ); 
-
 evalAlgTerm(
     term : AlgTerm,
     opers : Tree<string, [EvalOper]>,
     consts : Tree<AlgTypeFunc, EvalConst>
 ) -> Eval {
     switch (term) {
-        AlgTermVar(name, type): {
+        AlgTermVarUse(name, type): {
             Eval(\vals, conf -> {
                 val = lookupTreeDef(vals, name, flow(undefVal));
                 if (conf.trace) {
@@ -109,8 +91,8 @@ evalAlgTerm(
         }
         AlgTermFunc(name, args, type): {
             arg_types = map(args, \arg -> arg.type);
-            eitherMap(lookupTree(opers, name), 
-                \ops -> {
+            switch (lookupTree(opers, name)) {
+                Some(ops): {
                     fits = filter(ops, \op -> 
                         isSome(matchTypes(funcArgTypes(op.sign), arg_types, makeTree()))
                     );
@@ -138,31 +120,33 @@ evalAlgTerm(
                             eval.eval(vals, conf);
                         });
                     }
-                }, 
-                if (length(args) != 0) {
-                    if (!containsKeyTree(opers, name)) {
-                       println("Unknown operator: " + name);
-                    }
-                    Eval(\vals, conf -> {
-                        flow(undefVal)
-                    });
-                } else {
-                    switch (lookupTree(consts, type)) {
-                        Some(const): {
-                            Eval(\vals, conf -> {
-                                if (conf.trace) {
-                                   println(strIndentMany("const: " + name, ^(conf.callDepth)));
-                                }
-                                flow(const.eval(name, conf));
-                            });
-                        }
-                        None(): {
-                            println("Constant: " + name + " of type " + toString(type) +  " is uniterpreted");
-                            Eval(\vals, conf -> flow(undefVal));
-                        }
-                    }
-                }
-            );
+                } 
+                None(): {
+					if (length(args) != 0) {
+						if (!containsKeyTree(opers, name)) {
+							println("Unknown operator: " + name);
+						}
+						Eval(\vals, conf -> {
+							flow(undefVal)
+						});
+					} else {
+						switch (lookupTree(consts, type)) {
+							Some(const): {
+								Eval(\vals, conf -> {
+									if (conf.trace) {
+									println(strIndentMany("const: " + name, ^(conf.callDepth)));
+									}
+									flow(const.eval(name, conf));
+								});
+							}
+							None(): {
+								println("Constant: " + name + " of type " + toString(type) +  " is uniterpreted");
+								Eval(\vals, conf -> flow(undefVal));
+							}
+						}
+					}
+				}
+			}
         }
     }
 }
@@ -186,8 +170,8 @@ showAlgTerm(
     consts : Tree<AlgTypeFunc, EvalConst>
 ) -> Show {
     switch (term) {
-        AlgTermVar(name, type): Show(\-> name);
-        AlgTermVarDecl(name, type): Show(\-> name + " : " + algType2s(type));
+        AlgTermVarUse(name, type): Show(\conf -> name);
+        AlgTermVarDecl(name, type): Show(\conf -> name + " : " + algType2s(type));
         AlgTermFunc(name, args, type): {
             arg_types = map(args, \arg -> arg.type);
             eitherMap(
@@ -199,19 +183,24 @@ showAlgTerm(
                     if (length(fits) == 0) {
                         println("No operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                         println("ops: " + strGlue(map(ops, \op -> algType2s(op.sign)), ", "));
-                        Show(\-> "undefVal");
+                        Show(\conf -> "undefVal");
                     } else if (length(fits) > 1) {
                         println("Ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-                        Show(\-> "undefVal");
+                        Show(\conf -> "undefVal");
                     } else {
                         op = fits[0];
                         op.show(map(args, \arg -> showAlgTerm(arg, opers, consts)));
                     }
                 }, 
                 if (length(args) != 0) {
-                    Show(\-> name + "(" + strGlue(map(args, \arg -> showAlgTerm(arg, opers, consts).show()), ", ") + ")");
+                    Show(\conf -> {
+						long = name + "(" + strGlue(map(args, \arg -> showAlgTerm(arg, opers, consts).show(conf)), ", ") + ")";
+						if (strlen(long) <= conf.foldLen) long else {
+							name + "(\n" + strIndent(strGlue(map(args, \arg -> showAlgTerm(arg, opers, consts).show(conf)), ",\n")) + "\n)";
+						}
+					});
                 } else {
-                    Show(\-> name);
+                    Show(\conf -> name);
                     /*switch (lookupTree(consts, type)) {
                         Some(__): name;
                         None(): {
@@ -240,48 +229,67 @@ showValuation(v : Tree<string, flow>) -> string {
 
 
 showDfEvalOper(name : string) ->  (args : [Show]) -> Show {
-    \args -> Show(\->
-        name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \arg -> arg.show()), ", ") + ")")
-    );
+    \args -> Show(\conf -> {
+        long = name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + ")");
+		if (strlen(long) <= conf.foldLen) long else {
+			name + (if (length(args) == 0) "" else  "(\n" + 
+				strIndent(strGlue(map(args, \arg -> arg.show(conf)), ",\n")) + 
+			"\n)");
+		}
+	});
 }
 
 showConstEvalOper(name : string) ->  (args : [Show]) -> Show {
-    \args -> Show(\->
-        if (length(args) != 0) "broken const " + name + ", args: [" + strGlue(map(args, \arg -> arg.show()), ", ") + "]" else name
+    \args -> Show(\conf ->
+        if (length(args) != 0) "broken const " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" else name
     );
 }
 
 showUnaryEvalOper(name : string) -> (args : [Show]) -> Show {
-    \args -> Show(\->
-        if (length(args) != 1) "broken unary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show()), ", ") + "]" 
-        else name + args[0].show()
+    \args -> Show(\conf ->
+        if (length(args) != 1) "broken unary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" 
+        else name + args[0].show(conf)
     );
 }
 
 showBinaryEvalOper(name : string) -> (args : [Show]) -> Show {
-    \args -> Show(\->
-        if (length(args) != 2) "broken binary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show()), ", ") + "]"  else
-        "(" + args[0].show() + " " + name + " " + args[1].show() + ")"
+    \args -> Show(\conf ->
+        if (length(args) != 2) "broken binary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" else {
+        	long = "(" + args[0].show(conf) + " " + name + " " + args[1].show(conf) + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"(\n" + strIndent(args[0].show(conf)) + "\n\t" + name + "\n" + strIndent(args[1].show(conf)) + "\n)";
+			}
+		}
     );
 }
 
 showNaryEvalOper(name : string, arity : int) ->  (args : [Show]) -> Show {
-    \args -> Show(\->
-        if (length(args) != arity) "broken " + i2s(arity) + "-ary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show()), ", ") + "]" else
-        "(" + strGlue(map(args, \arg -> arg.show()), " " + name + " ")  + ")"
+    \args -> Show(\conf ->
+        if (length(args) != arity) "broken " + i2s(arity) + "-ary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" else {
+        	long = "(" + strGlue(map(args, \arg -> arg.show(conf)), " " + name + " ")  + ")";
+			if (strlen(long) <= conf.foldLen) long else {
+				"(\n" + strIndent(strGlue(map(args, \arg -> arg.show(conf)), " " + name + "\n"))  + "\n)";
+			}
+		}
     );
 }
 
 showVariadicEvalOper(name : string) ->  (args : [Show]) -> Show {
-    \args -> Show(\->
-        "(" + strGlue(map(args, \arg -> arg.show()), " " + name + " ")  + ")"
-    );
+    \args -> Show(\conf -> {
+        long = "(" + strGlue(map(args, \arg -> arg.show(conf)), " " + name + " ")  + ")";
+		if (strlen(long) <= conf.foldLen) long else {
+			"(\n" + strIndent(strGlue(map(args, \arg -> arg.show(conf)), " " + name + "\n"))  + "\n)"
+		}
+	});
 }
 
 showBracketEvalOper(open : string, close : string, infix : string) ->  (args : [Show]) -> Show {
-    \args -> Show(\->
-        open + strGlue(map(args, \arg -> arg.show()), infix + " ") + close
-    );
+    \args -> Show(\conf -> {
+        long = open + strGlue(map(args, \arg -> arg.show(conf)), infix + " ") + close;
+		if (strlen(long) <= conf.foldLen) long else {
+			open + "\n" + strIndent(strGlue(map(args, \arg -> arg.show(conf)), infix + "\n")) + "\n" + close;
+		}
+	});
 }
 
 evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow] {

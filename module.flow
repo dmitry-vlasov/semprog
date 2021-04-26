@@ -1,5 +1,4 @@
 import eval;
-import string_utils;
 import typecheck;
 
 export {
@@ -7,16 +6,14 @@ export {
 
     Def(
         name : string,
-        vars : [TypedVar],
+        vars : [AlgTermVarDecl],
         type : AlgType,
         term : AlgTerm
     );
 
-    TypedVar(name : string, type : AlgType);
-
     makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper;
-    module2s(module : Module, shower : (AlgTerm) -> Show) -> string;
-    def2s(def : Def, shower : (AlgTerm) -> Show) -> string;
+    module2s(module : Module, shower : (AlgTerm) -> Show, conf : Conf) -> string;
+    def2s(def : Def, shower : (AlgTerm) -> Show, conf : Conf) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
@@ -43,20 +40,20 @@ makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper {
     );
 }
 
-module2s(module : Module, shower : (AlgTerm) -> Show) -> string {
-    strGlue(map(module.defs, \def -> def2s(def, shower)), "\n");
+module2s(module : Module, shower : (AlgTerm) -> Show, conf : Conf) -> string {
+    strGlue(map(module.defs, \def -> def2s(def, shower, conf)), "\n");
 }
 
-def2s(def : Def, shower : (AlgTerm) -> Show) -> string {
+def2s(def : Def, shower : (AlgTerm) -> Show, conf : Conf) -> string {
     "def " +  def.name + 
-    " (" + strGlue(map(def.vars, typedVar2s), ", ") + ")" + 
-    " : " + algType2s(def.type) + "\n" +
-     strIndent(shower(def.term).show()) + "\n";
+    " (" + strGlue(map(def.vars, algTerm2s), ", ") + ")" + 
+    " : " + algType2s(def.type) + " {\n" +
+     strIndent(shower(def.term).show(conf)) + "\n}\n";
 }
 
-typedVar2s(var : TypedVar) -> string {
+/*typedVar2s(var : AlgTermVarDecl) -> string {
     var.name + " : " + algType2s(var.type);
-}
+}*/
 
 typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
     alg_signs = fold(algebra.opers, makeTree(), \acc, oper ->

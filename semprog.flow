@@ -7,61 +7,41 @@ import algebra;
 
 main() -> void {
     println("Semantic programming framework\n");
-    file = getUrlParameter("file");
-    if (!fileExists(file)) {
-        println("File: " + file  + " doesn't exist");
+	conf = makeConf();
+	//println("Conf:\n" + strIndent(conf2s(conf)));
+	if (conf.file == "") {
+		println("No input file.");
+	} else if (!fileExists(conf.file)) {
+        println("File: " + conf.file  + " doesn't exist");
     } else {
-        ext = getFileExt(file);
+        ext = getFileExt(conf.file);
         if (ext != ".sem") {
             println("Extension: " + ext  + " mismatches the expected .sem");
         } else {
-            conf = makeConf();
-            println(evalAlgebra2s(fullAlgebra));
-            show = algebraShow(fullAlgebra);
-            eval = algebraEval(fullAlgebra);
-            src = getFileContent(file);
-            name = changeFileExt(file, "");
+            src = getFileContent(conf.file);
+            name = changeFileExt(conf.file, "");
             module = typecheckModule(parseModule(src, name), fullAlgebra);
 
-            eval1 = ref eval;
+			// initial dummy eval func
+            eval = ref \term -> undefEval;
 
-            algebra1 = EvalAlgebra("module algebra", 
+            algebra = EvalAlgebra("module " + name + " algebra", 
                 fold(module.defs, fullAlgebra.opers, \acc, def -> 
-                    concat(acc, [makeDefOper(def, eval1)])
+                    concat(acc, [makeDefOper(def, eval)])
                 ),
                 fullAlgebra.consts
             );
 
-            show1 = algebraShow(algebra1);
-            eval1 := algebraEval(algebra1);
-
-            //module = parseModule(src, name);
-            println("Module:\n" + module2s(module, show1) + "\n\n");
-            /*iter(module.defs, \def -> println(def2s(def, show1)));
-            iter(module.defs, \def -> {
-                println("about to eval: " + algTypedTerm2s(def.term) + " ...");
-                println(eval1.eval(def.term, makeTree()))
-            });*/
-            /*println(
-                strGlue(map(module.defs, \def -> 
-                    //algTypedTerm2s(def.term) + "\n" +
-                    //def2s(def, show1)
-                    "eval[" + algTypedTerm2s(def.term) + "] = " +
-                    toString(
-                        ^eval1(AlgTermVar(def.name, def.type)).eval(makeTree(), conf)
-                    )
-                ), "\n")
-            );*/
-
-            ^eval1(AlgTermFunc("main", [], unitType)).eval(conf.opts, conf);
-            {}
-
-            /*println(
-                "eval[" + algTypedTerm2s(test1) + "] = " +
-                toString(
-                    ^eval1(test1).eval(makeTree(), conf)
-                )
-            );*/
+			if (lookupTreeDef(conf.opts, "show-algebra", "") == "1") {
+				println(evalAlgebra2s(algebra));
+			} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
+				show = algebraShow(algebra);
+            	println("Module " + name + ":\n" + module2s(module, show, conf) + "\n\n");
+			} else {
+				eval := algebraEval(algebra);
+            	^eval(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
+            	{}
+			}
         }
     }
     quit(0);

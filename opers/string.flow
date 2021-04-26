@@ -23,10 +23,10 @@ makeStringConst(name : string) -> EvalOper {
 
 stringOpers = [
     EvalOper("println", 
-        funcAlgType([variadicAlgType(stringType)], unitType), 
+        funcAlgType([variadicAlgType(stringType)], voidType), 
         \args -> Eval(\vals, conf -> {
             iter(args, \arg -> println(arg.eval(vals, conf)));
-            flow(UnitVal());
+            flow(VoidVal());
         }),
         showDfEvalOper("println")
     ),

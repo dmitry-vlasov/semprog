@@ -1,7 +1,7 @@
 module = ws (def)*:ds { makeModule(:ds) };
 
 def = "def" ws id $n ws "(" ws (def_var)*:vs ")" ws ":" ws type:tp "{" ws term:t "}" ws { makeDef(:n, :vs, :tp, :t)};
-def_var = id $n ws ":" ws type:t ("," ws)? { makeTypedVar(:n, :t) };
+def_var = var_decl:v ("," ws)? { :v };
 
 // Types
 
@@ -21,10 +21,12 @@ type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
 term = 
     or | and | impl | neg | eq | true | false | 
     forall | exists | filter | string |
-    sforall | sexists | sfilter | lambda |
+    sforall | sexists | sfilter | 
+	lambda0 | lambda1 | lambda2 | lambda3 | 
+	call0 | call1 | call2 | call3 |
     in | sub | equal | neq | less_eq  | less | 
     arithm_term | array_term | if | tern |
-    func | var;
+    func | var_use;
 
 or   = "(" ws term:l "\\/" $op ws term:r ")" ws { makeTermFunc(:op, :l, :r) };
 and  = "(" ws term:l "/\\" $op ws term:r ")" ws { makeTermFunc(:op, :l, :r) };
@@ -38,17 +40,27 @@ tern = "(" ws term:c "?" $op ws term:p ":" ws term:n ")" ws { makeTermFunc(:op, 
 true   = "True" $c ws  { makeTermFunc($c) };
 false  = "False" $c ws { makeTermFunc($c) };
 
-forall = "A" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
-exists = "E" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
-filter = "F" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+forall = "A" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+exists = "E" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+filter = "F" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 
-sforall = "SA" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
-sexists = "SE" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
-sfilter = "SF" $q ws var:v ":" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+sforall = "SA" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+sexists = "SE" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
+sfilter = "SF" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :a, :f) };
 
 string = '"' (!'"' char_)* $s '"' ws { makeStringConst($s) };
-lambda = "lambda" ws var:v ":" ws type:tp term:body { makeLambda(:v, :tp, :body) };
-lambda = "call" ws "(" ws term:fn "," ws term:ar ")" ws { makeCall(:fn, :ar) };
+
+lambda0 = "lambda0" $op ws term:body { makeTermFunc($op, :body) };
+lambda1 = "lambda1" $op ws var_decl:v term:body { makeTermFunc($op, :v, :body) };
+lambda2 = "lambda2" $op ws var_decl:v1 "," ws var_decl:v2 term:body { makeTermFunc($op, :v1, :v2, :body) };
+lambda3 = "lambda3" $op ws var_decl:v1 "," ws var_decl:v2 "," ws var_decl:v3 term:body { makeTermFunc($op, :v1, :v2, :v3, :body) };
+
+call0 = "call0" $op ws "(" ws term:fn ")" ws { makeTermFunc($op, :fn, :as) };
+call1 = "call1" $op ws "(" ws term:fn "," ws func_arg:a ")" ws { makeTermFunc($op, :fn, :a) };
+call2 = "call2" $op ws "(" ws term:fn "," ws func_arg:a_1 "," ws func_arg:a_2 ")" ws { makeTermFunc($op, :fn, :a_1, :a_2) };
+call3 = "call3" $op ws "(" ws term:fn "," ws func_arg:a_1 "," ws func_arg:a_2 "," ws func_arg:a_3 ")" ws { makeTermFunc($op, :fn, :a_1, :a_2, :a_3) };
+
+call0 = "rec1" $op ws "(" ws term:fn ")" ws { makeTermFunc($op, :fn) };
 
 in      = "(" ws term:l "in"  $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
@@ -88,7 +100,8 @@ get_arr    = "get" $op ws "." ws term:a "[" ws term:i "]" ws           { makeTer
 from_to    = "[" ws term:from "..." $op ws term:to "]" ws              { makeArrFromTo($op, :from, :to) };
 sublists = "sublists" $op ws "(" ws term:t ")" ws                      { makeTermFunc($op, :t) } ;
 
-var  = letter+ $s ws { makeTermVar($s) };
+var_use  = id $s ws { makeTermVarUse($s) };
+var_decl = id $s ws ":" ws type:t { makeTermVarDecl($s, :t) };
 id   = letter (letter | digit)*;
 letter = 'a'-'z' | 'A'-'Z' | '_';
 

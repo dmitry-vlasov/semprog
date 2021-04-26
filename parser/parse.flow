@@ -13,8 +13,12 @@ parseModule(str : string, name : string) -> Module {
             mergeTree(defaultPegActions.t,
             pairs2tree([
                 Pair("makeModule", \s -> Module(name, cast(s[0] : flow -> [Def]))),
-                Pair("makeDef", \s -> Def(flow2s(s[0]), s[1], s[2], s[3])),
-                Pair("makeTypedVar", \s -> TypedVar(flow2s(s[0]), s[1])),
+                Pair("makeDef", \s -> Def(
+					flow2s(s[0]), 
+					cast(s[1] : flow -> [AlgTermVarDecl]), 
+					cast(s[2] : flow -> AlgType), 
+					cast(s[3] : flow -> AlgTerm)
+				)),
                 Pair("makeTypeConst", \s -> constAlgType(flow2s(s[0]))),
                 Pair("makeTypeArray", \s -> arrayAlgType(s[0])),
                 Pair("makeTypeFn", \s -> funcAlgType(s[0], s[1])),
@@ -24,7 +28,8 @@ parseModule(str : string, name : string) -> Module {
 
                 Pair("makeTermFunc", \s -> {
                     //println("makeBoolFunc: " + flow2s(s[0]) + " = " + toString(s));
-                    args = tail(s);
+                    //args = cast(tail(s) : [flow] -> [AlgTerm]);
+					args = tail(s);
                     id = flow2s(s[0]);
                     if (length(args) > 0) {
                         AlgTermFunc(id, args, undefAlgType);
@@ -45,44 +50,30 @@ parseModule(str : string, name : string) -> Module {
                     args = cast(s[2] : flow -> [flow]);
                     AlgTermFunc(id, concat([arg], args), undefAlgType);
                 }),
-                Pair("makeTermVar",  \s -> {
+                Pair("makeTermVarUse",  \s -> {
                     //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
-                    AlgTermVar(flow2s(s[0]), undefAlgType)
+                    AlgTermVarUse(flow2s(s[0]), undefAlgType)
+                }),
+				Pair("makeTermVarDecl",  \s -> {
+                    //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
+                    AlgTermVarDecl(flow2s(s[0]), cast(s[1] : flow -> AlgType));
                 }),
                 Pair("makeArray", \s -> {
                     //println("makeArray: " + flow2s(s[0]) + " = " + toString(s));
                     //println(s[1]);
-                    AlgTermFunc("array", s[1], undefAlgType)
+                    AlgTermFunc("array", cast(s[1] : flow -> [flow]), undefAlgType)
                 }),
                 Pair("makeQuantifier", \s -> { 
                     //println(s[1]);
-                    var = cast(s[1] : flow -> AlgTermVar);
+					quant = flow2s(s[0]);
+                    //var = cast(s[1] : flow -> AlgTermVarUse);
+					//type = cast(s[2] : flow -> AlgType);
                     //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
-                    AlgTermFunc(flow2s(s[0]) + " " + var.name, tail(s), undefAlgType)
-                }),
-                Pair("makeLambda", \s -> { 
-                    //println(s[1]);
-                    var = cast(s[0] : flow -> AlgTermVar);
-                    type = cast(s[1] : flow -> AlgType);
-                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
-                    //AlgTermFunc("lambda", flow2s(s[0]) + " " + var.name, tail(s), undefAlgType)
                     AlgTermFunc(
-                        "lambda", 
-                        concat([AlgTermVarDecl(var.name, type)], subrange(s, 2, length(s) - 2)), 
-                        undefAlgType
-                    );
-                }),
-                Pair("makeCall", \s -> { 
-                    //println(s[1]);
-                    fn = cast(s[0] : flow -> AlgTerm);
-                    ar = cast(s[1] : flow -> AlgTerm);
-                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
-                    //AlgTermFunc("lambda", flow2s(s[0]) + " " + var.name, tail(s), undefAlgType)
-                    AlgTermFunc(
-                        "call", 
-                        [fn, ar], 
-                        undefAlgType
-                    );
+						quant, tail(s),
+						//concat([AlgTermVarDecl(var.name, type)], subrange(s, 3, length(s) - 3)), 
+						undefAlgType
+					);
                 }),
                 Pair("makeArrFromTo", \s -> { 
                     //println("makeArrFromTo: " + flow2s(s[0]) + " = " + toString(s));

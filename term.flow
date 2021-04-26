@@ -2,15 +2,15 @@ import type;
 
 export {
     // General form of an algebraic term: variable or an operation over other terms.
-    AlgTerm ::= AlgTermVar, AlgTermVarDecl, AlgTermFunc;
-    AlgTermVar(name : string, type : AlgType);
+    AlgTerm ::= AlgTermVarUse, AlgTermVarDecl, AlgTermFunc;
+    AlgTermVarUse(name : string, type : AlgType);
     AlgTermVarDecl(name : string, type : AlgType);
     AlgTermFunc(name : string, args : [AlgTerm], type : AlgType);
 
     algTerm2s(term : AlgTerm) -> string;
     algTypedTerm2s(term : AlgTerm) -> string;
-    algTerm2vars(term : AlgTerm) -> Set<AlgTermVar>;
-    undefTermVar = AlgTermVar("UNDEF-VAR", undefAlgType);
+    algTerm2vars(term : AlgTerm) -> Set<AlgTermVarUse>;
+    undefTermVar = AlgTermVarUse("UNDEF-VAR", undefAlgType);
     undefTermFunc = AlgTermFunc("UNDEF-FUNC", [], undefAlgType)
 
     // standard classes of operations
@@ -27,7 +27,7 @@ export {
 
 algTerm2s(term : AlgTerm) -> string {
     switch (term) {
-        AlgTermVar(name, type): name;
+        AlgTermVarUse(name, type): name;
         AlgTermVarDecl(name, type): name;
         AlgTermFunc(name, args, type): {
             if (length(args) == 0) name else {
@@ -39,7 +39,7 @@ algTerm2s(term : AlgTerm) -> string {
 
 algTypedTerm2s(term : AlgTerm) -> string {
     switch (term) {
-        AlgTermVar(name, type): name + " : " + algType2s(type);
+        AlgTermVarUse(name, type): name + " : " + algType2s(type);
         AlgTermVarDecl(name, type): name + " : " + algType2s(type);
         AlgTermFunc(name, args, type): {
             if (length(args) == 0) name else {
@@ -49,13 +49,13 @@ algTypedTerm2s(term : AlgTerm) -> string {
     }
 }
 
-algTerm2vars(term : AlgTerm) -> Set<AlgTermVar> {
+algTerm2vars(term : AlgTerm) -> Set<AlgTermVarUse> {
     doAlgTerm2s(makeSet(), term);
 }
 
-doAlgTerm2s(acc : Set<AlgTermVar>, term : AlgTerm) -> Set<AlgTermVar> {
+doAlgTerm2s(acc : Set<AlgTermVarUse>, term : AlgTerm) -> Set<AlgTermVarUse> {
     switch (term) {
-        AlgTermVar(__, __): insertSet(acc, term);
+        AlgTermVarUse(__, __): insertSet(acc, term);
         AlgTermVarDecl(__, __): acc; //insertSet(acc, term);
         AlgTermFunc(__, args, __): fold(args, acc, doAlgTerm2s);
     }

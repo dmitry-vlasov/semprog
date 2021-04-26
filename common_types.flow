@@ -1,9 +1,9 @@
 import type;
 
 export {
-    // Unit type: has only one value UnitVal.
-    unitType = constAlgType("unit");
-    UnitVal();
+    // Void type: has only one value VoidVal.
+    voidType = constAlgType("void");
+    VoidVal();
 
     // Common const type: boolean
     boolType = constAlgType("bool");
