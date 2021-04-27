@@ -1,0 +1,68 @@
+import shower;
+import dynamic;
+import opers/string;
+
+export {
+    controlOpers : [EvalOper];
+}
+
+controlOpers = [
+    EvalOper(
+        "if", 
+        funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 3) flow(undefVal) else {
+                if (flow2b(args[0].eval(vals, conf))) {
+                    args[1].eval(vals, conf);
+                } else {
+                    args[2].eval(vals, conf);
+                }
+            }
+        ),
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = "(if " + args[0].show(conf) + " then " + args[1].show(conf) + " else " + args[2].show(conf) + ")";
+				if (strlen(long) <= conf.foldLen) long else {
+					"(if " + args[0].show(conf) + " then\n" + strIndent(args[1].show(conf)) + "\nelse\n" + strIndent(args[2].show(conf)) + "\n)";
+				}
+			}
+        )
+    ),
+    EvalOper(
+        "?", 
+        funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 3) flow(undefVal) else {
+                cond = args[0].eval(vals, conf);
+                if (flow2b(cond)) {
+                    args[1].eval(vals, conf);
+                } else {
+                    args[2].eval(vals, conf);
+                }
+            }
+        ),
+        \args -> Show(\conf ->
+            if (length(args) != 3) "broken term" else {
+            	long = "(" + args[0].show(conf) + " ? " + args[1].show(conf) + " : " + args[2].show(conf) + ")";
+				if (strlen(long) <= conf.foldLen) long else {
+					"(\n" + strIndent(args[0].show(conf)) + " ?\n" + strIndent(args[1].show(conf)) + " :\n" + strIndent(args[2].show(conf)) + "\n)"
+				}
+			}
+        )
+    ),
+	EvalOper(
+        "let", 
+        funcAlgType([AlgTypeVar("A"), AlgTypeVar("A"), AlgTypeVar("V")], AlgTypeVar("V")),
+        \args -> Eval(\vals, conf -> {
+            v = flow2s(args[0].eval(vals, conf));
+			def = args[1].eval(vals, conf);
+            args[2].eval(setTree(vals, v, def), conf);
+        }),
+        \args -> Show(\conf -> {
+            long = "let " + args[0].show(conf) + " = " + args[1].show(conf) + "; " + args[2].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"let " + args[0].show(conf) + " = " + args[1].show(conf) + ";\n" + args[2].show(conf);
+			}
+		})
+    ),
+];

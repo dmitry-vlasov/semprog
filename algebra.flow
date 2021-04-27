@@ -1,8 +1,10 @@
 import opers/array;
 import opers/bool;
 import opers/int;
-import opers/quantifier;
+import opers/fol;
+import opers/lambda;
 import opers/string;
+import opers/control;
 
 export {
     fullAlgebra : EvalAlgebra;
@@ -17,7 +19,9 @@ allOpers = concatA([
     boolOpers,
     intOpers,
     folOpers,
-    stringOpers
+    stringOpers,
+	lambdaOpers,
+	controlOpers,
 ]);
 
 allConsts = [

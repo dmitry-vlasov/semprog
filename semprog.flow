@@ -9,7 +9,6 @@ import algebra;
 main() -> void {
     println("Semantic programming framework\n");
 	conf = makeConf();
-	//println("Conf:\n" + strIndent(conf2s(conf)));
 	if (conf.file == "") {
 		println("No input file.");
 	} else if (!fileExists(conf.file)) {
