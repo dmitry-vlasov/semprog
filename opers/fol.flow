@@ -25,7 +25,7 @@ folOpers = [
                 flow(args[0].eval(vals, conf) == args[1].eval(vals, conf));
             }
         ),
-        showBinaryEvalOper("=")
+        showInfixBinaryEvalOper("=")
     ),
     EvalOper("!=", 
         funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
@@ -34,7 +34,7 @@ folOpers = [
                 flow(args[0].eval(vals, conf) != args[1].eval(vals, conf));
             }
         ),
-        showBinaryEvalOper("!=")
+        showInfixBinaryEvalOper("!=")
     ),
     EvalOper("F",
         funcAlgType(

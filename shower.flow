@@ -6,7 +6,7 @@ export {
     showPrefixEvalOper(name : string) -> (args : [Show]) -> Show;
     showConstEvalOper(name : string) -> (args : [Show]) -> Show;
     showPrefixUnaryEvalOper(name) -> (args : [Show]) -> Show;
-    showBinaryEvalOper(name) -> (args : [Show]) -> Show;
+    showInfixBinaryEvalOper(name) -> (args : [Show]) -> Show;
     showBracketEvalOper(open : string, close : string, infix : string) -> (args : [Show]) -> Show;
     showNaryEvalOper(name : string, arity : int) -> (args : [Show]) -> Show;
     showVariadicEvalOper(name : string) -> (args : [Show]) -> Show;
@@ -105,7 +105,7 @@ showPrefixUnaryEvalOper(name : string) -> (args : [Show]) -> Show {
     );
 }
 
-showBinaryEvalOper(name : string) -> (args : [Show]) -> Show {
+showInfixBinaryEvalOper(name : string) -> (args : [Show]) -> Show {
     \args -> Show(\conf ->
         if (length(args) != 2) "broken binary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" else {
         	long = "(" + args[0].show(conf) + " " + name + " " + args[1].show(conf) + ")";

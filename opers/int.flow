@@ -90,6 +90,6 @@ makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
                 }
             }
         ),
-        showBinaryEvalOper(name)
+        showInfixBinaryEvalOper(name)
     );
 }
