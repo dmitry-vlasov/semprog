@@ -1,0 +1,28 @@
+import conf;
+import type;
+import term;
+import common_types;
+
+export {
+    // General semantics: eval function.
+    Eval(
+        eval : (vals : Tree<string, flow>, conf : Conf) -> flow
+    );
+    Show(
+        show : (conf : Conf) -> string
+    );
+
+    // Special constant: undefined value.
+    UndefVal();
+    undefVal = UndefVal();
+
+	// A trivial eval, show functions, which doesn't evaluate anything.
+	undefEval = Eval(\vals, conf -> undefVal);
+	undefShow = Show(\conf -> "");
+
+	evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow];
+}
+
+evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow] {
+    map(args, \arg -> arg.eval(vals, conf));
+}
