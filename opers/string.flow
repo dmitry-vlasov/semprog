@@ -29,7 +29,7 @@ stringOpers = [
             iter(args, \arg -> println(arg.eval(vals, conf)));
             flow(VoidVal());
         }),
-        showDfEvalOper("println")
+        showPrefixEvalOper("println")
     ),
     EvalOper("+", 
         funcAlgType([variadicAlgType(stringType)], stringType), 
@@ -47,7 +47,7 @@ stringOpers = [
                 flow(i2s(flow2i(args[0].eval(vals, conf))))
             }
         ),
-        showDfEvalOper("i2s")
+        showPrefixEvalOper("i2s")
     ),
     EvalOper("b2s", 
         funcAlgType([boolType], stringType), 
@@ -56,7 +56,7 @@ stringOpers = [
                 flow(b2s(flow2b(args[0].eval(vals, conf))))
             }
         ),
-        showDfEvalOper("b2s")
+        showPrefixEvalOper("b2s")
     ),
 	EvalOper("a2s", 
         funcAlgType([anyType], stringType), 
@@ -66,7 +66,7 @@ stringOpers = [
                 flow(trim2(str, "\""));
             }
         ),
-        showDfEvalOper("a2s")
+        showPrefixEvalOper("a2s")
     ),
 	EvalOper("evals", 
         funcAlgType([stringType], anyType), 
@@ -80,6 +80,6 @@ stringOpers = [
                 ^semantics(term).eval(vals, conf);
             }
         ),
-        showDfEvalOper("evals")
+        showPrefixEvalOper("evals")
     )
 ];

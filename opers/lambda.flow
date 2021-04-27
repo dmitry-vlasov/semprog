@@ -230,7 +230,7 @@ makeRecursion(n : AlgType, arg_types : [AlgType], val : AlgType) -> EvalOper {
             p   = cast(args[3].eval(vals, conf): flow -> ([flow]) -> flow);
             recursion(f_0, f_1, g, p);
         }),
-        showDfEvalOper("rec")
+        showPrefixEvalOper("rec")
     );
 }
 

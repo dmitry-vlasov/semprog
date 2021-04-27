@@ -3,7 +3,7 @@ import evalgebra;
 export {
     algebraShow(alg : EvalAlgebra) -> (AlgTerm) -> Show;
 
-    showDfEvalOper(name : string) -> (args : [Show]) -> Show;
+    showPrefixEvalOper(name : string) -> (args : [Show]) -> Show;
     showConstEvalOper(name : string) -> (args : [Show]) -> Show;
     showUnaryEvalOper(name) -> (args : [Show]) -> Show;
     showBinaryEvalOper(name) -> (args : [Show]) -> Show;
@@ -81,7 +81,7 @@ showValuation(v : Tree<string, flow>) -> string {
     strGlue(map(tree2pairs(v), \p -> p.first + "=" + toString(p.second)),  ", ");
 }
 
-showDfEvalOper(name : string) ->  (args : [Show]) -> Show {
+showPrefixEvalOper(name : string) ->  (args : [Show]) -> Show {
     \args -> Show(\conf -> {
         long = name + (if (length(args) == 0) "" else  "(" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + ")");
 		if (strlen(long) <= conf.foldLen) long else {

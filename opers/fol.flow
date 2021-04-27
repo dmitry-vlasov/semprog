@@ -119,7 +119,7 @@ makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOpe
                 flow(p(evalArgs(args, vals, conf)))
             }
         ),
-        showDfEvalOper(name)
+        showPrefixEvalOper(name)
     );
 }
 

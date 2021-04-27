@@ -36,7 +36,7 @@ makeDefOper(def : Def) -> EvalOper {
                 ^semantics(def.term).eval(vals1, conf);
             }
         ),
-        showDfEvalOper(def.name)
+        showPrefixEvalOper(def.name)
     );
 }
 
