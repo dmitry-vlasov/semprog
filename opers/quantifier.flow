@@ -335,6 +335,21 @@ folOpers = [
 			}
 		})
     ),
+	EvalOper(
+        "let", 
+        funcAlgType([AlgTypeVar("A"), AlgTypeVar("A"), AlgTypeVar("V")], AlgTypeVar("V")),
+        \args -> Eval(\vals, conf -> {
+            v = flow2s(args[0].eval(vals, conf));
+			def = args[1].eval(vals, conf);
+            args[2].eval(setTree(vals, v, def), conf);
+        }),
+        \args -> Show(\conf -> {
+            long = "let " + args[0].show(conf) + " = " + args[1].show(conf) + "; " + args[2].show(conf);
+			if (strlen(long) <= conf.foldLen) long else {
+				"let " + args[0].show(conf) + " = " + args[1].show(conf) + ";\n" + args[2].show(conf);
+			}
+		})
+    ),
 ];
 
 makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {

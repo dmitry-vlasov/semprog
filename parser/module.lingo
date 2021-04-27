@@ -21,7 +21,7 @@ type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
 term = 
     or | and | impl | neg | eq | true | false | 
     forall | exists | filter | string |
-    sforall | sexists | sfilter | 
+    sforall | sexists | sfilter | let |
 	lambda0 | lambda1 | lambda2 | lambda3 | 
 	call0 | call1 | call2 | call3 |
     in | sub | equal | neq | less_eq  | less | 
@@ -61,6 +61,8 @@ call2 = "call2" $op ws "(" ws term:fn "," ws func_arg:a_1 "," ws func_arg:a_2 ")
 call3 = "call3" $op ws "(" ws term:fn "," ws func_arg:a_1 "," ws func_arg:a_2 "," ws func_arg:a_3 ")" ws { makeTermFunc($op, :fn, :a_1, :a_2, :a_3) };
 
 call0 = "rec1" $op ws "(" ws term:fn ")" ws { makeTermFunc($op, :fn) };
+
+let = "let" $op ws var_decl:v "=" ws term:def ";" ws term:body { makeTermFunc($op, :v, :def, :body) };
 
 in      = "(" ws term:l "in"  $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };
 sub     = "(" ws term:l "sub" $op ws term:r ")" ws { makeTermFunc($op, :l, :r) };

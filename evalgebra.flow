@@ -1,0 +1,41 @@
+import conf;
+import type;
+import term;
+import common_types;
+
+export {
+    // General semantics: eval function.
+    Eval(
+        eval : (vals : Tree<string, flow>, conf : Conf) -> flow
+    );
+    Show(
+        show : (conf : Conf) -> string
+    );
+
+    // The structure, which defines a sementics for an operation.
+    // Operation may be polymorphic, i.e. may deal on different types of arguments.
+    EvalOper(
+        name : string, 
+        sign : AlgTypeFunc, 
+        eval : (args : [Eval]) -> Eval,
+        show : (args : [Show]) -> Show
+    );
+
+    // A constant provider. When a constant of a certain type is met,
+    // this structure provides its value from a string representation.
+    EvalConst(
+        type : AlgTypeFunc,
+        eval : (string, Conf) -> flow
+     );
+
+    // Algebra: consists of a set of operations with their sementics.
+    EvalAlgebra(name : string, opers : [EvalOper], consts : [EvalConst]);
+
+    // Special constant: undefined value.
+    UndefVal();
+    undefVal = UndefVal();
+
+	// A trivial eval, show functions, which doesn't evaluate anything.
+	undefEval = Eval(\vals, conf -> undefVal);
+	undefShow = Show(\conf -> "");
+}

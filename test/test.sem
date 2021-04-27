@@ -69,11 +69,12 @@ def main() : void {
             call1(lambda1 x : int (x = 2), 3)
         )),
 		("5!(rec1): " + i2s(
+			let x : int = 5;
             call1(
 				rec1(lambda3 i : int, acc : int, fn : (int, int, any) -> int
 					((i = 1) ? acc : call3(fn, (i - 1), (acc * i), fn))
 				), 
-				5
+				x
 			)
         )),
         ("E x : int in [2, 3] (x = 2): " + b2s(E x : int in [2, 3] (x = 2))),
