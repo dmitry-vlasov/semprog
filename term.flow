@@ -1,4 +1,5 @@
-import type;
+import common_types;
+import string_utils;
 
 export {
     // General form of an algebraic term: variable or an operation over other terms.
@@ -27,12 +28,23 @@ export {
 
 algTerm2s(term : AlgTerm) -> string {
     switch (term) {
-        AlgTermVarUse(name, type): name;
-        AlgTermVarDecl(name, type): name;
+        AlgTermVarUse(name, type): name /*+ (if (type == undefAlgType) "" else " : " + algType2s(type))*/;
+        AlgTermVarDecl(name, type): name + " : " + algType2s(type);
         AlgTermFunc(name, args, type): {
-            if (length(args) == 0) name else {
-                    name + "(" + strGlue(map(args, algTerm2s), ", ") + ")";
-            }
+			def_str = \-> {
+				long = name + "(" + strGlue(map(args, algTerm2s), ", ") + ")";
+				str = if (strlen(long) <= 48) long else {
+					name + "(\n" + strIndent(strGlue(map(args, algTerm2s), ",\n")) + "\n)";
+				}
+				str /* + (if (type == undefAlgType) "" else " : " + algType2s(type));*/
+			}
+			if (length(args) == 0) {
+				if (type == stringType)"\"" + name + "\"" else 
+				if (type == intType || type == boolType) name else 
+				def_str();
+			} else {
+				def_str();
+			}
         }
     }
 }

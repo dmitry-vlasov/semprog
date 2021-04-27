@@ -14,6 +14,8 @@ export {
     makeDefOper(def : Def) -> EvalOper;
     module2s(module : Module, conf : Conf) -> string;
     def2s(def : Def, conf : Conf) -> string;
+	moduleTerms2s(module : Module, conf : Conf) -> string;
+	defTerms2s(def : Def, conf : Conf) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
@@ -51,9 +53,16 @@ def2s(def : Def, conf : Conf) -> string {
      strIndent(^shower(def.term).show(conf)) + "\n}\n";
 }
 
-/*typedVar2s(var : AlgTermVarDecl) -> string {
-    var.name + " : " + algType2s(var.type);
-}*/
+moduleTerms2s(module : Module, conf : Conf) -> string {
+    strGlue(map(module.defs, \def -> defTerms2s(def, conf)), "\n");
+}
+
+defTerms2s(def : Def, conf : Conf) -> string {
+    "def " +  def.name + 
+    " (" + strGlue(map(def.vars, algTerm2s), ", ") + ")" + 
+    " : " + algType2s(def.type) + " {\n" +
+     strIndent(algTerm2s(def.term)) + "\n}\n";
+}
 
 typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
     alg_signs = fold(algebra.opers, makeTree(), \acc, oper ->

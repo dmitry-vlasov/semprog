@@ -8,6 +8,7 @@ export {
     showPrefixUnaryEvalOper(name) -> (args : [Show]) -> Show;
     showInfixBinaryEvalOper(name) -> (args : [Show]) -> Show;
     showInfixBracketEvalOper(open : string, close : string, infix : string) -> (args : [Show]) -> Show;
+	showPrefixBracketEvalOper(open : string, close : string, prefix : string) ->  (args : [Show]) -> Show;
     showInfixNaryEvalOper(name : string, arity : int) -> (args : [Show]) -> Show;
     showInfixVariadicEvalOper(name : string) -> (args : [Show]) -> Show;
 
@@ -141,6 +142,15 @@ showInfixBracketEvalOper(open : string, close : string, infix : string) ->  (arg
         long = open + strGlue(map(args, \arg -> arg.show(conf)), infix + " ") + close;
 		if (strlen(long) <= conf.foldLen) long else {
 			open + "\n" + strIndent(strGlue(map(args, \arg -> arg.show(conf)), infix + "\n")) + "\n" + close;
+		}
+	});
+}
+
+showPrefixBracketEvalOper(open : string, close : string, prefix : string) ->  (args : [Show]) -> Show {
+    \args -> Show(\conf -> {
+        long = prefix + open + strGlue(map(args, \arg -> arg.show(conf)), ", ") + close;
+		if (strlen(long) <= conf.foldLen) long else {
+			prefix + open + "\n" + strIndent(strGlue(map(args, \arg -> arg.show(conf)), ",\n")) + "\n" + close;
 		}
 	});
 }

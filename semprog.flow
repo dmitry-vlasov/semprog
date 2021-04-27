@@ -20,7 +20,11 @@ main() -> void {
         } else {
             src = getFileContent(conf.file);
             name = changeFileExt(conf.file, "");
-            module = typecheckModule(parseModule(src, name), fullAlgebra);
+			parsed = parseModule(src, name);
+			if (lookupTreeDef(conf.opts, "show-parsed", "") == "1") {
+            	println("Parsed module " + name + ":\n" + moduleTerms2s(parsed, conf) + "\n\n");
+			} 
+            module = typecheckModule(parsed, fullAlgebra);
 
             algebra = EvalAlgebra("module " + name + " algebra", 
                 fold(module.defs, fullAlgebra.opers, \acc, def -> 

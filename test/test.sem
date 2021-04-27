@@ -1,4 +1,8 @@
 
+def tree_ () : int {
+    (1 + 2)
+}
+
 
 def one_less_two () : bool {
     (1 < 2) 
@@ -8,14 +12,15 @@ def two_less_one () : bool {
     (2 < 1) 
 }
 
-//def one_in_emptyset () : bool  {
-//    (1 in [])
-//}
+/*
+def one_in_emptyset () : bool  {
+    (1 in arr[])
+}
 
-//def x_in_emptyset (x : int) : bool {
-//    (x in [])
-//}
-
+def x_in_emptyset (x : int) : bool {
+    (x in arr[])
+}
+*/
 def mult (x : int, y : int) : int {
     (x * y)
 }
@@ -29,16 +34,46 @@ def min (x : int) : bool {
 }
 
 def x_in_set_one_two (x : int) : bool {
-    (x in [1, 2])
+    (x in arr[1, 2])
 }
 
 
 def fact (x : int) : int {
-    ((x = 0) ? 1 : (1 * x * 1 * fact((x - 1))))
+	((x = 0) ? 1 : (x * fact((x - 1))))
 }
 
 def fact_five() : int {
     fact(5)
+}
+
+def fact_11() : string {
+	i2s(
+		call1(
+			rec1(
+				lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+					if(
+						(i = 1), 
+						acc, 
+						call3(fn, (i - 1), (acc * i), fn)
+					)
+				)
+			), 
+			5
+		)
+	)
+}
+
+def egypt(n : int) : bool {
+	E(x : int, [1 ... n], 
+	E(y : int, [1 ... n],
+	E(z : int, [1 ... n]
+		let s : bool = (((x * x) + (y * y)) = (z * z));
+		s
+	)))
+}
+
+def show_egypt(n : int) : string {
+	("egypt(" + i2s(n) + "): " + b2s(egypt(n)))
 }
 
 def main() : void {
@@ -46,20 +81,53 @@ def main() : void {
         ("5! = " + i2s(fact_five())),
         ("7! = " + i2s(fact(7))),
         ("lambda1 x : int . (x = 2)(2): " + b2s(
-            call1(lambda1 x : int . (x = 2), 2)
+            call1(lambda1(x : int, (x = 2)), 2)
         )),
 
 
         ("lambda1 x : int . (x = 2)(3): " + b2s(
-            call1(lambda1 x : int . (x = 2), 3)
+            call1(lambda1(x : int, (x = 2)), 3)
+        )),
+
+		("lambda2 x : int, y : int . (x = 2)(3): " + i2s(
+            call2(lambda2(x : int, y : int, (x + y)), 3, 4)
+        )),
+	
+		("lambda2 x : int, y : int . (x = 2)(3): " + i2s(
+            call2(
+				lambda2(x : int, y : (int) -> int, y(x)), 
+				3, 
+				lambda1(x : int, (x + 1))
+			)
+        )),
+
+		("fact_11: " + fact_11()),
+
+		("5!(rec1): " + i2s(
+			call1(
+				rec1(
+					lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+						if(
+							(i = 1), 
+							acc, 
+							call3(fn, (i - 1), (acc * i), fn)
+						)
+					)
+				), 
+				5
+			)
         )),
 
 		("5!(rec1): " + i2s(
-			let x : int = 5;
-            call1(
-				rec1(lambda3 i : int, acc : int, fn :  (int, int, any) -> int .
-					((i = 1) ? acc : call3(fn, (i - 1), (acc * i), fn))
-				), 
+			let	x : int = 5;
+			call1(
+				rec1(lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+					if(
+						(i = 1), 
+						acc, 
+						call3(fn, (i - 1), (acc * i), fn)
+					)
+				)), 
 				x
 			)
         )),
@@ -67,24 +135,34 @@ def main() : void {
 		("a2s(evals('56')): " + a2s(evals("56"))),
 
 
-        ("E x : int in [2, 3] (x = 2): " + b2s(E x : int in [2, 3] (x = 2))),
-        ("E x : int in [2, 3] E y : int in [(x + 1), (x * 2)] (((x * 2) + 1) = y): " + 
+        ("E(x : int, arr[2, 3], (x = 2)): " + 
+			b2s(E(x : int, arr[2, 3], (x = 2)))
+		),
+        ("E(x : int, arr[2, 3], E(y : int, arr[(x + 1), (x * 2)] (((x * 2) + 1) = y))): " + 
             b2s(
-                E x : int in [2, 3] E y : int in [(x + 1), (x * 2)] (((x * 2) + 1) = y)
+                E(x : int, arr[2, 3], E(y : int, arr[(x + 1), (x * 2)] (((x * 2) + 1) = y)))
             )
         ),
 
-		
 		(" !! " + 
             b2s(
-                E x : int in [1 ... 5] 
-				E y : int in [1 ... 5]
-				E z : int in [1 ... 5] 
+                E(x : int, [1 ... 5],
+				E(y : int, [1 ... 5],
+				E(z : int, [1 ... 5],
 					//(((x * x) + (y * y)) = (z * z))
 					let s : bool = (((x * x) + (y * y)) = (z * z));
 					s
+				)))
             )
-        )
+        ),
+
+		("egypt(2): " + 
+            b2s(egypt(2))
+        ),
+		show_egypt(2),
+		show_egypt(3),
+		show_egypt(4),
+		show_egypt(5),
     )
 }
 

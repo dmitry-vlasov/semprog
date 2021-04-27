@@ -70,14 +70,13 @@ algType2s(type : AlgType) -> string {
     switch (type) {
         AlgTypeVar(name): name;
         AlgTypeFunc(name, args): {
-            if (name == "ar") "[" + algType2s(args[0]) + "]" else 
-            if (name == "fn") "(" + strGlue(map(tail(args), algType2s), ", ") + ") -> " + algType2s(args[0]) else
+            if (name == "ar") "[" + (if (length(args) == 0) "" else algType2s(args[0])) + "]" else 
+            if (name == "fn") "(" + strGlue(map(tail(args), algType2s), ", ") + ") -> " + (if (length(args) == 0) "" else algType2s(args[0])) else
             if (name == "U")  "(" + strGlue(map(args, algType2s), "U") + ")" else
             if (name == "x")  "(" + strGlue(map(args, algType2s), "x") + ")" else
 			if (name == "tp") "(" + strGlue(map(args, algType2s), ", ") + ")" else
-            if (name == "...") algType2s(args[0]) + ", ... ," + algType2s(args[0]) else 
-            name + (if (length(args) == 0) "" else 
-            "(" + strGlue(map(args, algType2s), ", ") + ")");
+            if (name == "...") { if (length(args) == 0) "..." else algType2s(args[0]) + ", ... ," + algType2s(args[0]) } else 
+			name + (if (length(args) == 0) "" else "(" + strGlue(map(args, algType2s), ", ") + ")");
         }
     }
 }
@@ -192,27 +191,31 @@ matchTypes(patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -
             None();
         }
     } else {
-        if (length(tps) == 0) {
-            None();
-        } else {
-            variadic_pattern = unwrapVariadicAlgType(patterns[0]);
-            if (variadic_pattern == undefAlgType) {
-                maybeBind(
-                    matchType(patterns[0], tps[0], acc),
-                    \sub -> matchTypes(tail(patterns), tail(tps), sub)
-                );
-            } else {
-                //println("variafic pattern: " + algType2s(variadic_pattern));
-                maybeBind(
-                    matchType(variadic_pattern, tps[0], acc),
-                    \sub -> {
-                        variadic_type = instantiateType(variadic_pattern, sub);
-                        //println("variadic_type: " + algType2s(variadic_type));
-                        matchVariadicTypes(variadic_type, tail(patterns), tail(tps), sub);
-                    }
-                );
-            }
-        }
+		variadic_pattern = unwrapVariadicAlgType(patterns[0]);
+		if (variadic_pattern == undefAlgType) {
+			if (length(tps) == 0) {
+				None();
+			} else {
+				maybeBind(
+					matchType(patterns[0], tps[0], acc),
+					\sub -> matchTypes(tail(patterns), tail(tps), sub)
+				);
+			}
+		} else {
+			if (length(tps) == 0) {
+				Some(acc);
+			} else {
+				//println("variafic pattern: " + algType2s(variadic_pattern));
+				maybeBind(
+					matchType(variadic_pattern, tps[0], acc),
+					\sub -> {
+						variadic_type = instantiateType(variadic_pattern, sub);
+						//println("variadic_type: " + algType2s(variadic_type));
+						matchVariadicTypes(variadic_type, tail(patterns), tail(tps), sub);
+					}
+				);
+			}
+		}
     }
 
     /*println(

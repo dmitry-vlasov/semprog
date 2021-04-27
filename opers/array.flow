@@ -78,13 +78,13 @@ arrayOpers = [
         showPrefixEvalOper("sublists")
     ),
     EvalOper(
-        "array",
+        "arr",
         funcAlgType(
             [variadicAlgType(AlgTypeVar("T"))],
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf -> map(args, \arg -> arg.eval(vals, conf))),
-        showInfixBracketEvalOper("[", "]", ",")
+        showPrefixBracketEvalOper("[", "]", "arr")
     ),
     EvalOper(
         "...", 

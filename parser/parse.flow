@@ -18,64 +18,31 @@ getParser() -> [PegOp] {
 }
 
 term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
+	// Types
 	Pair("makeTypeConst", \s -> constAlgType(flow2s(s[0]))),
 	Pair("makeTypeArray", \s -> arrayAlgType(s[0])),
-	Pair("makeTypeFn", \s -> funcAlgType(s[0], s[1])),
-	Pair("makeTypeInfix", \s -> {
-		as = cast(s[0] : flow -> [Pair<AlgType, string>]);
-		ops = map(as, \a -> a.second);
-		op = ops[0];
-		if (forall(ops, \o -> op == o)) {
-			AlgTypeFunc(op, map(as, \a -> a.first));
-		} else {
-			println("different infix operators: '" + strGlue(ops, ", ") + "'");
-			AlgTypeFunc("", []);
-		}
-	}),
+	Pair("makeTypeFn",    \s -> funcAlgType(s[0], s[1])),
+	Pair("makeTypeInfix", \s ->
+		AlgTypeFunc(s[0], concat([s[1], s[2]], cast(s[3] : flow -> [flow])))
+	),
 	Pair("makeTypePrefix", \s -> AlgTypeFunc(s[0], s[1])),
-	Pair("makeStringConst", \s -> AlgTermFunc(s[0], [], stringType)),
 
-	Pair("makeTermFunc", \s -> {
-		args = tail(s);
-		id = flow2s(s[0]);
-		if (length(args) > 0) {
-			AlgTermFunc(id, args, undefAlgType);
-		} else if (isDigits(id)) {
-			AlgTermFunc(id, [], intType);
-		} else {
-			AlgTermFunc(id, [], stringType);
-		}
-	}),
-	Pair("makeTermFuncNary", \s -> {
-		id = flow2s(s[0]);
-		args = cast(s[1] : flow -> [flow]);
-		AlgTermFunc(id, args, undefAlgType);
-	}),
-	Pair("makeTermFuncNary1", \s -> {
-		id = flow2s(s[0]);
-		arg = s[1];
-		args = cast(s[2] : flow -> [flow]);
-		AlgTermFunc(id, concat([arg], args), undefAlgType);
-	}),
-	Pair("makeTermVarUse",  \s -> {
-		AlgTermVarUse(flow2s(s[0]), undefAlgType)
-	}),
-	Pair("makeTermVarDecl",  \s -> {
-		AlgTermVarDecl(flow2s(s[0]), cast(s[1] : flow -> AlgType));
-	}),
-	Pair("makeArray", \s -> {
-		AlgTermFunc("array", cast(s[1] : flow -> [flow]), undefAlgType)
-	}),
-	Pair("makeQuantifier", \s -> { 
-		quant = flow2s(s[0]);
-		AlgTermFunc(
-			quant, tail(s),
-			undefAlgType
-		);
-	}),
-	Pair("makeArrFromTo", \s -> {
-		AlgTermFunc(flow2s(s[0]), tail(s), undefAlgType)
-	}),
+	// Terms
+	Pair("makeTermInfix", \s -> 
+		AlgTermFunc(s[0], concat([s[1], s[2]], cast(s[3] : flow -> [flow])), undefAlgType)
+	),
+	Pair("makeTermPrefix",  \s -> AlgTermFunc(s[0], s[1], undefAlgType)),
+	Pair("makeTermQuant",   \s -> 
+		AlgTermFunc(s[0], concat(cast(s[1] : flow -> [flow]), cast(s[2] : flow -> [flow])), undefAlgType)
+	),
+	Pair("makeTermLet",   \s -> 
+		AlgTermFunc(s[0], [s[1], s[2], s[3]], undefAlgType)
+	),
+	Pair("makeTermString",  \s -> AlgTermFunc(s[0], [], stringType)),
+	Pair("makeTermInt",     \s -> AlgTermFunc(s[0], [], intType)),
+	Pair("makeTermBool",    \s -> AlgTermFunc(s[0], [], boolType)),
+	Pair("makeTermVarUse",  \s -> AlgTermVarUse(s[0], undefAlgType)),
+	Pair("makeTermVarDecl", \s -> AlgTermVarDecl(s[0], s[1])),
 ]);
 
 module_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([

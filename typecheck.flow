@@ -31,57 +31,71 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
                         default: acc.second;
                     }
                 );
-            }).first;
-            arg_types = map(typed_args, \arg -> arg.type);
-            val_type = 
+            })
+			arg_types = map(typed_args.first, \arg -> arg.type);
+			find_val_type = \ops -> {
+				fits = filtermap(ops, \op -> 
+					maybeMap(
+						matchTypes(funcArgTypes(op), arg_types, makeTree()),
+						\sub -> Pair(op, sub)
+					)
+				);
+				if (length(fits) == 0) {
+					println("(B) no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+					println("ops: " + strGlue(map(ops, \op -> algType2s(op)), ", "));
+					println("term: " + algTerm2s(term));
+					undefAlgType;
+				} else if (length(fits) > 1) {
+					println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+					undefAlgType;
+				} else {
+					op = fits[0].first;
+					sub = fits[0].second;
+					if (op.name != "fn") {
+						println("NOT fn: " + op.name);
+						undefAlgType 
+					} else {
+						ret = instantiateType(funcValType(op), sub);
+						if (ret == undefAlgType) {
+							println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
+						}
+						ret;
+					}
+				}
+			}
+			surrender = \msg-> {
+				if (type == undefAlgType) {
+					println(msg + "unknown oprator: " + name);
+				}
+				type
+			}
+            val_type = {
                 if (exists(arg_types, \t -> t == undefAlgType)) {
                     println(
 						"untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") + "\n" +
 						"\t" + algTerm2s(term)
 					);
                     undefAlgType;
-                } else 
-                switch (lookupTree(signs, name))  {
-                    Some(ops): {
-                        fits = filtermap(ops, \op -> 
-                            maybeMap(
-                                matchTypes(funcArgTypes(op), arg_types, makeTree()),
-                                \sub -> Pair(op, sub)
-                            )
-                        );
-                        if (length(fits) == 0) {
-                            println("(B) no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-                            println("ops: " + strGlue(map(ops, \op -> algType2s(op)), ", "));
-                            println("term: " + algTerm2s(term));
-                            undefAlgType;
-                        } else if (length(fits) > 1) {
-                            println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-                            undefAlgType;
-                        } else {
-                            op = fits[0].first;
-                            sub = fits[0].second;
-                            if (op.name != "fn") {
-								println("NOT fn: " + op.name);
-								undefAlgType 
-							} else {
-								ret = instantiateType(funcValType(op), sub);
-								if (ret == undefAlgType) {
-									println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
-								}
-								ret;
+                } else {
+					switch (lookupTree(signs, name))  {
+						Some(ops): find_val_type(ops);
+						None(): {
+							switch (lookupTree(typed_args.second, name)) {
+								Some(var_type): {
+									switch (var_type) {
+										AlgTypeFunc(__,__): find_val_type([var_type]);
+										default: surrender("A_");
+									}
+								} 
+								None(): surrender("B_");
 							}
-                        }
-                    }
-					None(): {
-						if (type == undefAlgType) {
-							println("unknown oprator: " + name);
 						}
-						type
-					}
-				};
+					};
+				}
+			}
             AlgTermFunc(term with 
                 type = val_type,
-                args = typed_args
+                args = typed_args.first
             );
         }
     }
