@@ -94,8 +94,46 @@ evalAlgTerm(
 											arg_evals[1].eval(vals, conf), 
 											arg_evals[2].eval(vals, conf)
 										);
+									} else if (length(arg_evals) == 4) {
+										fn = cast(func_var : flow -> (flow, flow, flow, flow) -> flow);
+										fn(
+											arg_evals[0].eval(vals, conf), 
+											arg_evals[1].eval(vals, conf), 
+											arg_evals[2].eval(vals, conf),
+											arg_evals[3].eval(vals, conf), 
+										);
+									} else if (length(arg_evals) == 5) {
+										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow) -> flow);
+										fn(
+											arg_evals[0].eval(vals, conf), 
+											arg_evals[1].eval(vals, conf), 
+											arg_evals[2].eval(vals, conf),
+											arg_evals[3].eval(vals, conf), 
+											arg_evals[4].eval(vals, conf), 
+										);
+									} else if (length(arg_evals) == 6) {
+										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow, flow) -> flow);
+										fn(
+											arg_evals[0].eval(vals, conf), 
+											arg_evals[1].eval(vals, conf), 
+											arg_evals[2].eval(vals, conf),
+											arg_evals[3].eval(vals, conf), 
+											arg_evals[4].eval(vals, conf), 
+											arg_evals[5].eval(vals, conf), 
+										);
+									} else if (length(arg_evals) == 7) {
+										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow, flow, flow) -> flow);
+										fn(
+											arg_evals[0].eval(vals, conf), 
+											arg_evals[1].eval(vals, conf), 
+											arg_evals[2].eval(vals, conf),
+											arg_evals[3].eval(vals, conf), 
+											arg_evals[4].eval(vals, conf), 
+											arg_evals[5].eval(vals, conf), 
+											arg_evals[6].eval(vals, conf), 
+										);
 									} else {
-										println("Arity of functional variable " + name + " is too high - not supproted yet");
+										println("Arity " + i2s(length(arg_evals)) + " of functional variable " + name + " is too high - not supproted yet");
 										flow(undefVal);
 									}
 								}
