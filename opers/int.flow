@@ -72,7 +72,7 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
                 }
             }
         ),
-        showUnaryEvalOper(name)
+        showPrefixUnaryEvalOper(name)
     )
 }
 
