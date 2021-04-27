@@ -4,82 +4,91 @@ import common_types;
 
 export {
     parseModule(str : string, name : string) -> Module;
+	parseTerm(str : string) -> AlgTerm;
 }
 
-parseModule(str : string, name : string) -> Module {
-    e_gr = "#include parser/module.lingo";
-	parsic(compilePegGrammar(e_gr), str, 
-        SemanticActions(
-            mergeTree(defaultPegActions.t,
-            pairs2tree([
-                Pair("makeModule", \s -> Module(name, cast(s[0] : flow -> [Def]))),
-                Pair("makeDef", \s -> Def(
-					flow2s(s[0]), 
-					cast(s[1] : flow -> [AlgTermVarDecl]), 
-					cast(s[2] : flow -> AlgType), 
-					cast(s[3] : flow -> AlgTerm)
-				)),
-                Pair("makeTypeConst", \s -> constAlgType(flow2s(s[0]))),
-                Pair("makeTypeArray", \s -> arrayAlgType(s[0])),
-                Pair("makeTypeFn", \s -> funcAlgType(s[0], s[1])),
-                Pair("makeTypeProd", \s -> prodAlgType(s[0])),
-                Pair("makeTypeUnion", \s -> unionAlgType(s[0])),
-                Pair("makeStringConst", \s -> AlgTermFunc(s[0], [], stringType)),
+parser : ref [PegOp] = ref [];
 
-                Pair("makeTermFunc", \s -> {
-                    //println("makeBoolFunc: " + flow2s(s[0]) + " = " + toString(s));
-                    //args = cast(tail(s) : [flow] -> [AlgTerm]);
-					args = tail(s);
-                    id = flow2s(s[0]);
-                    if (length(args) > 0) {
-                        AlgTermFunc(id, args, undefAlgType);
-                    } else if (isDigits(id)) {
-                        AlgTermFunc(id, [], intType);
-                    } else {
-                        AlgTermFunc(id, [], stringType);
-                    }
-                }),
-                Pair("makeTermFuncNary", \s -> {
-                    id = flow2s(s[0]);
-                    args = cast(s[1] : flow -> [flow]);
-                    AlgTermFunc(id, args, undefAlgType);
-                }),
-                Pair("makeTermFuncNary1", \s -> {
-                    id = flow2s(s[0]);
-                    arg = s[1];
-                    args = cast(s[2] : flow -> [flow]);
-                    AlgTermFunc(id, concat([arg], args), undefAlgType);
-                }),
-                Pair("makeTermVarUse",  \s -> {
-                    //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
-                    AlgTermVarUse(flow2s(s[0]), undefAlgType)
-                }),
-				Pair("makeTermVarDecl",  \s -> {
-                    //println("makeIntVar: " + flow2s(s[0]) + " = " + toString(s));
-                    AlgTermVarDecl(flow2s(s[0]), cast(s[1] : flow -> AlgType));
-                }),
-                Pair("makeArray", \s -> {
-                    //println("makeArray: " + flow2s(s[0]) + " = " + toString(s));
-                    //println(s[1]);
-                    AlgTermFunc("array", cast(s[1] : flow -> [flow]), undefAlgType)
-                }),
-                Pair("makeQuantifier", \s -> { 
-                    //println(s[1]);
-					quant = flow2s(s[0]);
-                    //var = cast(s[1] : flow -> AlgTermVarUse);
-					//type = cast(s[2] : flow -> AlgType);
-                    //println("makeQuantifier: " + flow2s(s[0]) + " " + var.name + " = " + toString(s));
-                    AlgTermFunc(
-						quant, tail(s),
-						//concat([AlgTermVarDecl(var.name, type)], subrange(s, 3, length(s) - 3)), 
-						undefAlgType
-					);
-                }),
-                Pair("makeArrFromTo", \s -> { 
-                    //println("makeArrFromTo: " + flow2s(s[0]) + " = " + toString(s));
-                    AlgTermFunc(flow2s(s[0]), tail(s), undefAlgType)
-                }),
-            ]))
-        )
-    );
+getParser() -> [PegOp] {
+	if (^parser == []) {
+		e_gr = "#include parser/module.lingo";
+		parser := compilePegGrammar(e_gr);
+	}
+	^parser;
+}
+
+term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
+	Pair("makeTypeConst", \s -> constAlgType(flow2s(s[0]))),
+	Pair("makeTypeArray", \s -> arrayAlgType(s[0])),
+	Pair("makeTypeFn", \s -> funcAlgType(s[0], s[1])),
+	Pair("makeTypeProd", \s -> prodAlgType(s[0])),
+	Pair("makeTypeUnion", \s -> unionAlgType(s[0])),
+	Pair("makeStringConst", \s -> AlgTermFunc(s[0], [], stringType)),
+
+	Pair("makeTermFunc", \s -> {
+		args = tail(s);
+		id = flow2s(s[0]);
+		if (length(args) > 0) {
+			AlgTermFunc(id, args, undefAlgType);
+		} else if (isDigits(id)) {
+			AlgTermFunc(id, [], intType);
+		} else {
+			AlgTermFunc(id, [], stringType);
+		}
+	}),
+	Pair("makeTermFuncNary", \s -> {
+		id = flow2s(s[0]);
+		args = cast(s[1] : flow -> [flow]);
+		AlgTermFunc(id, args, undefAlgType);
+	}),
+	Pair("makeTermFuncNary1", \s -> {
+		id = flow2s(s[0]);
+		arg = s[1];
+		args = cast(s[2] : flow -> [flow]);
+		AlgTermFunc(id, concat([arg], args), undefAlgType);
+	}),
+	Pair("makeTermVarUse",  \s -> {
+		AlgTermVarUse(flow2s(s[0]), undefAlgType)
+	}),
+	Pair("makeTermVarDecl",  \s -> {
+		AlgTermVarDecl(flow2s(s[0]), cast(s[1] : flow -> AlgType));
+	}),
+	Pair("makeArray", \s -> {
+		AlgTermFunc("array", cast(s[1] : flow -> [flow]), undefAlgType)
+	}),
+	Pair("makeQuantifier", \s -> { 
+		quant = flow2s(s[0]);
+		AlgTermFunc(
+			quant, tail(s),
+			undefAlgType
+		);
+	}),
+	Pair("makeArrFromTo", \s -> {
+		AlgTermFunc(flow2s(s[0]), tail(s), undefAlgType)
+	}),
+]);
+
+module_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
+	Pair("makeModule", \s -> Module("", cast(s[0] : flow -> [Def]))),
+	Pair("makeDef", \s -> Def(
+		flow2s(s[0]), 
+		cast(s[1] : flow -> [AlgTermVarDecl]), 
+		cast(s[2] : flow -> AlgType), 
+		cast(s[3] : flow -> AlgTerm)
+	))
+]);
+
+parseModule(str : string, name : string) -> Module {
+	module : Module = parsic(getParser(), str, 
+		SemanticActions(mergeTree(defaultPegActions.t,
+			mergeTree(term_semantic_actions, module_semantic_actions)
+		))
+	);
+	Module(module with name = name);
+}
+
+parseTerm(str : string) -> AlgTerm {
+	parsic(getParser(), str, 
+		SemanticActions(mergeTree(defaultPegActions.t, term_semantic_actions))
+	);
 }

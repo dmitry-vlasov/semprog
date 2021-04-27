@@ -11,13 +11,13 @@ export {
         term : AlgTerm
     );
 
-    makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper;
-    module2s(module : Module, shower : (AlgTerm) -> Show, conf : Conf) -> string;
-    def2s(def : Def, shower : (AlgTerm) -> Show, conf : Conf) -> string;
+    makeDefOper(def : Def) -> EvalOper;
+    module2s(module : Module, conf : Conf) -> string;
+    def2s(def : Def, conf : Conf) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
 }
 
-makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper {
+makeDefOper(def : Def) -> EvalOper {
     EvalOper(
         def.name,
         funcAlgType(map(def.vars, \v -> v.type), def.term.type),
@@ -33,22 +33,22 @@ makeDefOper(def : Def, evaluator : ref (AlgTerm) -> Eval) -> EvalOper {
                 vals1 = foldi(def.vars, vals, \i, acc, var -> 
                     setTree(acc, var.name, arg_vals[i])
                 );
-                ^evaluator(def.term).eval(vals1, conf);
+                ^semantics(def.term).eval(vals1, conf);
             }
         ),
         showDfEvalOper(def.name)
     );
 }
 
-module2s(module : Module, shower : (AlgTerm) -> Show, conf : Conf) -> string {
-    strGlue(map(module.defs, \def -> def2s(def, shower, conf)), "\n");
+module2s(module : Module, conf : Conf) -> string {
+    strGlue(map(module.defs, \def -> def2s(def, conf)), "\n");
 }
 
-def2s(def : Def, shower : (AlgTerm) -> Show, conf : Conf) -> string {
+def2s(def : Def, conf : Conf) -> string {
     "def " +  def.name + 
     " (" + strGlue(map(def.vars, algTerm2s), ", ") + ")" + 
     " : " + algType2s(def.type) + " {\n" +
-     strIndent(shower(def.term).show(conf)) + "\n}\n";
+     strIndent(^shower(def.term).show(conf)) + "\n}\n";
 }
 
 /*typedVar2s(var : AlgTermVarDecl) -> string {

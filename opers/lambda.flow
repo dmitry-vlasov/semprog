@@ -30,7 +30,7 @@ makeIf(type : AlgType) -> EvalOper {
 makeLambda(var_type : AlgType, body : AlgType) -> EvalOper {
     EvalOper(
         "lambda", 
-        funcAlgType([var_type, val_type], funcAlgType([var_type], val_type)),
+        funcAlgType([var_type], funcAlgType([var_type], val_type)),
         \args -> Eval(\vals, conf -> {
             v = flow2s(args[0].eval(vals, conf));
             \x -> args[0].eval(setTree(vals, v, x), conf)

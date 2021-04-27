@@ -23,24 +23,21 @@ main() -> void {
             name = changeFileExt(conf.file, "");
             module = typecheckModule(parseModule(src, name), fullAlgebra);
 
-			// initial dummy eval func
-            eval = ref \term -> undefEval;
-
             algebra = EvalAlgebra("module " + name + " algebra", 
                 fold(module.defs, fullAlgebra.opers, \acc, def -> 
-                    concat(acc, [makeDefOper(def, eval)])
+                    concat(acc, [makeDefOper(def)])
                 ),
                 fullAlgebra.consts
             );
+			semantics := algebraEval(algebra);
+			shower := algebraShow(algebra);
 
 			if (lookupTreeDef(conf.opts, "show-algebra", "") == "1") {
 				println(evalAlgebra2s(algebra));
 			} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
-				show = algebraShow(algebra);
-            	println("Module " + name + ":\n" + module2s(module, show, conf) + "\n\n");
+            	println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
 			} else {
-				eval := algebraEval(algebra);
-            	^eval(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
+            	^semantics(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
             	{}
 			}
         }

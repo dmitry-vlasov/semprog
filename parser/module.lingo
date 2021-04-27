@@ -1,4 +1,5 @@
-module = ws (def)*:ds { makeModule(:ds) };
+toplevel = ws (!"def" term | module);
+module = (def)*:ds { makeModule(:ds) };
 
 def = "def" ws id $n ws "(" ws (def_var)*:vs ")" ws ":" ws type:tp "{" ws term:t "}" ws { makeDef(:n, :vs, :tp, :t)};
 def_var = var_decl:v ("," ws)? { :v };

@@ -1,6 +1,7 @@
 import shower;
 import dynamic;
 import common_types;
+import parser/parse;
 
 export {
     // String operations
@@ -56,5 +57,29 @@ stringOpers = [
             }
         ),
         showDfEvalOper("b2s")
+    ),
+	EvalOper("a2s", 
+        funcAlgType([anyType], stringType), 
+        \args -> Eval(\vals, conf -> 
+            if (length(args) != 1) flow(undefVal) else {
+				str = toString(args[0].eval(vals, conf));
+                flow(trim2(str, "\""));
+            }
+        ),
+        showDfEvalOper("a2s")
+    ),
+	EvalOper("evals", 
+        funcAlgType([stringType], anyType), 
+        \args -> Eval(\vals, conf -> 
+            if (length(args) != 1) flow(undefVal) else {
+				src = flow2s(args[0].eval(vals, conf));
+				term = parseTerm(src);
+				/*println(
+					"TERM: \n" + strIndent(src) + "\n=\n" + strIndent(^shower(term).show(conf)) + "\n"
+				);*/
+                ^semantics(term).eval(vals, conf);
+            }
+        ),
+        showDfEvalOper("evals")
     )
 ];

@@ -26,7 +26,7 @@ export {
     EvalConst(
         type : AlgTypeFunc,
         eval : (string, Conf) -> flow
-     );
+    );
 
     // Algebra: consists of a set of operations with their sementics.
     EvalAlgebra(name : string, opers : [EvalOper], consts : [EvalConst]);
@@ -43,6 +43,11 @@ export {
 	evalAlgebra2s(alg : EvalAlgebra) -> string;
 
 	evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow];
+
+	// A global function, which makes eval function for each term. Initially it's trivial.
+	semantics : ref (AlgTerm) -> Eval = ref \term -> undefEval;
+
+	shower : ref (AlgTerm) -> Show = ref \term -> undefShow;
 }
 
 
