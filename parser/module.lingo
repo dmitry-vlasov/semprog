@@ -6,16 +6,18 @@ def_var = var_decl:v ("," ws)? { :v };
 
 // Types
 
-type = type_arr | type_fn | type_prod | type_union | type_const ;
+type = type_arr | type_fn | type_infix | type_prefix | type_const ;
 
-type_const = id $n ws { makeTypeConst($n) };
-type_arr = "[" ws type:t "]" ws { makeTypeArray(:t) } ;
-type_fn = "(" ws (type_fn_arg)*:as ")" ws "->" ws type:v { makeTypeFn(:as, :v) };
-    type_fn_arg = type:t ("," ws)? { :t};
-type_prod =  "(" ws (type_prod_arg)*:as ")" ws { makeTypeProd(:as) };
-    type_prod_arg = type:t ("X" ws)? { :t };
-type_union =  "(" ws (type_union_arg)*:as ")" ws { makeTypeUnion(:as) };
-    type_union_arg = type:t ("U" ws)? { :t };
+type_arr    = "[" ws type:t "]" ws { makeTypeArray(:t) } ;
+type_fn     = "(" ws (type_fn_arg)*:as ")" ws "->" ws type:v { makeTypeFn(:as, :v) };
+type_infix  = "(" ws (type_inf_arg)+:as ")" ws { makeTypeInfix(:as) };
+type_prefix = type_id:op ws "(" ws (type_fn_arg)*:as ")" ws { makeTypePrefix(:op, :as) };
+type_const  = type_id:op ws { makeTypeConst(:op) };
+type_fn_arg  = type:t (',' ws)? { :t };
+type_inf_arg = type:t (type_id:op ws)? { Pair(:t, :op) };
+
+type_id   = (!bad_type_id_char char_)+ $id { $id };
+bad_type_id_char = ws_ | '(' | ')' | '[' | ']' | '{' | '}' | ',';
 
 // Terms (general algebraic representation)
 
@@ -52,9 +54,9 @@ sfilter = "SF" $q ws var_decl:v "in" ws term:a term:f { makeQuantifier($q, :v, :
 string = '"' (!'"' char_)* $s '"' ws { makeStringConst($s) };
 
 lambda0 = "lambda0" $op ws term:body { makeTermFunc($op, :body) };
-lambda1 = "lambda1" $op ws var_decl:v term:body { makeTermFunc($op, :v, :body) };
-lambda2 = "lambda2" $op ws var_decl:v1 "," ws var_decl:v2 term:body { makeTermFunc($op, :v1, :v2, :body) };
-lambda3 = "lambda3" $op ws var_decl:v1 "," ws var_decl:v2 "," ws var_decl:v3 term:body { makeTermFunc($op, :v1, :v2, :v3, :body) };
+lambda1 = "lambda1" $op ws var_decl:v "." ws term:body { makeTermFunc($op, :v, :body) };
+lambda2 = "lambda2" $op ws var_decl:v1 "," ws var_decl:v2 "." ws term:body { makeTermFunc($op, :v1, :v2, :body) };
+lambda3 = "lambda3" $op ws var_decl:v1 "," ws var_decl:v2 "," ws var_decl:v3 "." ws term:body { makeTermFunc($op, :v1, :v2, :v3, :body) };
 
 call0 = "call0" $op ws "(" ws term:fn ")" ws { makeTermFunc($op, :fn, :as) };
 call1 = "call1" $op ws "(" ws term:fn "," ws func_arg:a ")" ws { makeTermFunc($op, :fn, :a) };
@@ -110,6 +112,7 @@ letter = 'a'-'z' | 'A'-'Z' | '_';
 
 const_int = digit+ $s ws { makeTermFunc($s) };
 digit = '0'-'9';
+
 
 ws = ws_*;
 ws_ = ' ' | '\t' | '\n' | '\r' | scomment | mcomment;

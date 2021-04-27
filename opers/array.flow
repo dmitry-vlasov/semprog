@@ -103,11 +103,13 @@ arrayOpers = [
         funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2")], prodAlgType([AlgTypeVar("T1"), AlgTypeVar("T2")])),
         \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
-                low = flow2i(args[0].eval(vals, conf));
-                hi  = flow2i(args[1].eval(vals, conf));
-                enumFromTo(low, hi);
+                a1 = cast(args[0].eval(vals, conf) : flow -> [flow]);
+                a2 = cast(args[1].eval(vals, conf) : flow -> [flow]);
+                fold(a1, [], \acc, x -> 
+					fold(a2, acc, \ac, y -> concat(ac, [Pair(x, y)]))
+				);
             }
         ),
-        showInfixBracketEvalOper("[", "]", "...")
+        showInfixBinaryEvalOper("x")
     )
 ];

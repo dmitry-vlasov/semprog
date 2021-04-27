@@ -21,8 +21,18 @@ term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
 	Pair("makeTypeConst", \s -> constAlgType(flow2s(s[0]))),
 	Pair("makeTypeArray", \s -> arrayAlgType(s[0])),
 	Pair("makeTypeFn", \s -> funcAlgType(s[0], s[1])),
-	Pair("makeTypeProd", \s -> prodAlgType(s[0])),
-	Pair("makeTypeUnion", \s -> unionAlgType(s[0])),
+	Pair("makeTypeInfix", \s -> {
+		as = cast(s[0] : flow -> [Pair<AlgType, string>]);
+		ops = map(as, \a -> a.second);
+		op = ops[0];
+		if (forall(ops, \o -> op == o)) {
+			AlgTypeFunc(op, map(as, \a -> a.first));
+		} else {
+			println("different infix operators: '" + strGlue(ops, ", ") + "'");
+			AlgTypeFunc("", []);
+		}
+	}),
+	Pair("makeTypePrefix", \s -> AlgTypeFunc(s[0], s[1])),
 	Pair("makeStringConst", \s -> AlgTermFunc(s[0], [], stringType)),
 
 	Pair("makeTermFunc", \s -> {
