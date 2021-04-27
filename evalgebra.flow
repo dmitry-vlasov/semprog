@@ -38,4 +38,23 @@ export {
 	// A trivial eval, show functions, which doesn't evaluate anything.
 	undefEval = Eval(\vals, conf -> undefVal);
 	undefShow = Show(\conf -> "");
+
+	// Show info about algebra, mainly its signature
+	evalAlgebra2s(alg : EvalAlgebra) -> string;
+
+	evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow];
+}
+
+
+evalAlgebra2s(alg : EvalAlgebra) -> string {
+    alg.name + ":\n"+ 
+    strGlue(map(alg.opers, \op -> "\t" + op.name + " : " + algType2s(op.sign) + "\n"),  "") +
+    (if (length(alg.consts) == 0) "" else 
+        "\n" + 
+        strGlue(map(alg.consts, \const -> "\tconst (string) -> " + algType2s(const.type) + "\n"), "")
+    );
+}
+
+evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow] {
+    map(args, \arg -> arg.eval(vals, conf));
 }

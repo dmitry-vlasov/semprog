@@ -1,0 +1,100 @@
+import evalgebra;
+
+export {
+    algebraEval(alg : EvalAlgebra) -> (AlgTerm) -> Eval;
+}
+
+algebraEval(alg : EvalAlgebra) -> (AlgTerm) -> Eval {
+    opers = fold(alg.opers, makeTree(), \acc, op -> 
+        setTree(acc, op.name, concat(lookupTreeDef(acc, op.name, []), [op]))
+    );
+    consts = fold(alg.consts, makeTree(), \acc, const -> {
+        if (containsKeyTree(acc, const.type)) {
+            println("constant provider for type " + algType2s(const.type) + " is already provided");
+        }
+        setTree(acc, const.type, const);
+    });
+    \term -> evalAlgTerm(term, opers, consts);
+}
+
+evalAlgTerm(
+    term : AlgTerm,
+    opers : Tree<string, [EvalOper]>,
+    consts : Tree<AlgTypeFunc, EvalConst>
+) -> Eval {
+    switch (term) {
+        AlgTermVarUse(name, type): {
+            Eval(\vals, conf -> {
+                val = lookupTreeDef(vals, name, flow(undefVal));
+                if (conf.trace) {
+                    println(strIndentMany("var " + name + " = " + toString(val), ^(conf.callDepth)));
+                }
+                val;
+            });
+        }
+        AlgTermVarDecl(name, __): {
+            Eval(\vals, conf -> {
+                flow(name);
+            });
+        }
+        AlgTermFunc(name, args, type): {
+            arg_types = map(args, \arg -> arg.type);
+            switch (lookupTree(opers, name)) {
+                Some(ops): {
+                    fits = filter(ops, \op -> 
+                        isSome(matchTypes(funcArgTypes(op.sign), arg_types, makeTree()))
+                    );
+                    if (length(fits) == 0) {
+                        println(
+                            "No operator " + name + " matches argument types: [" + 
+                            strGlue(map(arg_types, \t -> algType2s(t)), ", ") + "]"
+                        );
+                        flow(undefVal);
+                    } else if (length(fits) > 1) {
+                        println(
+                            "Ambigous operator " + name + " matching with argument types: [" + 
+                            strGlue(map(arg_types, \t -> algType2s(t)), ", ") + "]"
+                        );
+                        flow(undefVal);
+                    } else {
+                        //call_depth = ^(conf.callDepth);
+                        //conf.callDepth := call_depth + 1;
+                        eval = fits[0].eval(map(args, \arg -> evalAlgTerm(arg, opers, consts)));
+                        //conf.callDepth := call_depth;
+                        Eval(\vals, conf -> {
+                            if (conf.trace) {
+                                println(strIndentMany("applying " + name, ^(conf.callDepth)));
+                            }
+                            eval.eval(vals, conf);
+                        });
+                    }
+                } 
+                None(): {
+					if (length(args) != 0) {
+						if (!containsKeyTree(opers, name)) {
+							println("Unknown operator: " + name);
+						}
+						Eval(\vals, conf -> {
+							flow(undefVal)
+						});
+					} else {
+						switch (lookupTree(consts, type)) {
+							Some(const): {
+								Eval(\vals, conf -> {
+									if (conf.trace) {
+									println(strIndentMany("const: " + name, ^(conf.callDepth)));
+									}
+									flow(const.eval(name, conf));
+								});
+							}
+							None(): {
+								println("Constant: " + name + " of type " + toString(type) +  " is uniterpreted");
+								Eval(\vals, conf -> flow(undefVal));
+							}
+						}
+					}
+				}
+			}
+        }
+    }
+}

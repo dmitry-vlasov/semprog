@@ -3,6 +3,7 @@ import fs/filesystem;
 import parser/parse;
 import typecheck;
 import module;
+import evaluator;
 import algebra;
 
 main() -> void {

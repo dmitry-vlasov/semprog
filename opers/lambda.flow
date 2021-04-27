@@ -1,4 +1,4 @@
-import eval;
+import shower;
 import dynamic;
 
 export {
@@ -20,9 +20,9 @@ makeIf(type : AlgType) -> EvalOper {
                 }
             }
         ),
-        \args -> Show(\->
+        \args -> Show(\conf ->
             if (length(args) != 3) "broken term" else
-            "(if " + args[0].show() + " then " + args[1].show() + " else " + args[2].show() + ")"
+            "(if " + args[0].show(conf) + " then " + args[1].show(conf) + " else " + args[2].show(conf) + ")"
         )
     );
 }
@@ -35,8 +35,8 @@ makeLambda(var_type : AlgType, body : AlgType) -> EvalOper {
             v = flow2s(args[0].eval(vals, conf));
             \x -> args[0].eval(setTree(vals, v, x), conf)
         }),
-        \args -> Show(\->
-            "lambda " + args[0].show() + " : " + algType2s(var_type) + " " + args[0].show()
+        \args -> Show(\conf ->
+            "lambda " + args[0].show(conf) + " : " + algType2s(var_type) + " " + args[0].show(conf)
         )
     );
 }
