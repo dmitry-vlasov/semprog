@@ -24,18 +24,14 @@ export {
 
 opts2conf(opts : Tree<string, string>) -> Conf {
     trace = lookupTreeDef(opts, "trace", "") == "1";
-    verbose = s2i(lookupTreeDef(opts, "verb", "0"));
+    verbose = s2i(lookupTreeDef(opts, "verbose", "0"));
 	foldLen = s2i(lookupTreeDef(opts, "fold-len", "48"));
 	file0 = foldTree(opts, "", \key, val, acc -> if (val == "") key else acc);
 	file = lookupTreeDef(opts, "file", file0);
-    Conf(
-		file, 
-        trace,
-        ref 0,
-        verbose,
-		foldLen,
-		removeFromTree(removeFromTree(removeFromTree(opts, "trace"), "verb"), "file")
-    );
+	cleared_opts = fold(["trace", "verb", "file", "fold-len"], opts, \acc, opt ->
+		removeFromTree(acc, opt)
+	);
+    Conf(file, trace, ref 0, verbose, foldLen, cleared_opts);
 }
 
 urlParams2opts(params : [[string]]) -> Tree<string, string> {
@@ -67,6 +63,7 @@ conf2s(conf : Conf) -> string {
 		if (!conf.trace) None() else Some("trace=" + conf.file),
 		if (^(conf.callDepth) == 0) None() else Some("callDepth=" + i2s(^(conf.callDepth))),
 		if (conf.verbose == 0) None() else Some("verbose=" + i2s(conf.verbose)),
+		Some("fold-len=" + i2s(conf.foldLen)),
 	], idfn);
 	opts_arr = map(tree2pairs(conf.opts), \p -> 
 		if (p.second == "") p.first else p.first + "=" + p.second

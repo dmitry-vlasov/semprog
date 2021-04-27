@@ -11,6 +11,9 @@ main() -> void {
 	conf = makeConf();
 	if (conf.file == "") {
 		println("No input file.");
+		usage(conf);
+	} else if (helpAsked(conf)) {
+		usage(conf);
 	} else if (!fileExists(conf.file)) {
         println("File: " + conf.file  + " doesn't exist");
     } else {
@@ -23,27 +26,59 @@ main() -> void {
 			parsed = parseModule(src, name);
 			if (lookupTreeDef(conf.opts, "show-parsed", "") == "1") {
             	println("Parsed module " + name + ":\n" + moduleTerms2s(parsed, conf) + "\n\n");
-			} 
-            module = typecheckModule(parsed, fullAlgebra);
-
-            algebra = EvalAlgebra("module " + name + " algebra", 
-                fold(module.defs, fullAlgebra.opers, \acc, def -> 
-                    concat(acc, [makeDefOper(def)])
-                ),
-                fullAlgebra.consts
-            );
-			semantics := algebraEval(algebra);
-			shower := algebraShow(algebra);
-
-			if (lookupTreeDef(conf.opts, "show-algebra", "") == "1") {
-				println(evalAlgebra2s(algebra));
-			} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
-            	println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
 			} else {
-            	^semantics(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
-            	{}
+				module = typecheckModule(parsed, fullAlgebra);
+
+				algebra = EvalAlgebra("module " + name + " algebra", 
+					fold(module.defs, fullAlgebra.opers, \acc, def -> 
+						concat(acc, [makeDefOper(def)])
+					),
+					fullAlgebra.consts
+				);
+				semantics := algebraEval(algebra);
+				shower := algebraShow(algebra);
+
+				if (lookupTreeDef(conf.opts, "show-algebra", "") == "1") {
+					println(evalAlgebra2s(algebra));
+				} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
+					println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
+				} else {
+					if (exists(algebra.opers, \oper -> oper.name == "main")) {
+						^semantics(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
+						{}
+					} else {
+						if (conf.verbose > 0) {
+							println("No main function is defined");
+						}
+					}
+				}
 			}
         }
     }
     quit(0);
+}
+
+helpAsked(conf : Conf) -> bool {
+	conf.file == "-?"    || conf.file == "--?"    || 
+	conf.file == "-help" || conf.file == "--help" ||
+	containsKeyTree(conf.opts, "help");
+}
+
+usage(conf : Conf) -> void {
+	help = helpAsked(conf);
+	prih = \h, s -> if (h) println(s);
+	pri  = \s -> println(s);
+	pri("Usage:");
+	pri("  semprog <file> [other=params]");
+	pri("");
+	prih(help, "Options:");
+	prih(help, "      help=1                    Show help (available options)");
+	prih(help, "      file=<name.sem>           Specify the input file");
+	prih(help, "      show-parsed=1             Show the raw AST of parsed source");
+	prih(help, "      show-module=1             Show module after typechecking");
+	prih(help, "      show-algebra=1            Show the evalgebra operations");
+	prih(help, "      trace=1                   Trace the evaluation of source");
+	prih(help, "      verbose=<int>             Set the level of verbosity");
+	prih(help, "      fold-len=<int>            Maximum length of expressions, at which auto wrapping is on");
+	prih(help,"");
 }
