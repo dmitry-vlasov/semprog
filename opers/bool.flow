@@ -80,7 +80,7 @@ makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
         \args -> Eval(\vals, conf ->
             flow(op(map(args, \arg -> flow2b(arg.eval(vals, conf)))))
         ),
-        showVariadicEvalOper(name)
+        showInfixVariadicEvalOper(name)
     );
 }
 

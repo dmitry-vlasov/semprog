@@ -84,7 +84,7 @@ arrayOpers = [
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf -> map(args, \arg -> arg.eval(vals, conf))),
-        showBracketEvalOper("[", "]", ",")
+        showInfixBracketEvalOper("[", "]", ",")
     ),
     EvalOper(
         "...", 
@@ -96,7 +96,7 @@ arrayOpers = [
                 enumFromTo(low, hi);
             }
         ),
-        showBracketEvalOper("[", "]", "...")
+        showInfixBracketEvalOper("[", "]", "...")
     ),
 	EvalOper(
         "times2_array", 
@@ -108,6 +108,6 @@ arrayOpers = [
                 enumFromTo(low, hi);
             }
         ),
-        showBracketEvalOper("[", "]", "...")
+        showInfixBracketEvalOper("[", "]", "...")
     )
 ];

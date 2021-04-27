@@ -23,7 +23,7 @@ intOpers = [
                 map(arg_vals, flow2i), 0, \acc, i -> acc + i
             ));
         }),
-        showVariadicEvalOper("+")
+        showInfixVariadicEvalOper("+")
     ),
     EvalOper("*",
         funcAlgType([variadicAlgType(intType)], intType),
@@ -33,7 +33,7 @@ intOpers = [
                 map(arg_vals, flow2i), 1, \acc, i -> acc * i
             ));
         }),
-        showVariadicEvalOper("*")
+        showInfixVariadicEvalOper("*")
     ),
     makeIntBinary("/", \x, y -> x / y),
     makeIntBinary("-", \x, y -> x - y)

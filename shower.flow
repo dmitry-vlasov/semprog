@@ -7,9 +7,9 @@ export {
     showConstEvalOper(name : string) -> (args : [Show]) -> Show;
     showPrefixUnaryEvalOper(name) -> (args : [Show]) -> Show;
     showInfixBinaryEvalOper(name) -> (args : [Show]) -> Show;
-    showBracketEvalOper(open : string, close : string, infix : string) -> (args : [Show]) -> Show;
-    showNaryEvalOper(name : string, arity : int) -> (args : [Show]) -> Show;
-    showVariadicEvalOper(name : string) -> (args : [Show]) -> Show;
+    showInfixBracketEvalOper(open : string, close : string, infix : string) -> (args : [Show]) -> Show;
+    showInfixNaryEvalOper(name : string, arity : int) -> (args : [Show]) -> Show;
+    showInfixVariadicEvalOper(name : string) -> (args : [Show]) -> Show;
 
     showValuation(v : Tree<string, flow>) -> string;
 }
@@ -116,7 +116,7 @@ showInfixBinaryEvalOper(name : string) -> (args : [Show]) -> Show {
     );
 }
 
-showNaryEvalOper(name : string, arity : int) ->  (args : [Show]) -> Show {
+showInfixNaryEvalOper(name : string, arity : int) ->  (args : [Show]) -> Show {
     \args -> Show(\conf ->
         if (length(args) != arity) "broken " + i2s(arity) + "-ary " + name + ", args: [" + strGlue(map(args, \arg -> arg.show(conf)), ", ") + "]" else {
         	long = "(" + strGlue(map(args, \arg -> arg.show(conf)), " " + name + " ")  + ")";
@@ -127,7 +127,7 @@ showNaryEvalOper(name : string, arity : int) ->  (args : [Show]) -> Show {
     );
 }
 
-showVariadicEvalOper(name : string) ->  (args : [Show]) -> Show {
+showInfixVariadicEvalOper(name : string) ->  (args : [Show]) -> Show {
     \args -> Show(\conf -> {
         long = "(" + strGlue(map(args, \arg -> arg.show(conf)), " " + name + " ")  + ")";
 		if (strlen(long) <= conf.foldLen) long else {
@@ -136,7 +136,7 @@ showVariadicEvalOper(name : string) ->  (args : [Show]) -> Show {
 	});
 }
 
-showBracketEvalOper(open : string, close : string, infix : string) ->  (args : [Show]) -> Show {
+showInfixBracketEvalOper(open : string, close : string, infix : string) ->  (args : [Show]) -> Show {
     \args -> Show(\conf -> {
         long = open + strGlue(map(args, \arg -> arg.show(conf)), infix + " ") + close;
 		if (strlen(long) <= conf.foldLen) long else {

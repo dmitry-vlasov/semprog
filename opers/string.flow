@@ -38,7 +38,7 @@ stringOpers = [
                 flow2s(arg.eval(vals, conf))
             )))
         ),
-        showVariadicEvalOper("+")
+        showInfixVariadicEvalOper("+")
     ),
     EvalOper("i2s", 
         funcAlgType([intType], stringType), 
