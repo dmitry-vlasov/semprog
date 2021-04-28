@@ -35,7 +35,7 @@ export {
     unionAlgType(args : [AlgType]) -> AlgTypeFunc;
 
 	// Tuple type: (type_1, type_2, ... , type_k)
-    tupleAlgType(args : [AlgType]) -> AlgTypeFunc;
+    //tupleAlgType(args : [AlgType]) -> AlgTypeFunc;
 
     // Product type: (type_1 x type_2 x ... x type_k)
     prodAlgType(args : [AlgType]) -> AlgTypeFunc;
@@ -97,9 +97,9 @@ unionAlgType(args : [AlgType]) -> AlgTypeFunc {
     AlgTypeFunc("U", args);
 }
 
-tupleAlgType(args : [AlgType]) -> AlgTypeFunc {
+/*tupleAlgType(args : [AlgType]) -> AlgTypeFunc {
     AlgTypeFunc("tp", args);
-}
+}*/
 
 prodAlgType(args : [AlgType]) -> AlgTypeFunc {
     AlgTypeFunc("X", args);

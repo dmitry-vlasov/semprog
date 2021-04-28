@@ -72,6 +72,52 @@ def egypt(n : int) : bool {
 	)))
 }
 
+def find_egypt(n : int) : maybe(tuple(int, int, int)) {
+	findmap([1 ... n], 
+		lambda1(x : int,
+			maybeMap(
+				findmap([1 ... n],
+					lambda1(y : int,
+						maybeMap(
+							find(z : int, [1 ... n]
+								(((x * x) + (y * y)) = (z * z))
+							),
+							lambda1(z : int,
+								tuple2(y, z)
+							)
+						)
+					)
+				),
+				lambda1(pair : tuple(int, int),
+					tuple3(x, first(pair), second(pair))
+				)
+			)
+		)
+	)
+}
+
+def find_egypt_up_to(N : int) : string {
+	let result : maybe(tuple(int, int, int, int)) = findmap([1 ... N], 
+		lambda1(n : int, 
+			maybeMap(
+				find_egypt(n),
+				lambda1(triple : tuple(int, int, int),
+					tuple4(n, first(triple), second(triple), third(triple))
+				)
+			)
+		)
+	);
+	eitherMap(result,
+		lambda1(quad : tuple(int, int, int, int),
+			(
+				"egypt triange is found for min boundary: " + 
+				i2s(first(quad)) + ", triangle: x=" + i2s(second(quad)) + " y=" + i2s(third(quad)) + " z=" + i2s(fourth(quad))
+			)
+		),
+		("no egypt triangles are found up to " + i2s(N))
+	)
+}
+
 def show_egypt(n : int) : string {
 	("egypt(" + i2s(n) + "): " + b2s(egypt(n)))
 }
@@ -163,6 +209,8 @@ def main() : void {
 		show_egypt(3),
 		show_egypt(4),
 		show_egypt(5),
+		find_egypt_up_to(4),
+		find_egypt_up_to(7),
     )
 }
 

@@ -41,8 +41,12 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
 					)
 				);
 				if (length(fits) == 0) {
-					println("(B) no operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-					println("ops: " + strGlue(map(ops, \op -> algType2s(op)), ", "));
+					println("(B) no operator " + name + " matches argument types:\n" + 
+						strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
+					);
+					println("ops:\n" + 
+						strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
+					);
 					println("term: " + algTerm2s(term));
 					undefAlgType;
 				} else if (length(fits) > 1) {

@@ -65,4 +65,159 @@ controlOpers = [
 			}
 		})
     ),
+	EvalOper(
+        "some", 
+        funcAlgType([AlgTypeVar("A")], AlgTypeFunc("maybe", [AlgTypeVar("V")])),
+        \args -> Eval(\vals, conf -> {
+            val = args[0].eval(vals, conf);
+			flow(Some(val));
+        }),
+        showPrefixEvalOper("some")
+    ),
+	EvalOper(
+        "none", 
+        funcAlgType([], AlgTypeFunc("maybe", [AlgTypeVar("V")])),
+        \args -> Eval(\vals, conf -> {
+			flow(None());
+        }),
+        showPrefixEvalOper("none")
+    ),
+	EvalOper(
+        "isNone", 
+        funcAlgType([AlgTypeFunc("maybe", [AlgTypeVar("V")])], boolType),
+        \args -> Eval(\vals, conf -> {
+			val = args[0].eval(vals, conf);
+			flow(isNone(val));
+        }),
+        showPrefixEvalOper("isNone")
+    ),
+	EvalOper(
+        "isSome", 
+        funcAlgType([AlgTypeFunc("maybe", [AlgTypeVar("V")])], boolType),
+        \args -> Eval(\vals, conf -> {
+			val = args[0].eval(vals, conf);
+			flow(isSome(val));
+        }),
+        showPrefixEvalOper("isSome")
+    ),
+	EvalOper(
+        "either", 
+        funcAlgType(
+			[
+				AlgTypeFunc("maybe", [AlgTypeVar("V")]), 
+				AlgTypeVar("V")
+			], 
+			AlgTypeVar("V")
+		),
+        \args -> Eval(\vals, conf -> {
+			mval = args[0].eval(vals, conf);
+			def_val = args[1].eval(vals, conf);
+			flow(either(mval, def_val));
+        }),
+        showPrefixEvalOper("either")
+    ),
+	EvalOper(
+        "maybeMap", 
+        funcAlgType(
+			[
+				AlgTypeFunc("maybe", [AlgTypeVar("V")]), 
+				funcAlgType(
+					[AlgTypeVar("V1")], 
+					AlgTypeVar("V2")
+				)
+			],
+			AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+		),
+        \args -> Eval(\vals, conf -> {
+			val = args[0].eval(vals, conf);
+			fn = args[1].eval(vals, conf);
+			flow(maybeMap(val, fn));
+        }),
+        showPrefixEvalOper("maybeMap")
+    ),
+	EvalOper(
+        "maybeBind", 
+        funcAlgType(
+			[
+				AlgTypeFunc("maybe", [AlgTypeVar("V")]), 
+				funcAlgType(
+					[AlgTypeVar("V1")], 
+					AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+				)
+			],
+			AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+		),
+        \args -> Eval(\vals, conf -> {
+			val = args[0].eval(vals, conf);
+			fn = args[1].eval(vals, conf);
+			flow(maybeMap(val, fn));
+        }),
+        showPrefixEvalOper("maybeMap")
+    ),
+	EvalOper(
+        "eitherMap", 
+        funcAlgType(
+			[
+				AlgTypeFunc("maybe", [AlgTypeVar("V")]), 
+				funcAlgType(
+					[AlgTypeVar("V1")], 
+					AlgTypeVar("V2")
+				),
+				AlgTypeVar("V2")
+			],
+			AlgTypeVar("V2")
+		),
+        \args -> Eval(\vals, conf -> {
+			val = args[0].eval(vals, conf);
+			fn  = args[1].eval(vals, conf);
+			def = args[2].eval(vals, conf);
+			flow(eitherMap(val, fn, def));
+        }),
+        showPrefixEvalOper("eitherMap")
+    ),
+	EvalOper("find",
+        funcAlgType(
+            [
+				AlgTypeVar("T"), 
+				arrayAlgType(AlgTypeVar("T")), 
+				boolType
+			] , 
+            AlgTypeFunc("maybe", [AlgTypeVar("V")])
+        ),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 3) {
+                flow(undefVal)
+            } else {
+                v = flow2s(args[0].eval(vals, conf));
+                flow(find(
+                    cast(args[1].eval(vals, conf) : flow -> [flow]),
+                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
+                ));
+            }
+        ),
+		showPrefixEvalOper("find")
+    ),
+	EvalOper("findmap",
+        funcAlgType(
+            [
+				arrayAlgType(AlgTypeVar("T")), 
+				funcAlgType(
+					[AlgTypeVar("V1")], 
+					AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+				)
+			] , 
+            AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+        ),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 2) {
+                flow(undefVal)
+            } else {
+                flow(findmap(
+                    cast(args[0].eval(vals, conf) : flow -> [flow]),
+                    cast(args[1].eval(vals, conf) : flow -> (flow) -> Maybe<flow>)
+                ));
+            }
+        ),
+		showPrefixEvalOper("findmap")
+    ),
 ];

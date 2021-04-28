@@ -1,0 +1,276 @@
+import shower;
+import dynamic;
+import common_types;
+
+export {
+    // Tuple operations
+    tupleOpers : [EvalOper];
+}
+
+tupleOpers = [
+    EvalOper(
+        "tuple0",
+        funcAlgType([], AlgTypeFunc("tuple", [])),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 0) flow(undefVal) else {
+                flow([]);
+            }
+        ),
+        showPrefixEvalOper("tuple0")
+    ),
+	EvalOper(
+        "tuple1",
+        funcAlgType([AlgTypeVar("T")], AlgTypeFunc("tuple", [AlgTypeVar("T")])),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow([args[0].eval(vals, conf)]);
+            }
+        ),
+        showPrefixEvalOper("tuple1")
+    ),
+	EvalOper(
+        "tuple2",
+        funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2")], AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 2) flow(undefVal) else {
+                flow([
+					args[0].eval(vals, conf),
+					args[1].eval(vals, conf)
+				]);
+            }
+        ),
+        showPrefixEvalOper("tuple2")
+    ),
+	EvalOper(
+        "tuple3",
+        funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")], AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 3) flow(undefVal) else {
+                flow([
+					args[0].eval(vals, conf),
+					args[1].eval(vals, conf),
+					args[2].eval(vals, conf)
+				]);
+            }
+        ),
+        showPrefixEvalOper("tuple3")
+    ),
+	EvalOper(
+        "tuple4",
+        funcAlgType(
+			[
+				AlgTypeVar("T1"), 
+				AlgTypeVar("T2"), 
+				AlgTypeVar("T3"),
+				AlgTypeVar("T4")
+			], 
+			AlgTypeFunc("tuple", [
+				AlgTypeVar("T1"), 
+				AlgTypeVar("T2"), 
+				AlgTypeVar("T3"), 
+				AlgTypeVar("T4")
+			])
+		),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 4) flow(undefVal) else {
+                flow([
+					args[0].eval(vals, conf),
+					args[1].eval(vals, conf),
+					args[2].eval(vals, conf),
+					args[3].eval(vals, conf)
+				]);
+            }
+        ),
+        showPrefixEvalOper("tuple4")
+    ),
+	EvalOper(
+        "tuple5",
+        funcAlgType(
+			[
+				AlgTypeVar("T1"), 
+				AlgTypeVar("T2"), 
+				AlgTypeVar("T3"),
+				AlgTypeVar("T4"),
+				AlgTypeVar("T5")
+			], 
+			AlgTypeFunc("tuple", [
+				AlgTypeVar("T1"), 
+				AlgTypeVar("T2"), 
+				AlgTypeVar("T3"), 
+				AlgTypeVar("T4"),
+				AlgTypeVar("T5")
+			])
+		),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 5) flow(undefVal) else {
+                flow([
+					args[0].eval(vals, conf),
+					args[1].eval(vals, conf),
+					args[2].eval(vals, conf),
+					args[3].eval(vals, conf),
+					args[5].eval(vals, conf)
+				]);
+            }
+        ),
+        showPrefixEvalOper("tuple5")
+    ),
+	// First
+	EvalOper(
+        "first",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T")])], AlgTypeVar("T")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[0]);
+            }
+        ),
+        showPrefixEvalOper("first")
+    ),
+	EvalOper(
+        "first",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])], AlgTypeVar("T1")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[0]);
+            }
+        ),
+        showPrefixEvalOper("first")
+    ),
+	EvalOper(
+        "first",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])], AlgTypeVar("T1")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[0]);
+            }
+        ),
+        showPrefixEvalOper("first")
+    ),
+	EvalOper(
+        "first",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4")])], AlgTypeVar("T1")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[0]);
+            }
+        ),
+        showPrefixEvalOper("first")
+    ),
+	EvalOper(
+        "first",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4"), AlgTypeVar("T5")])], AlgTypeVar("T1")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[0]);
+            }
+        ),
+        showPrefixEvalOper("first")
+    ),
+
+	// Second
+	EvalOper(
+        "second",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])], AlgTypeVar("T2")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[1]);
+            }
+        ),
+        showPrefixEvalOper("second")
+    ),
+	EvalOper(
+        "second",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[1]);
+            }
+        ),
+        showPrefixEvalOper("second")
+    ),
+	EvalOper(
+        "second",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[1]);
+            }
+        ),
+        showPrefixEvalOper("second")
+    ),
+	EvalOper(
+        "second",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4"), AlgTypeVar("T5")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[1]);
+            }
+        ),
+        showPrefixEvalOper("second")
+    ),
+
+	// Third
+	EvalOper(
+        "third",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[2]);
+            }
+        ),
+        showPrefixEvalOper("third")
+    ),
+	EvalOper(
+        "third",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[2]);
+            }
+        ),
+        showPrefixEvalOper("third")
+    ),
+	EvalOper(
+        "third",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4"), AlgTypeVar("T5")])], AlgTypeVar("T3")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[2]);
+            }
+        ),
+        showPrefixEvalOper("third")
+    ),
+
+	// Fourth
+	EvalOper(
+        "fourth",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4")])], AlgTypeVar("T4")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[3]);
+            }
+        ),
+        showPrefixEvalOper("fourth")
+    ),
+	EvalOper(
+        "fourth",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4"), AlgTypeVar("T5")])], AlgTypeVar("T4")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[3]);
+            }
+        ),
+        showPrefixEvalOper("fourth")
+    ),
+
+	// Fifth
+	EvalOper(
+        "fifth",
+        funcAlgType([AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3"), AlgTypeVar("T4"), AlgTypeVar("T5")])], AlgTypeVar("T5")),
+        \args -> Eval(\vals, conf ->
+            if (length(args) != 1) flow(undefVal) else {
+                flow(cast(args[0].eval(vals, conf) : flow -> [flow])[4]);
+            }
+        ),
+        showPrefixEvalOper("fifth")
+    ),
+];
