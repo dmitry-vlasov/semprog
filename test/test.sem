@@ -122,6 +122,16 @@ def show_egypt(n : int) : string {
 	("egypt(" + i2s(n) + "): " + b2s(egypt(n)))
 }
 
+
+def test_closure() : bool {
+	let fn : (int) -> bool =
+		let a : int = 5;
+		lambda(x : int, (x = a))
+	;
+	let a : int = 7;
+	(fn(5) /\ !(fn(7)))
+}
+
 def main() : void {
     println(
         ("5! = " + i2s(fact_five())),
@@ -211,6 +221,7 @@ def main() : void {
 		show_egypt(5),
 		find_egypt_up_to(4),
 		find_egypt_up_to(7),
+		("closure test passed: " + b2s(test_closure())),
     )
 }
 
