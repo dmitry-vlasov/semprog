@@ -9,16 +9,16 @@ import algebra;
 main() -> void {
     println("Semantic programming framework\n");
 	conf = makeConf();
-	if (conf.file == "") {
+	if (lookupTreeDef(conf.opts, "show-algebra", "") == "pre-defined") {
+		println(evalAlgebra2s(fullAlgebra));
+    } else if (conf.file == "") {
 		println("No input file.");
 		usage(conf);
 	} else if (helpAsked(conf)) {
 		usage(conf);
 	} else if (!fileExists(conf.file)) {
         println("File: " + conf.file  + " doesn't exist");
-	} else if (lookupTreeDef(conf.opts, "show-algebra", "") == "pre-defined") {
-		println(evalAlgebra2s(fullAlgebra));
-    } else {
+	} else {
         ext = getFileExt(conf.file);
         if (ext != ".sem") {
             println("Extension: " + ext  + " mismatches the expected .sem");
