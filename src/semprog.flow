@@ -16,6 +16,8 @@ main() -> void {
 		usage(conf);
 	} else if (!fileExists(conf.file)) {
         println("File: " + conf.file  + " doesn't exist");
+	} else if (lookupTreeDef(conf.opts, "show-algebra", "") == "pre-defined") {
+		println(evalAlgebra2s(fullAlgebra));
     } else {
         ext = getFileExt(conf.file);
         if (ext != ".sem") {
@@ -38,8 +40,15 @@ main() -> void {
 				semantics := algebraEval(algebra);
 				shower := algebraShow(algebra);
 
-				if (lookupTreeDef(conf.opts, "show-algebra", "") == "1") {
+				if (lookupTreeDef(conf.opts, "show-algebra", "") == "all") {
 					println(evalAlgebra2s(algebra));
+				} else if (lookupTreeDef(conf.opts, "show-algebra", "") == "module") {
+					println(evalAlgebra2s(
+						EvalAlgebra("module " + name + " algebra", 
+							map(module.defs, makeDefOper),
+							[]
+						)
+					));
 				} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
 					println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
 				} else {
@@ -76,7 +85,7 @@ usage(conf : Conf) -> void {
 	prih(help, "      file=<name.sem>           Specify the input file");
 	prih(help, "      show-parsed=1             Show the raw AST of parsed source");
 	prih(help, "      show-module=1             Show module after typechecking");
-	prih(help, "      show-algebra=1            Show the evalgebra operations");
+	prih(help, "      show-algebra=<mode>       Show the signature of: {all | module | pre-defined}");
 	prih(help, "      trace=1                   Trace the evaluation of source");
 	prih(help, "      verbose=<int>             Set the level of verbosity");
 	prih(help, "      fold-len=<int>            Maximum length of expressions, at which auto wrapping is on");
