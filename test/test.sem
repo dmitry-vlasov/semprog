@@ -48,13 +48,13 @@ def fact_five() : int {
 
 def fact_11() : string {
 	i2s(
-		call1(
-			rec1(
-				lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+		call(
+			rec(
+				lambda(i : int, acc : int, fn : (int, int, any) -> int,
 					if(
 						(i = 1), 
 						acc, 
-						call3(fn, (i - 1), (acc * i), fn)
+						call(fn, (i - 1), (acc * i), fn)
 					)
 				)
 			), 
@@ -74,22 +74,22 @@ def egypt(n : int) : bool {
 
 def find_egypt(n : int) : maybe(tuple(int, int, int)) {
 	findmap([1 ... n], 
-		lambda1(x : int,
+		lambda(x : int,
 			maybeMap(
 				findmap([1 ... n],
-					lambda1(y : int,
+					lambda(y : int,
 						maybeMap(
 							find(z : int, [1 ... n]
 								(((x * x) + (y * y)) = (z * z))
 							),
-							lambda1(z : int,
-								tuple2(y, z)
+							lambda(z : int,
+								tuple(y, z)
 							)
 						)
 					)
 				),
-				lambda1(pair : tuple(int, int),
-					tuple3(x, first(pair), second(pair))
+				lambda(pair : tuple(int, int),
+					tuple(x, first(pair), second(pair))
 				)
 			)
 		)
@@ -98,17 +98,17 @@ def find_egypt(n : int) : maybe(tuple(int, int, int)) {
 
 def find_egypt_up_to(N : int) : string {
 	let result : maybe(tuple(int, int, int, int)) = findmap([1 ... N], 
-		lambda1(n : int, 
+		lambda(n : int, 
 			maybeMap(
 				find_egypt(n),
-				lambda1(triple : tuple(int, int, int),
-					tuple4(n, first(triple), second(triple), third(triple))
+				lambda(triple : tuple(int, int, int),
+					tuple(n, first(triple), second(triple), third(triple))
 				)
 			)
 		)
 	);
 	eitherMap(result,
-		lambda1(quad : tuple(int, int, int, int),
+		lambda(quad : tuple(int, int, int, int),
 			(
 				"egypt triange is found for min boundary: " + 
 				i2s(first(quad)) + ", triangle: x=" + i2s(second(quad)) + " y=" + i2s(third(quad)) + " z=" + i2s(fourth(quad))
@@ -126,37 +126,37 @@ def main() : void {
     println(
         ("5! = " + i2s(fact_five())),
         ("7! = " + i2s(fact(7))),
-        ("lambda1 x : int . (x = 2)(2): " + b2s(
-            call1(lambda1(x : int, (x = 2)), 2)
+        ("lambda x : int . (x = 2)(2): " + b2s(
+            call(lambda(x : int, (x = 2)), 2)
         )),
 
 
-        ("lambda1 x : int . (x = 2)(3): " + b2s(
-            call1(lambda1(x : int, (x = 2)), 3)
+        ("lambda x : int . (x = 2)(3): " + b2s(
+            call(lambda(x : int, (x = 2)), 3)
         )),
 
-		("lambda2 x : int, y : int . (x = 2)(3): " + i2s(
-            call2(lambda2(x : int, y : int, (x + y)), 3, 4)
+		("lambda x : int, y : int . (x = 2)(3): " + i2s(
+            call(lambda(x : int, y : int, (x + y)), 3, 4)
         )),
 	
-		("lambda2 x : int, y : int . (x = 2)(3): " + i2s(
-            call2(
-				lambda2(x : int, y : (int) -> int, y(x)), 
+		("lambda x : int, y : int . (x = 2)(3): " + i2s(
+            call(
+				lambda(x : int, y : (int) -> int, y(x)), 
 				3, 
-				lambda1(x : int, (x + 1))
+				lambda(x : int, (x + 1))
 			)
         )),
 
 		("fact_11: " + fact_11()),
 
-		("5!(rec1): " + i2s(
-			call1(
-				rec1(
-					lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+		("5!(rec): " + i2s(
+			call(
+				rec(
+					lambda(i : int, acc : int, fn : (int, int, any) -> int,
 						if(
 							(i = 1), 
 							acc, 
-							call3(fn, (i - 1), (acc * i), fn)
+							call(fn, (i - 1), (acc * i), fn)
 						)
 					)
 				), 
@@ -164,14 +164,14 @@ def main() : void {
 			)
         )),
 
-		("5!(rec1): " + i2s(
+		("5!(rec): " + i2s(
 			let	x : int = 5;
-			call1(
-				rec1(lambda3(i : int, acc : int, fn : (int, int, any) -> int,
+			call(
+				rec(lambda(i : int, acc : int, fn : (int, int, any) -> int,
 					if(
 						(i = 1), 
 						acc, 
-						call3(fn, (i - 1), (acc * i), fn)
+						call(fn, (i - 1), (acc * i), fn)
 					)
 				)), 
 				x

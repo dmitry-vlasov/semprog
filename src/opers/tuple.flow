@@ -9,7 +9,7 @@ export {
 
 tupleOpers = [
     EvalOper(
-        "tuple0",
+        "tuple",
         funcAlgType([], AlgTypeFunc("tuple", [])),
         \args -> Eval(\vals, conf ->
             if (length(args) != 0) flow(undefVal) else {
@@ -19,7 +19,7 @@ tupleOpers = [
         showPrefixEvalOper("tuple0")
     ),
 	EvalOper(
-        "tuple1",
+        "tuple",
         funcAlgType([AlgTypeVar("T")], AlgTypeFunc("tuple", [AlgTypeVar("T")])),
         \args -> Eval(\vals, conf ->
             if (length(args) != 1) flow(undefVal) else {
@@ -29,7 +29,7 @@ tupleOpers = [
         showPrefixEvalOper("tuple1")
     ),
 	EvalOper(
-        "tuple2",
+        "tuple",
         funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2")], AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])),
         \args -> Eval(\vals, conf ->
             if (length(args) != 2) flow(undefVal) else {
@@ -42,7 +42,7 @@ tupleOpers = [
         showPrefixEvalOper("tuple2")
     ),
 	EvalOper(
-        "tuple3",
+        "tuple",
         funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")], AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])),
         \args -> Eval(\vals, conf ->
             if (length(args) != 3) flow(undefVal) else {
@@ -53,10 +53,10 @@ tupleOpers = [
 				]);
             }
         ),
-        showPrefixEvalOper("tuple3")
+        showPrefixEvalOper("tuple")
     ),
 	EvalOper(
-        "tuple4",
+        "tuple",
         funcAlgType(
 			[
 				AlgTypeVar("T1"), 
@@ -81,10 +81,10 @@ tupleOpers = [
 				]);
             }
         ),
-        showPrefixEvalOper("tuple4")
+        showPrefixEvalOper("tuple")
     ),
 	EvalOper(
-        "tuple5",
+        "tuple",
         funcAlgType(
 			[
 				AlgTypeVar("T1"), 
@@ -112,7 +112,7 @@ tupleOpers = [
 				]);
             }
         ),
-        showPrefixEvalOper("tuple5")
+        showPrefixEvalOper("tuple")
     ),
 	// First
 	EvalOper(

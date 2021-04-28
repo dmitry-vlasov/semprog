@@ -7,34 +7,24 @@ export {
 
 lambdaOpers = [
 	EvalOper(
-        "lambda0", 
+        "lambda", 
         funcAlgType([AlgTypeVar("V")], funcAlgType([], AlgTypeVar("V"))),
         \args -> Eval(\vals, conf -> {
             flow(\-> args[0].eval(vals, conf));
         }),
-        \args -> Show(\conf -> {
-			long = "lambda0 " + args[0].show(conf);
-			if (strlen(long) <= conf.foldLen) long else {
-				"lambda0\n" + strIndent(args[0].show(conf));
-			}
-		})
+        showPrefixEvalOper("lambda")
     ),
 	EvalOper(
-        "lambda1", 
+        "lambda", 
         funcAlgType([AlgTypeVar("A"), AlgTypeVar("V")], funcAlgType([AlgTypeVar("A")], AlgTypeVar("V"))),
         \args -> Eval(\vals, conf -> {
             v = flow2s(args[0].eval(vals, conf));
             flow(\x -> args[1].eval(setTree(vals, v, x), conf));
         }),
-        \args -> Show(\conf -> {
-            long = "lambda1 " + args[0].show(conf) + " " + args[1].show(conf);
-			if (strlen(long) <= conf.foldLen) long else {
-				"lambda1 " + args[0].show(conf) + "\n" + strIndent(args[1].show(conf));
-			}
-		})
+        showPrefixEvalOper("lambda")
     ),
 	EvalOper(
-        "lambda2", 
+        "lambda", 
         funcAlgType(
 			[AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("V")], 
 			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V"))
@@ -44,15 +34,10 @@ lambdaOpers = [
 			v2 = flow2s(args[1].eval(vals, conf));
             flow(\x, y -> args[2].eval(setTree(setTree(vals, v1, x), v2, y), conf));
         }),
-        \args -> Show(\conf -> {
-            long = "lambda2 " + args[0].show(conf) + ", " + args[1].show(conf) + " " + args[2].show(conf);
-			if (strlen(long) <= conf.foldLen) long else {
-				"lambda2 " + args[0].show(conf) + ", " + args[1].show(conf) + "\n" + strIndent(args[2].show(conf));
-			}
-		})
+       	showPrefixEvalOper("lambda")
     ),
 	EvalOper(
-        "lambda3", 
+        "lambda", 
         funcAlgType(
 			[AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3"), AlgTypeVar("V")], 
 			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))
@@ -63,15 +48,10 @@ lambdaOpers = [
 			v3 = flow2s(args[2].eval(vals, conf));
             flow(\x, y, z -> args[3].eval(setTree(setTree(setTree(vals, v1, x), v2, y), v3, z), conf));
         }),
-        \args -> Show(\conf -> {
-            long = "lambda3 " + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + " " + args[3].show(conf);
-			if (strlen(long) <= conf.foldLen) long else {
-				"lambda3 " + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + "\n" + strIndent(args[3].show(conf));
-			}
-		})
+        showPrefixEvalOper("lambda")
     ),
 	EvalOper(
-        "call0", 
+        "call", 
         funcAlgType(
 			[funcAlgType([], AlgTypeVar("V"))], 
 			AlgTypeVar("V")
@@ -80,15 +60,10 @@ lambdaOpers = [
             fn = cast(args[0].eval(vals, conf) : flow -> () -> flow);
             fn();
         }),
-        \args -> Show(\conf -> {
-			long = "call0(" + args[0].show(conf) + ")";
-			if (strlen(long) <= conf.foldLen) long else {
-				"call0(\n" + strIndent(args[0].show(conf)) + "\n)";
-			}
-		})
+        showPrefixEvalOper("call")
     ),
     EvalOper(
-        "call1", 
+        "call", 
         funcAlgType(
 			[
 				funcAlgType([AlgTypeVar("A")], AlgTypeVar("V")), 
@@ -101,18 +76,10 @@ lambdaOpers = [
             ar = args[1].eval(vals, conf);
             fn(ar);
         }),
-        \args -> Show(\conf -> {
-            long = "call1(" + args[0].show(conf) + ", " + args[1].show(conf) + ")";
-			if (strlen(long) <= conf.foldLen) long else {
-				"call1(\n" + 
-					strIndent(args[0].show(conf)) + ",\n" + 
-					strIndent(args[1].show(conf)) + 
-				"\n)";
-			}
-		})
+        showPrefixEvalOper("call")
     ),
 	EvalOper(
-        "call2", 
+        "call", 
         funcAlgType(
 			[
 				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V")), 
@@ -126,19 +93,10 @@ lambdaOpers = [
 			a_2 = args[2].eval(vals, conf);
             fn(a_1, a_2);
         }),
-        \args -> Show(\conf -> {
-            long = "call2(" + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + ")";
-			if (strlen(long) <= conf.foldLen) long else {
-				"call2(\n" + 
-					strIndent(args[0].show(conf)) + ",\n" + 
-					strIndent(args[1].show(conf)) + ",\n" + 
-					strIndent(args[2].show(conf)) + 
-				"\n)";
-			}
-		})
+       showPrefixEvalOper("call")
     ),
 	EvalOper(
-        "call3", 
+        "call", 
         funcAlgType(
 			[
 				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V")), 
@@ -153,20 +111,10 @@ lambdaOpers = [
 			a_3 = args[3].eval(vals, conf);
             fn(a_1, a_2, a_3);
         }),
-        \args -> Show(\conf -> {
-            long = "call3(" + args[0].show(conf) + ", " + args[1].show(conf) + ", " + args[2].show(conf) + ", " + args[3].show(conf) + ")";
-			if (strlen(long) <= conf.foldLen) long else {
-				"call3(\n" + 
-					strIndent(args[0].show(conf)) + ",\n" + 
-					strIndent(args[1].show(conf)) + ",\n" + 
-					strIndent(args[2].show(conf)) + ",\n" + 
-					strIndent(args[3].show(conf)) + 
-				"\n)";
-			}
-		})
+        showPrefixEvalOper("call")
     ),
 	EvalOper(
-        "rec1", 
+        "rec", 
         funcAlgType(
 			[funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))], 
 			funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))
@@ -177,12 +125,7 @@ lambdaOpers = [
 				cast(fn : flow -> ((flow, flow, flow) -> flow))(n, 1, fn)
 			);
         }),
-        \args -> Show(\conf -> {
-            long = "rec1(" + args[0].show(conf) + ")";
-			if (strlen(long) <= conf.foldLen) long else {
-				"rec1(\n" + strIndent(args[0].show(conf)) + "\n)";
-			}
-		})
+        showPrefixEvalOper("rec")
     ),
 ];
 
