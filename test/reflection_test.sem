@@ -3,11 +3,34 @@ def inc (x : int) : int {
     (x + 1)
 }
 
-def add_3(x : int) : int {
-	transform(t : term,
+def fn (x : int) : int {
+    (x + x + x)
+}
+
+/*
+def add_3(t0 : term) : term {
+	rec(
+		lambda(t : term, acc : term, fn : (term, term) -> term,
+			let 
+
+		)
+	)
 		lambda(name : string, t : type, args : [term],
 			(name == "E") 
 		)
+	)
+}
+*/
+
+def transf (t : term) : term {
+	if (
+		("+" = termName(t)),
+		makeTermFunc(
+			"*", 
+			map(termArgs(t), lambda(x : term, transf(x))), 
+			termType(t)
+		),
+		t,
 	)
 }
 
@@ -27,6 +50,22 @@ def main() : void {
 						evalTerm(src("inc"))
 					),
 					3
+				)
+			)
+		),
+
+		("transf: " + term2s(
+			transf(src("inc"))
+		)),
+
+		("fn(5): " + i2s(fn(5))),
+		("transf(fn)(5): " + 
+			i2s(
+				call(
+					lambda(x : int,
+						evalTerm(transf(src("fn")))
+					),
+					5
 				)
 			)
 		),

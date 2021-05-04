@@ -9,17 +9,17 @@ export {
 
 mapOpers = [
     EvalOper(
-        "map",
+        "makeMap",
         funcAlgType([], 
 			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
 		),
         \args -> Eval(\vals, conf -> 
 			Val(makeTree(), AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]))
 		),
-        showPrefixEvalOper("map")
+        showPrefixEvalOper("makeMap")
     ),
 	EvalOper(
-        "map",
+        "makeMap",
         funcAlgType(
 			[AlgTypeVar("K"), AlgTypeVar("V")], 
 			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
@@ -32,7 +32,7 @@ mapOpers = [
 				AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
 			)
         ),
-        showPrefixEvalOper("map")
+        showPrefixEvalOper("makeMap")
     ),
 	EvalOper(
         "get",

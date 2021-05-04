@@ -230,9 +230,7 @@ matchTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -
     } else {
 		variadic_left = unwrapVariadicAlgType(lefts[0]);
 		if (variadic_left == undefType) {
-			if (length(rights) == 0) {
-				None();
-			} else if (length(lefts) == length(rights)) {
+			if (length(lefts) == length(rights)) {
 				maybeBind(
 					matchType(lefts[0], rights[0], acc),
 					\sub -> matchTypes(tail(lefts), tail(rights), sub)
@@ -242,7 +240,7 @@ matchTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -
 			}
 		} else {
 			if (length(rights) == 0) {
-				Some(acc);
+				None();
 			} else {
 				//println("variafic left: " + algType2s(variadic_left));
 				maybeBind(

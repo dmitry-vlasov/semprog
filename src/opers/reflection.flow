@@ -139,9 +139,144 @@ reflectionOpers = [
 					as = cast(args[3].eval(vals, conf).val : flow -> [Val]);
 					AlgTermFunc(name, map(as, \a -> a.val), type);
 				},
-				typeType
+				termType
 			)
         }),
         showPrefixEvalOper("tuple2term")
+    ),
+
+	EvalOper("makeTypeVar", 
+        funcAlgType([stringType], typeType), 
+        \args -> Eval(\vals, conf -> {
+			name = flow2s(args[0].eval(vals, conf).val);
+			Val(AlgTypeVar(name), typeType)
+        }),
+        showPrefixEvalOper("makeTypeVar")
+    ),
+	EvalOper("makeTypeFunc", 
+        funcAlgType([stringType, arrayAlgType(typeType)], typeType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			as     = cast(args[1].eval(vals, conf).val : flow -> [Val]);
+			Val(AlgTypeFunc(name, map(as, \a -> a.val)), typeType);
+        }),
+        showPrefixEvalOper("makeTypeFunc")
+    ),
+	EvalOper("typeKind", 
+        funcAlgType([typeType], intType), 
+        \args -> Eval(\vals, conf -> {
+			type = cast(args[0].eval(vals, conf).val : flow -> AlgType);
+			Val(
+				switch (type) {
+					AlgTypeVar(__):     0;
+					AlgTypeFunc(__,__): 1;
+				},
+				intType
+			)
+        }),
+        showPrefixEvalOper("typeKind")
+    ),
+	EvalOper("typeName", 
+        funcAlgType([typeType], stringType), 
+        \args -> Eval(\vals, conf -> {
+			type = cast(args[0].eval(vals, conf).val : flow -> AlgType);
+			Val(type.name, stringType)
+        }),
+        showPrefixEvalOper("typeName")
+    ),
+	EvalOper("typeArgs", 
+        funcAlgType([typeType], arrayAlgType(typeType)), 
+        \args -> Eval(\vals, conf -> {
+			type = cast(args[0].eval(vals, conf).val : flow -> AlgType);
+			Val(
+				switch (type) {
+					AlgTypeFunc(__,as): map(as, \a -> Val(a, typeType));
+					default: [];
+				},
+				arrayAlgType(typeType)
+			)
+        }),
+        showPrefixEvalOper("typeArgs")
+    ),
+
+
+
+
+
+
+
+
+	EvalOper("makeVarUse", 
+        funcAlgType([stringType, typeType], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			type   = cast(args[1].eval(vals, conf).val : flow -> AlgType);
+			Val(AlgTermVarUse(name, type), termType)
+        }),
+        showPrefixEvalOper("makeVarUse")
+    ),
+	EvalOper("makeVarDecl", 
+        funcAlgType([stringType, typeType], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			type   = cast(args[1].eval(vals, conf).val : flow -> AlgType);
+			Val(AlgTermVarDecl(name, type), termType)
+        }),
+        showPrefixEvalOper("makeVarDecl")
+    ),
+	EvalOper("makeTermFunc", 
+        funcAlgType([stringType, arrayAlgType(termType), typeType], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			as     = cast(args[1].eval(vals, conf).val : flow -> [Val]);
+			type   = cast(args[2].eval(vals, conf).val : flow -> AlgType);
+			Val(AlgTermFunc(name, map(as, \a -> a.val), type), termType);
+        }),
+        showPrefixEvalOper("makeVarDecl")
+    ),
+	EvalOper("termKind", 
+        funcAlgType([termType], intType), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			Val(
+				switch (term) {
+					AlgTermVarUse(__,__):  0;
+					AlgTermVarDecl(__,__): 1;
+					AlgTermFunc(__,__,__): 2;
+				},
+				intType
+			)
+        }),
+        showPrefixEvalOper("termKind")
+    ),
+	EvalOper("termName", 
+        funcAlgType([termType], stringType), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			Val(term.name, stringType)
+        }),
+        showPrefixEvalOper("termName")
+    ),
+	EvalOper("termType", 
+        funcAlgType([termType], typeType), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			Val(term.type, typeType)
+        }),
+        showPrefixEvalOper("termType")
+    ),
+	EvalOper("termArgs", 
+        funcAlgType([termType], arrayAlgType(termType)), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			Val(
+				switch (term) {
+					AlgTermFunc(__,as,__): map(as, \a -> Val(a, termType));
+					default: [];
+				},
+				arrayAlgType(termType)
+			)
+        }),
+        showPrefixEvalOper("termType")
     ),
 ];
