@@ -18,8 +18,9 @@ export {
 	// Special universal type: anything
     anyType = constAlgType("any");
 
-	// Special type for reflection.
+	// Special types for reflection.
 	termType = constAlgType("term");
+	typeType = constAlgType("type");
 
     algType2s(type : AlgType) -> string;
 

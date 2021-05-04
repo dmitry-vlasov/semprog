@@ -64,7 +64,7 @@ def fact_11() : string {
 						acc, 
 						call(fn, (i - 1), (acc * i), fn)
 					)
-				)
+				), 1
 			), 
 			5
 		)
@@ -172,7 +172,7 @@ def main() : void {
 
 		("fact_11: " + fact_11()),
 
-		("5!(rec): " + i2s(
+		("BAD 5!(rec): " + i2s(
 			call(
 				rec(
 					lambda(i : int, acc : int, fn : (int, int, any) -> int,
@@ -181,7 +181,8 @@ def main() : void {
 							acc, 
 							call(fn, (i - 1), (acc * i), fn)
 						)
-					)
+					),
+					3
 				), 
 				5
 			)
@@ -196,7 +197,7 @@ def main() : void {
 						acc, 
 						call(fn, (i - 1), (acc * i), fn)
 					)
-				)), 
+				), 1), 
 				x
 			)
         )),

@@ -128,17 +128,19 @@ lambdaOpers = [
 	EvalOper(
         "rec", 
         funcAlgType(
-			[funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))], 
+			[
+				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V")),
+				AlgTypeVar("A2")
+			], 
 			funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))
 		),
         \args -> Eval(\vals, conf -> {
             fn = args[0].eval(vals, conf).val;
+			k = args[1].eval(vals, conf);
 			Val(
 				\n -> 
 					cast(fn : flow -> ((Val, Val, flow) -> Val))
-					(
-						n, 
-						Val(1, intType), 
+					(n, k, 
 						Val(fn, funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V")))
 					),
 				funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))

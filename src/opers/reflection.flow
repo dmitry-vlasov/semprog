@@ -34,6 +34,14 @@ reflectionOpers = [
         }),
         showPrefixEvalOper("term2s")
     ),
+	EvalOper("type2s", 
+        funcAlgType([typeType], stringType), 
+        \args -> Eval(\vals, conf -> {
+			type = cast(args[0].eval(vals, conf).val : flow -> AlgType);
+			Val(algType2s(type), stringType);
+        }),
+        showPrefixEvalOper("type2s")
+    ),
 	EvalOper("evalTerm", 
         funcAlgType([termType], AlgTypeVar("T")), 
         \args -> Eval(\vals, conf -> {
@@ -41,5 +49,99 @@ reflectionOpers = [
 			^semantics(term).eval(vals, conf);
         }),
         showPrefixEvalOper("evalTerm")
+    ),
+	EvalOper("type2tuple", 
+        funcAlgType([typeType], AlgTypeFunc("tuple", [stringType, boolType, arrayAlgType(typeType)])), 
+        \args -> Eval(\vals, conf -> {
+			type = cast(args[0].eval(vals, conf).val : flow -> AlgType);
+			switch (type) {
+				AlgTypeVar(name): {
+					Val(
+						[Val(name, stringType), Val(true, boolType), Val([], arrayAlgType(typeType))],
+						AlgTypeFunc("tuple", [stringType, boolType, arrayAlgType(typeType)]),
+					);
+				}
+				AlgTypeFunc(name, as): {
+					Val(
+						[
+							Val(name, stringType), 
+							Val(false, boolType), 
+							Val(map(as, \a -> Val(a, typeType)), arrayAlgType(typeType))
+						],
+						AlgTypeFunc("tuple", [stringType, boolType, arrayAlgType(typeType)]),
+					);
+				}
+			}
+        }),
+        showPrefixEvalOper("type2tuple")
+    ),
+	EvalOper("tuple2type", 
+        funcAlgType([AlgTypeFunc("tuple", [stringType, boolType, arrayAlgType(typeType)])], typeType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			is_var = flow2b(args[1].eval(vals, conf).val);
+			Val(
+				if (is_var) {
+					AlgTypeVar(name);
+				} else {
+					as = cast(args[2].eval(vals, conf).val : flow -> [Val]);
+					AlgTypeFunc(name, map(as, \a -> a.val));
+				},
+				typeType
+			)
+        }),
+        showPrefixEvalOper("tuple2type")
+    ),
+	EvalOper("term2tuple", 
+        funcAlgType([termType], AlgTypeFunc("tuple", [stringType, intType, typeType, arrayAlgType(termType)])), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			switch (term) {
+				AlgTermVarUse(name, type): {
+					Val(
+						[Val(name, stringType), Val(0, intType), Val(type, typeType), Val([], arrayAlgType(termType))],
+						AlgTypeFunc("tuple", [stringType, intType, typeType, arrayAlgType(typeType)]),
+					);
+				}
+				AlgTermVarDecl(name, type): {
+					Val(
+						[Val(name, stringType), Val(1, intType), Val(type, typeType), Val([], arrayAlgType(typeType))],
+						AlgTypeFunc("tuple", [stringType, intType, typeType, arrayAlgType(termType)]),
+					);
+				}
+				AlgTermFunc(name, as, type): {
+					Val(
+						[
+							Val(name, stringType), 
+							Val(2, intType), 
+							Val(type, typeType),
+							Val(map(as, \a -> Val(a, termType)), arrayAlgType(termType))
+						],
+						AlgTypeFunc("tuple", [stringType, intType, typeType, arrayAlgType(termType)]),
+					);
+				}
+			}
+        }),
+        showPrefixEvalOper("term2tuple")
+    ),
+	EvalOper("tuple2term", 
+        funcAlgType([AlgTypeFunc("tuple", [stringType, intType, typeType, arrayAlgType(termType)])], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			what   = flow2i(args[1].eval(vals, conf).val);
+			type   = cast(args[2].eval(vals, conf).val : flow -> AlgType);
+			Val(
+				if (what == 0) {
+					AlgTermVarUse(name, type);
+				} else if (what == 1) {
+					AlgTermVarDecl(name, type);
+				} else {
+					as = cast(args[3].eval(vals, conf).val : flow -> [Val]);
+					AlgTermFunc(name, map(as, \a -> a.val), type);
+				},
+				typeType
+			)
+        }),
+        showPrefixEvalOper("tuple2term")
     ),
 ];

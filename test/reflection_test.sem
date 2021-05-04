@@ -3,6 +3,14 @@ def inc (x : int) : int {
     (x + 1)
 }
 
+def add_3(x : int) : int {
+	transform(t : term,
+		lambda(name : string, t : type, args : [term],
+			(name == "E") 
+		)
+	)
+}
+
 def main() : void {
     println(
 		("inc: " + term2s(src("inc"))),
