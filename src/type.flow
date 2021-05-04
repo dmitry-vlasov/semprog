@@ -18,6 +18,9 @@ export {
 	// Special universal type: anything
     anyType = constAlgType("any");
 
+	// Special type for reflection.
+	termType = constAlgType("term");
+
     algType2s(type : AlgType) -> string;
 
     // -- A set of common algebraic type operators -- 
@@ -54,16 +57,16 @@ export {
     unwrapArrayAlgType(type : AlgType) -> AlgType;
 
     // A special constant - undefined type.
-    undefAlgType : AlgType = AlgTypeFunc("__undef_type", []);
+    undefType : AlgType = AlgTypeFunc("__undef_type", []);
 
     // Substitute type variables with approptiate values from 'sub'
     instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType;
 
-    // Match a pattern with a type: try to instantiate type variables properly
-    matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+    // Match a left with a type: try to instantiate type variables properly
+    matchType(left : AlgType, right : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
 
-    // Matching a pattern with respect to variadic type 
-    matchTypes(pattern : [AlgType], tp : [AlgType], ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+    // Matching a left with respect to variadic type 
+    matchTypes(left : [AlgType], right : [AlgType], ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
 }
 
 algType2s(type : AlgType) -> string {
@@ -110,11 +113,11 @@ variadicAlgType(arg : AlgType) -> AlgTypeFunc {
 }
 
 funcArgTypes(fn : AlgTypeFunc) -> [AlgType] {
-    if (fn.name != "fn") [undefAlgType] else tail(fn.args);
+    if (fn.name != "fn") [undefType] else tail(fn.args);
 }
 
 funcValType(fn : AlgTypeFunc) -> AlgType {
-    if (fn.name != "fn") undefAlgType else fn.args[0];
+    if (fn.name != "fn") undefType else fn.args[0];
 }
 
 makeFuncType(n : int, type : AlgType) -> AlgTypeFunc {
@@ -123,9 +126,9 @@ makeFuncType(n : int, type : AlgType) -> AlgTypeFunc {
 
 unwrapArrayAlgType(type : AlgType) -> AlgType {
     switch (type) {
-        AlgTypeVar(__): undefAlgType;
+        AlgTypeVar(__): undefType;
         AlgTypeFunc(name, args): {
-            if (name == "ar" && length(args) == 1) args[0] else undefAlgType;
+            if (name == "ar" && length(args) == 1) args[0] else undefType;
         }
     }
 }
@@ -139,31 +142,64 @@ instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType {
     }
 }
 
-matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
-    ret = switch (pattern) {
-        AlgTypeVar(v): {
-            switch (lookupTree(ac, v)) {
-                Some(t): if (t == tp) Some(ac) else {
+matchType(left0 : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+	left = instantiateType(left0, ac);
+	right = instantiateType(right0, ac);
+    ret = switch (left) {
+        AlgTypeVar(left_v): {
+            switch (lookupTree(ac, left_v)) {
+                Some(left_t): {
+					maybeMap(matchType(left_t, right, ac), 
+						\ac1 -> {
+							resolved = instantiateType(right, ac1);
+							setTree(ac1, left_v, resolved);
+						}
+					);
+					/*if (t == right) Some(ac) else 
 					if (t != anyType) None() else {
-						Some(setTree(ac, v, tp));
-					}
+						Some(setTree(ac, v, right));
+					}*/
 				}
-                None(): Some(setTree(ac, v, tp));
+                None(): {
+					Some(setTree(ac, left_v, right));
+				}
             }
         }
-        AlgTypeFunc(name, args): {
-            switch (tp) {
-                AlgTypeVar(__): None();
-                AlgTypeFunc(n, as): {
-                    if (name != n) None()
-                    else matchTypes(args, as, ac);
+        AlgTypeFunc(left_name, left_args): {
+            switch (right) {
+                AlgTypeVar(right_v): {
+					switch (lookupTree(ac, right_v)) {
+						Some(right_t): {
+							maybeMap(matchType(left, right_t, ac), 
+								\ac1 -> {
+									resolved = instantiateType(left, ac1);
+									setTree(ac1, right_v, resolved);
+								}
+							);
+							/*if (t == right) Some(ac) else 
+							if (t != anyType) None() else {
+								Some(setTree(ac, v, right));
+							}*/
+						}
+						None(): Some(setTree(ac, right_v, right));
+					}
+				}
+                AlgTypeFunc(right_name, right_args): {
+                    if (left_name == right_name) {
+						matchTypes(left_args, right_args, ac);
+					} else if (left_name == "any" || right_name == "any") {
+						// any is a universal type
+						Some(ac);
+					} else {
+						None();
+					}
                 }
             }
         }
     }
     /*println(
-        "(A) matching: " + algType2s(pattern) + 
-        " with: " + algType2s(tp) + 
+        "(A) matching: " + algType2s(left) + 
+        " with: " + algType2s(right) + 
         " ret: " + toString(ret)
     );*/
     ret;
@@ -171,47 +207,49 @@ matchType(pattern : AlgType, tp : AlgType, ac : Tree<string, AlgType>) -> Maybe<
 
 unwrapVariadicAlgType(type : AlgType) -> AlgType {
     switch (type) {
-        AlgTypeVar(__): undefAlgType;
+        AlgTypeVar(__): undefType;
         AlgTypeFunc(name, args): {
             if (name == "..." && length(args) == 1) {
                 args[0];
             } else {
-                undefAlgType;
+                undefType;
             }
         }
     }
 }
 
-matchTypes(patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+matchTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
 
-    ret = if (length(patterns) == 0) {
-        if (length(tps) == 0) {
+    ret = if (length(lefts) == 0) {
+        if (length(rights) == 0) {
             Some(acc);
         } else {
             None();
         }
     } else {
-		variadic_pattern = unwrapVariadicAlgType(patterns[0]);
-		if (variadic_pattern == undefAlgType) {
-			if (length(tps) == 0) {
+		variadic_left = unwrapVariadicAlgType(lefts[0]);
+		if (variadic_left == undefType) {
+			if (length(rights) == 0) {
 				None();
-			} else {
+			} else if (length(lefts) == length(rights)) {
 				maybeBind(
-					matchType(patterns[0], tps[0], acc),
-					\sub -> matchTypes(tail(patterns), tail(tps), sub)
+					matchType(lefts[0], rights[0], acc),
+					\sub -> matchTypes(tail(lefts), tail(rights), sub)
 				);
+			} else {
+				None();
 			}
 		} else {
-			if (length(tps) == 0) {
+			if (length(rights) == 0) {
 				Some(acc);
 			} else {
-				//println("variafic pattern: " + algType2s(variadic_pattern));
+				//println("variafic left: " + algType2s(variadic_left));
 				maybeBind(
-					matchType(variadic_pattern, tps[0], acc),
+					matchType(variadic_left, rights[0], acc),
 					\sub -> {
-						variadic_type = instantiateType(variadic_pattern, sub);
+						variadic_type = instantiateType(variadic_left, sub);
 						//println("variadic_type: " + algType2s(variadic_type));
-						matchVariadicTypes(variadic_type, tail(patterns), tail(tps), sub);
+						matchVariadicTypes(variadic_type, tail(lefts), tail(rights), sub);
 					}
 				);
 			}
@@ -219,21 +257,21 @@ matchTypes(patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -
     }
 
     /*println(
-        "(B) matching: " + strGlue(map(patterns, algType2s), ", ") + 
-        " with: " + strGlue(map(tps, algType2s), ", ") + 
+        "(B) matching: " + strGlue(map(lefts, algType2s), ", ") + 
+        " with: " + strGlue(map(rights, algType2s), ", ") + 
         " ret: " + toString(ret)
     );*/
     ret;
 }
 
-matchVariadicTypes(variadic : AlgType, patterns : [AlgType], tps : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
-    if (length(tps) == 0) {
+matchVariadicTypes(variadic : AlgType, lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+    if (length(rights) == 0) {
         Some(acc);
     } else {
-        if (tps[0] == variadic) {
-            matchVariadicTypes(variadic, patterns, tail(tps), acc);
+        if (rights[0] == variadic) {
+            matchVariadicTypes(variadic, lefts, tail(rights), acc);
         } else {
-            matchTypes(patterns, tps, acc);
+            matchTypes(lefts, rights, acc);
         }
     }
 }

@@ -11,13 +11,11 @@ controlOpers = [
         "if", 
         funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
         \args -> Eval(\vals, conf ->
-            if (length(args) != 3) flow(undefVal) else {
-                if (flow2b(args[0].eval(vals, conf))) {
-                    args[1].eval(vals, conf);
-                } else {
-                    args[2].eval(vals, conf);
-                }
-            }
+			if (flow2b(args[0].eval(vals, conf).val)) {
+				args[1].eval(vals, conf);
+			} else {
+				args[2].eval(vals, conf);
+			}
         ),
         \args -> Show(\conf ->
             if (length(args) != 3) "broken term" else {
@@ -32,14 +30,11 @@ controlOpers = [
         "?", 
         funcAlgType([boolType, AlgTypeVar("T"), AlgTypeVar("T")], AlgTypeVar("T")),
         \args -> Eval(\vals, conf ->
-            if (length(args) != 3) flow(undefVal) else {
-                cond = args[0].eval(vals, conf);
-                if (flow2b(cond)) {
-                    args[1].eval(vals, conf);
-                } else {
-                    args[2].eval(vals, conf);
-                }
-            }
+			if (flow2b(args[0].eval(vals, conf).val)) {
+				args[1].eval(vals, conf);
+			} else {
+				args[2].eval(vals, conf);
+			}
         ),
         \args -> Show(\conf ->
             if (length(args) != 3) "broken term" else {
@@ -54,7 +49,7 @@ controlOpers = [
         "let", 
         funcAlgType([AlgTypeVar("A"), AlgTypeVar("A"), AlgTypeVar("V")], AlgTypeVar("V")),
         \args -> Eval(\vals, conf -> {
-            v = flow2s(args[0].eval(vals, conf));
+            v = flow2s(args[0].eval(vals, conf).val);
 			def = args[1].eval(vals, conf);
             args[2].eval(setTree(vals, v, def), conf);
         }),
@@ -67,37 +62,40 @@ controlOpers = [
     ),
 	EvalOper(
         "some", 
-        funcAlgType([AlgTypeVar("A")], AlgTypeFunc("maybe", [AlgTypeVar("V")])),
-        \args -> Eval(\vals, conf -> {
-            val = args[0].eval(vals, conf);
-			flow(Some(val));
-        }),
+        funcAlgType([AlgTypeVar("A")],AlgTypeFunc("maybe", [AlgTypeVar("V")])),
+        \args -> Eval(\vals, conf ->
+			Val(
+				Some(args[0].eval(vals, conf)), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V")])
+			)
+        ),
         showPrefixEvalOper("some")
     ),
 	EvalOper(
         "none", 
         funcAlgType([], AlgTypeFunc("maybe", [AlgTypeVar("V")])),
-        \args -> Eval(\vals, conf -> {
-			flow(None());
-        }),
+        \args -> Eval(\vals, conf ->
+			Val(
+				None(), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V")])
+			)
+        ),
         showPrefixEvalOper("none")
     ),
 	EvalOper(
         "isNone", 
         funcAlgType([AlgTypeFunc("maybe", [AlgTypeVar("V")])], boolType),
-        \args -> Eval(\vals, conf -> {
-			val = args[0].eval(vals, conf);
-			flow(isNone(val));
-        }),
+        \args -> Eval(\vals, conf ->
+			Val(isNone(args[0].eval(vals, conf).val), boolType)
+        ),
         showPrefixEvalOper("isNone")
     ),
 	EvalOper(
         "isSome", 
         funcAlgType([AlgTypeFunc("maybe", [AlgTypeVar("V")])], boolType),
-        \args -> Eval(\vals, conf -> {
-			val = args[0].eval(vals, conf);
-			flow(isSome(val));
-        }),
+        \args -> Eval(\vals, conf ->
+			Val(isSome(args[0].eval(vals, conf).val), boolType)
+        ),
         showPrefixEvalOper("isSome")
     ),
 	EvalOper(
@@ -110,9 +108,9 @@ controlOpers = [
 			AlgTypeVar("V")
 		),
         \args -> Eval(\vals, conf -> {
-			mval = args[0].eval(vals, conf);
+			mval = args[0].eval(vals, conf).val;
 			def_val = args[1].eval(vals, conf);
-			flow(either(mval, def_val));
+			either(mval, def_val);
         }),
         showPrefixEvalOper("either")
     ),
@@ -129,9 +127,12 @@ controlOpers = [
 			AlgTypeFunc("maybe", [AlgTypeVar("V2")])
 		),
         \args -> Eval(\vals, conf -> {
-			val = args[0].eval(vals, conf);
-			fn = args[1].eval(vals, conf);
-			flow(maybeMap(val, fn));
+			val = args[0].eval(vals, conf).val;
+			fn = cast(args[1].eval(vals, conf).val : flow -> (Val) -> Val);
+			Val(
+				maybeMap(val, fn), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+			);
         }),
         showPrefixEvalOper("maybeMap")
     ),
@@ -148,11 +149,14 @@ controlOpers = [
 			AlgTypeFunc("maybe", [AlgTypeVar("V2")])
 		),
         \args -> Eval(\vals, conf -> {
-			val = args[0].eval(vals, conf);
-			fn = args[1].eval(vals, conf);
-			flow(maybeMap(val, fn));
+			val = args[0].eval(vals, conf).val;
+			fn = args[1].eval(vals, conf).val;
+			Val(
+				maybeBind(val, fn), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+			);
         }),
-        showPrefixEvalOper("maybeMap")
+        showPrefixEvalOper("maybeBind")
     ),
 	EvalOper(
         "eitherMap", 
@@ -168,10 +172,10 @@ controlOpers = [
 			AlgTypeVar("V2")
 		),
         \args -> Eval(\vals, conf -> {
-			val = args[0].eval(vals, conf);
-			fn  = args[1].eval(vals, conf);
+			val = args[0].eval(vals, conf).val;
+			fn  = args[1].eval(vals, conf).val;
 			def = args[2].eval(vals, conf);
-			flow(eitherMap(val, fn, def));
+			eitherMap(val, fn, def);
         }),
         showPrefixEvalOper("eitherMap")
     ),
@@ -184,17 +188,16 @@ controlOpers = [
 			] , 
             AlgTypeFunc("maybe", [AlgTypeVar("V")])
         ),
-        \args -> Eval(\vals, conf ->
-            if (length(args) != 3) {
-                flow(undefVal)
-            } else {
-                v = flow2s(args[0].eval(vals, conf));
-                flow(find(
-                    cast(args[1].eval(vals, conf) : flow -> [flow]),
-                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
-                ));
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			v = flow2s(args[0].eval(vals, conf).val);
+			Val(
+				find(
+					cast(args[1].eval(vals, conf).val : flow -> [Val]),
+					\a -> flow2b(args[2].eval(setTree(vals, v, a), conf).val)
+				), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V")])
+			);
+        }),
 		showPrefixEvalOper("find")
     ),
 	EvalOper("findmap",
@@ -208,16 +211,16 @@ controlOpers = [
 			] , 
             AlgTypeFunc("maybe", [AlgTypeVar("V2")])
         ),
-        \args -> Eval(\vals, conf ->
-            if (length(args) != 2) {
-                flow(undefVal)
-            } else {
-                flow(findmap(
-                    cast(args[0].eval(vals, conf) : flow -> [flow]),
-                    cast(args[1].eval(vals, conf) : flow -> (flow) -> Maybe<flow>)
-                ));
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			fn = cast(args[1].eval(vals, conf).val : flow -> (Val) -> Val);
+			Val(
+				findmap(
+					cast(args[0].eval(vals, conf).val : flow -> [Val]),
+					\a -> fn(a).val
+				), 
+				AlgTypeFunc("maybe", [AlgTypeVar("V2")])
+			)
+		}),
 		showPrefixEvalOper("findmap")
     ),
 ];

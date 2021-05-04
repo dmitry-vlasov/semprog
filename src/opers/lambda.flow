@@ -9,17 +9,23 @@ lambdaOpers = [
 	EvalOper(
         "lambda", 
         funcAlgType([AlgTypeVar("V")], funcAlgType([], AlgTypeVar("V"))),
-        \args -> Eval(\vals, conf -> {
-            flow(\-> args[0].eval(vals, conf));
-        }),
+        \args -> Eval(\vals, conf ->
+            Val(
+				\-> args[0].eval(vals, conf), 
+				funcAlgType([], AlgTypeVar("V"))
+			)
+        ),
         showPrefixEvalOper("lambda")
     ),
 	EvalOper(
         "lambda", 
         funcAlgType([AlgTypeVar("A"), AlgTypeVar("V")], funcAlgType([AlgTypeVar("A")], AlgTypeVar("V"))),
         \args -> Eval(\vals, conf -> {
-            v = flow2s(args[0].eval(vals, conf));
-            flow(\x -> args[1].eval(setTree(vals, v, x), conf));
+            v = flow2s(args[0].eval(vals, conf).val);
+            Val(
+				\x -> args[1].eval(setTree(vals, v, x), conf),
+				funcAlgType([AlgTypeVar("A")], AlgTypeVar("V"))
+			);
         }),
         showPrefixEvalOper("lambda")
     ),
@@ -30,9 +36,12 @@ lambdaOpers = [
 			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V"))
 		),
         \args -> Eval(\vals, conf -> {
-            v1 = flow2s(args[0].eval(vals, conf));
-			v2 = flow2s(args[1].eval(vals, conf));
-            flow(\x, y -> args[2].eval(setTree(setTree(vals, v1, x), v2, y), conf));
+            v1 = flow2s(args[0].eval(vals, conf).val);
+			v2 = flow2s(args[1].eval(vals, conf).val);
+            Val(
+				\x, y -> args[2].eval(setTree(setTree(vals, v1, x), v2, y), conf),
+				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2")], AlgTypeVar("V"))
+			);
         }),
        	showPrefixEvalOper("lambda")
     ),
@@ -43,10 +52,13 @@ lambdaOpers = [
 			funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))
 		),
         \args -> Eval(\vals, conf -> {
-            v1 = flow2s(args[0].eval(vals, conf));
-			v2 = flow2s(args[1].eval(vals, conf));
-			v3 = flow2s(args[2].eval(vals, conf));
-            flow(\x, y, z -> args[3].eval(setTree(setTree(setTree(vals, v1, x), v2, y), v3, z), conf));
+            v1 = flow2s(args[0].eval(vals, conf).val);
+			v2 = flow2s(args[1].eval(vals, conf).val);
+			v3 = flow2s(args[2].eval(vals, conf).val);
+            Val(
+				\x, y, z -> args[3].eval(setTree(setTree(setTree(vals, v1, x), v2, y), v3, z), conf),
+				funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V"))
+			);
         }),
         showPrefixEvalOper("lambda")
     ),
@@ -57,7 +69,7 @@ lambdaOpers = [
 			AlgTypeVar("V")
 		),
         \args -> Eval(\vals, conf -> {
-            fn = cast(args[0].eval(vals, conf) : flow -> () -> flow);
+            fn = cast(args[0].eval(vals, conf).val : flow -> () -> Val);
             fn();
         }),
         showPrefixEvalOper("call")
@@ -72,7 +84,7 @@ lambdaOpers = [
 			AlgTypeVar("V")
 		),
         \args -> Eval(\vals, conf -> {
-            fn = cast(args[0].eval(vals, conf) : flow -> (flow) -> flow);
+            fn = cast(args[0].eval(vals, conf).val : flow -> (Val) -> Val);
             ar = args[1].eval(vals, conf);
             fn(ar);
         }),
@@ -88,7 +100,7 @@ lambdaOpers = [
 			AlgTypeVar("V")
 		),
         \args -> Eval(\vals, conf -> {
-            fn = cast(args[0].eval(vals, conf) : flow -> (flow, flow) -> flow);
+            fn = cast(args[0].eval(vals, conf).val : flow -> (Val, Val) -> Val);
             a_1 = args[1].eval(vals, conf);
 			a_2 = args[2].eval(vals, conf);
             fn(a_1, a_2);
@@ -105,7 +117,7 @@ lambdaOpers = [
 			AlgTypeVar("V")
 		),
         \args -> Eval(\vals, conf -> {
-            fn = cast(args[0].eval(vals, conf) : flow -> (flow, flow, flow) -> flow);
+            fn = cast(args[0].eval(vals, conf).val : flow -> (Val, Val, Val) -> Val);
             a_1 = args[1].eval(vals, conf);
 			a_2 = args[2].eval(vals, conf);
 			a_3 = args[3].eval(vals, conf);
@@ -120,15 +132,22 @@ lambdaOpers = [
 			funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))
 		),
         \args -> Eval(\vals, conf -> {
-            fn = args[0].eval(vals, conf);
-			flow(\n -> 
-				cast(fn : flow -> ((flow, flow, flow) -> flow))(n, 1, fn)
+            fn = args[0].eval(vals, conf).val;
+			Val(
+				\n -> 
+					cast(fn : flow -> ((Val, Val, flow) -> Val))
+					(
+						n, 
+						Val(1, intType), 
+						Val(fn, funcAlgType([AlgTypeVar("A1"), AlgTypeVar("A2"), AlgTypeVar("A3")], AlgTypeVar("V")))
+					),
+				funcAlgType([AlgTypeVar("A1")], AlgTypeVar("V"))
 			);
         }),
         showPrefixEvalOper("rec")
     ),
 ];
-
+/*
 doRecursion(
     f_0 : ([flow]) -> flow,
     f_1 : ([flow]) -> flow,
@@ -176,4 +195,4 @@ makeRecursion(n : AlgType, arg_types : [AlgType], val : AlgType) -> EvalOper {
         showPrefixEvalOper("rec")
     );
 }
-
+*/

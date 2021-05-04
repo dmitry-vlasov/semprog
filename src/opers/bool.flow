@@ -42,9 +42,7 @@ boolOpers = [
 
 makeBoolConst(name : string, v : bool) -> EvalOper {
     EvalOper(name, boolType, 
-        \args -> Eval(\__, conf ->
-            if (length(args) != 0) flow(undefVal) else flow(v)
-        ),
+        \args -> Eval(\__, conf -> Val(v, boolType)),
         \__ -> Show(\conf -> name)
     );
 }
@@ -52,9 +50,7 @@ makeBoolConst(name : string, v : bool) -> EvalOper {
 makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper {
     EvalOper(name, unaryBoolFnType, 
         \args -> Eval(\vals, conf ->
-            if (length(args) != 1) flow(undefVal) else {
-                flow(op(flow2b(args[0].eval(vals, conf))));
-            }
+            Val(op(flow2b(args[0].eval(vals, conf).val)), boolType)
         ),
         showPrefixUnaryEvalOper(name)
     )
@@ -63,12 +59,10 @@ makeBoolUnary(name : string, op : (bool) -> bool) -> EvalOper {
 makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
     EvalOper(name, binaryBoolFnType,
         \args -> Eval(\vals, conf ->
-            if (length(args) != 2) flow(undefVal) else {
-                flow(op(
-                    flow2b(args[0].eval(vals, conf)), 
-                    flow2b(args[1].eval(vals, conf))
-                ));
-            }
+			Val(op(
+				flow2b(args[0].eval(vals, conf).val), 
+				flow2b(args[1].eval(vals, conf).val)
+			), boolType)
         ),
         showInfixBinaryEvalOper(name)
     );
@@ -78,7 +72,7 @@ makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
     EvalOper(name, 
         funcAlgType([variadicAlgType(boolType)], boolType),
         \args -> Eval(\vals, conf ->
-            flow(op(map(args, \arg -> flow2b(arg.eval(vals, conf)))))
+            Val(op(map(args, \arg -> flow2b(arg.eval(vals, conf).val))), boolType)
         ),
         showInfixVariadicEvalOper(name)
     );
@@ -87,24 +81,22 @@ makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
 makeBoolQuantifier(BQ : string) -> EvalOper {
     EvalOper(BQ,
         funcAlgType([stringType, boolType] , boolType),
-        \args -> Eval(\vals, conf ->
-            if (length(args) != 2) {
-                flow(undefVal)
-            } else {
-                v = flow2s(args[0].eval(vals, conf));
-                if (BQ == "BA") {
-                    flow(
-                        flow2b(args[1].eval(setTree(vals, v, true), conf)) && 
-                        flow2b(args[1].eval(setTree(vals, v, false), conf))
-                    );
-                } else {
-                    flow(
-                        flow2b(args[1].eval(setTree(vals, v, true), conf)) || 
-                        flow2b(args[1].eval(setTree(vals, v, false), conf))
-                    );
-                }
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			v = flow2s(args[0].eval(vals, conf).val);
+			if (BQ == "BA") {
+				Val(
+					flow2b(args[1].eval(setTree(vals, v, Val(true, boolType)), conf).val) && 
+					flow2b(args[1].eval(setTree(vals, v, Val(false, boolType)), conf).val),
+					boolType
+				);
+			} else {
+				Val(
+					flow2b(args[1].eval(setTree(vals, v, Val(true, boolType)), conf).val) || 
+					flow2b(args[1].eval(setTree(vals, v, Val(false, boolType)), conf).val),
+					boolType
+				);
+			}
+		}),
         \args -> Show(\conf ->
             if (length(args) != 2) "broken term" else
             BQ + " " + args[0].show(conf) + " " + args[1].show(conf)
@@ -193,13 +185,13 @@ makeBoolExistsTerm(v : AlgTermVarUse, t : AlgTerm) -> AlgTermFunc {
 
 getTermQuantVar(t : AlgTerm) -> AlgTermVarUse {
     switch (t) {
-        AlgTermVarUse(__,__): AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
-        AlgTermVarDecl(__,__): AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
+        AlgTermVarUse(__,__): AlgTermVarUse("ERROR QUANT VAR", undefType);
+        AlgTermVarDecl(__,__): AlgTermVarUse("ERROR QUANT VAR", undefType);
         AlgTermFunc(name, args, __): {
             if (isQuantifierOper(name)) {
                 cast(args[0] : AlgTerm -> AlgTermVarUse);
             } else {
-                AlgTermVarUse("ERROR QUANT VAR", undefAlgType);
+                AlgTermVarUse("ERROR QUANT VAR", undefType);
             }
         }
     }

@@ -33,14 +33,36 @@ evalAlgTerm(
             });
         }
         AlgTermVarDecl(name, __): {
-            Eval(\vals, conf -> {
-                flow(name);
-            });
+            Eval(\vals, conf -> Val(name, stringType));
         }
         AlgTermFunc(name, args, type): {
             arg_types = map(args, \arg -> arg.type);
 			arg_evals = map(args, \arg -> evalAlgTerm(arg, opers, consts));
-            switch (lookupTree(opers, name)) {
+			switch (evalAlgTermOper(name, type, arg_types, arg_evals, opers)) {
+				Some(eval): eval;
+				None(): {
+					if (length(args) == 0) {
+						switch (lookupTree(consts, type)) {
+							Some(const): {
+								Eval(\vals, conf -> {
+									ret = const.eval(name, conf);
+									if (conf.trace) {
+										println(strIndentMany("const: " + name + " = " + toString(ret), ^(conf.callDepth)));
+									}
+									ret;
+								});
+							}
+							None(): {
+								println("Constant: " + name + " of type " + toString(type) +  " is uniterpreted");
+								Eval(\vals, conf -> Val(undefVal, undefType));
+							}
+						}
+					} else {
+						evalAlgTermVal(name, type, arg_evals);
+					}
+				}
+			}
+            /*switch (lookupTree(opers, name)) {
                 Some(ops): {
                     fits = filter(ops, \op -> 
                         isSome(matchTypes(funcArgTypes(op.sign), arg_types, makeTree()))
@@ -66,7 +88,11 @@ evalAlgTerm(
                             if (conf.trace) {
                                 println(strIndentMany("applying " + name, ^(conf.callDepth)));
                             }
-                            eval.eval(vals, conf);
+                            ret = Val(eval.eval(vals, conf) with type = type);
+							if (conf.trace) {
+                                println(strIndentMany("result of " + name + " = " + toString(ret), ^(conf.callDepth)));
+                            }
+							ret
                         });
                     }
                 } 
@@ -76,26 +102,26 @@ evalAlgTerm(
 							switch (lookupTree(vals, name)) {
 								Some(func_var): {
 									if (length(arg_evals) == 0) {
-										fn = cast(func_var : flow -> () -> flow);
+										fn = cast(func_var.val : flow -> () -> Val);
 										fn();
 									} else if (length(arg_evals) == 1) {
-										fn = cast(func_var : flow -> (flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val) -> Val);
 										fn(arg_evals[0].eval(vals, conf));
 									} else if (length(arg_evals) == 2) {
-										fn = cast(func_var : flow -> (flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf)
 										);
 									} else if (length(arg_evals) == 3) {
-										fn = cast(func_var : flow -> (flow, flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf), 
 											arg_evals[2].eval(vals, conf)
 										);
 									} else if (length(arg_evals) == 4) {
-										fn = cast(func_var : flow -> (flow, flow, flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val, Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf), 
@@ -103,7 +129,7 @@ evalAlgTerm(
 											arg_evals[3].eval(vals, conf), 
 										);
 									} else if (length(arg_evals) == 5) {
-										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf), 
@@ -112,7 +138,7 @@ evalAlgTerm(
 											arg_evals[4].eval(vals, conf), 
 										);
 									} else if (length(arg_evals) == 6) {
-										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf), 
@@ -122,7 +148,7 @@ evalAlgTerm(
 											arg_evals[5].eval(vals, conf), 
 										);
 									} else if (length(arg_evals) == 7) {
-										fn = cast(func_var : flow -> (flow, flow, flow, flow, flow, flow, flow) -> flow);
+										fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val, Val, Val) -> Val);
 										fn(
 											arg_evals[0].eval(vals, conf), 
 											arg_evals[1].eval(vals, conf), 
@@ -134,12 +160,12 @@ evalAlgTerm(
 										);
 									} else {
 										println("Arity " + i2s(length(arg_evals)) + " of functional variable " + name + " is too high - not supproted yet");
-										flow(undefVal);
+										Val(undefVal, undefType);
 									}
 								}
 								None(): {
 									println("Unknown operator: " + name);
-									flow(undefVal);
+									Val(undefVal, undefType);
 								}
 							}
 						});
@@ -147,20 +173,145 @@ evalAlgTerm(
 						switch (lookupTree(consts, type)) {
 							Some(const): {
 								Eval(\vals, conf -> {
+									ret = const.eval(name, conf);
 									if (conf.trace) {
-									println(strIndentMany("const: " + name, ^(conf.callDepth)));
+										println(strIndentMany("const: " + name + " = " + toString(ret), ^(conf.callDepth)));
 									}
-									flow(const.eval(name, conf));
+									ret;
 								});
 							}
 							None(): {
 								println("Constant: " + name + " of type " + toString(type) +  " is uniterpreted");
-								Eval(\vals, conf -> flow(undefVal));
+								Eval(\vals, conf -> Val(undefVal, undefType));
 							}
 						}
 					}
 				}
-			}
+			}*/
         }
     }
 }
+
+evalAlgTermOper(
+	name : string, 
+	type : AlgType,
+	arg_types : [AlgType],
+	arg_evals : [Eval],
+    opers : Tree<string, [EvalOper]>
+) -> Maybe<Eval> {
+	maybeBind(lookupTree(opers, name),
+		\ops -> {
+			fits = filter(ops, \op -> 
+				isSome(matchTypes(funcArgTypes(op.sign), arg_types, makeTree()))
+			);
+			if (length(fits) == 0) {
+				/*println(
+					"No operator " + name + " matches argument types: [" + 
+					strGlue(map(arg_types, \t -> algType2s(t)), ", ") + "]"
+				);*/
+				None();
+			} else if (length(fits) > 1) {
+				println(
+					"Ambigous operator " + name + " matching with argument types: [" + 
+					strGlue(map(arg_types, \t -> algType2s(t)), ", ") + "]"
+				);
+				None();
+			} else {
+				//call_depth = ^(conf.callDepth);
+				//conf.callDepth := call_depth + 1;
+				eval = fits[0].eval(arg_evals);
+				//conf.callDepth := call_depth;
+				Some(Eval(\vals, conf -> {
+					if (conf.trace) {
+						println(strIndentMany("applying " + name, ^(conf.callDepth)));
+					}
+					ret = Val(eval.eval(vals, conf) with type = type);
+					if (conf.trace) {
+						println(strIndentMany("result of " + name + " = " + toString(ret), ^(conf.callDepth)));
+					}
+					ret
+				}));
+			}
+		}
+	);
+}
+
+
+evalAlgTermVal(
+    name : string, 
+	type : AlgType,
+	arg_evals : [Eval],
+) -> Eval {
+	Eval(\vals, conf -> {
+		switch (lookupTree(vals, name)) {
+			Some(func_var): {
+				if (length(arg_evals) == 0) {
+					fn = cast(func_var.val : flow -> () -> Val);
+					fn();
+				} else if (length(arg_evals) == 1) {
+					fn = cast(func_var.val : flow -> (Val) -> Val);
+					fn(arg_evals[0].eval(vals, conf));
+				} else if (length(arg_evals) == 2) {
+					fn = cast(func_var.val : flow -> (Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf)
+					);
+				} else if (length(arg_evals) == 3) {
+					fn = cast(func_var.val : flow -> (Val, Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf), 
+						arg_evals[2].eval(vals, conf)
+					);
+				} else if (length(arg_evals) == 4) {
+					fn = cast(func_var.val : flow -> (Val, Val, Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf), 
+						arg_evals[2].eval(vals, conf),
+						arg_evals[3].eval(vals, conf), 
+					);
+				} else if (length(arg_evals) == 5) {
+					fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf), 
+						arg_evals[2].eval(vals, conf),
+						arg_evals[3].eval(vals, conf), 
+						arg_evals[4].eval(vals, conf), 
+					);
+				} else if (length(arg_evals) == 6) {
+					fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf), 
+						arg_evals[2].eval(vals, conf),
+						arg_evals[3].eval(vals, conf), 
+						arg_evals[4].eval(vals, conf), 
+						arg_evals[5].eval(vals, conf), 
+					);
+				} else if (length(arg_evals) == 7) {
+					fn = cast(func_var.val : flow -> (Val, Val, Val, Val, Val, Val, Val) -> Val);
+					fn(
+						arg_evals[0].eval(vals, conf), 
+						arg_evals[1].eval(vals, conf), 
+						arg_evals[2].eval(vals, conf),
+						arg_evals[3].eval(vals, conf), 
+						arg_evals[4].eval(vals, conf), 
+						arg_evals[5].eval(vals, conf), 
+						arg_evals[6].eval(vals, conf), 
+					);
+				} else {
+					println("Arity " + i2s(length(arg_evals)) + " of functional variable " + name + " is too high - not supproted yet");
+					Val(undefVal, type);
+				}
+			}
+			None(): {
+				println("Unknown operator: " + name);
+				Val(undefVal, type);
+			}
+		}
+	});
+}
+

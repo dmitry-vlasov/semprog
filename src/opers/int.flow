@@ -19,9 +19,9 @@ intOpers = [
         funcAlgType([variadicAlgType(intType)], intType),
         \args -> Eval(\vals, conf -> {
             arg_vals = evalArgs(args, vals, conf);
-            flow(fold(
-                map(arg_vals, flow2i), 0, \acc, i -> acc + i
-            ));
+            Val(fold(
+                map(arg_vals, \arg -> flow2i(arg.val)), 0, \acc, i -> acc + i
+            ), intType);
         }),
         showInfixVariadicEvalOper("+")
     ),
@@ -29,9 +29,9 @@ intOpers = [
         funcAlgType([variadicAlgType(intType)], intType),
         \args -> Eval(\vals, conf -> {
             arg_vals = evalArgs(args, vals, conf);
-            flow(fold(
-                map(arg_vals, flow2i), 1, \acc, i -> acc * i
-            ));
+            Val(fold(
+                map(arg_vals, \arg -> flow2i(arg.val)), 1, \acc, i -> acc * i
+            ), intType);
         }),
         showInfixVariadicEvalOper("*")
     ),
@@ -42,21 +42,17 @@ intOpers = [
 intConst = EvalConst(
     intType, 
     \n, conf -> if (isDigits(n)) {
-        flow(s2i(n));
+        Val(s2i(n), intType);
     } else {
         println("wrong integer format: " + n);
-        flow(undefVal);
+        Val(undefVal, intType);
     }
 );
 
 makeIntConst(name : string, val : int) -> EvalOper {
     EvalOper(name,
         funcAlgType([], intType),
-        \args -> Eval(\__,conf ->
-            if (length(args) != 0) flow(undefVal) else {
-                flow(val);
-            }
-        ),
+        \args -> Eval(\__,conf -> Val(val, intType)),
         showConstEvalOper(name)
     )
 }
@@ -64,14 +60,12 @@ makeIntConst(name : string, val : int) -> EvalOper {
 makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
     EvalOper(name, 
         funcAlgType([intType], intType),
-        \args -> Eval(\vals, conf -> 
-            if (length(args) != 1) flow(undefVal) else {
-                arg_val = args[0].eval(vals, conf);
-                if (arg_val == undefVal) flow(undefVal) else {
-                    flow(op(flow2i(arg_val)));
-                }
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			arg_val = args[0].eval(vals, conf).val;
+			if (arg_val == undefVal) Val(undefVal, intType) else {
+				Val(op(flow2i(arg_val)), intType);
+			}
+		}),
         showPrefixUnaryEvalOper(name)
     )
 }
@@ -79,17 +73,18 @@ makeIntUnary(name : string, op : (int) -> int) -> EvalOper {
 makeIntBinary(name : string, op : (int, int) -> int) -> EvalOper {
     EvalOper(name, 
         funcAlgType([intType, intType], intType),
-        \args -> Eval(\vals, conf -> 
-            if (length(args) != 2) flow(undefVal) else {
-                arg1_val = args[0].eval(vals, conf);
-                if (arg1_val == undefVal) flow(undefVal) else {
-                    arg2_val = args[1].eval(vals, conf);
-                    if (arg2_val == undefVal) flow(undefVal) else {
-                        flow(op(flow2i(arg1_val), flow2i(arg2_val)));
-                    }
-                }
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			arg1_val = args[0].eval(vals, conf).val;
+			if (arg1_val == undefVal) Val(undefVal, intType) else {
+				arg2_val = args[1].eval(vals, conf).val;
+				if (arg2_val == undefVal) Val(undefVal, intType) else {
+					Val(
+						op(flow2i(arg1_val), flow2i(arg2_val)), 
+						intType
+					);
+				}
+			}
+        }),
         showInfixBinaryEvalOper(name)
     );
 }

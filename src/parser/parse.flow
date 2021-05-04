@@ -3,18 +3,18 @@ import module;
 import common_types;
 
 export {
-    parseModule(str : string, name : string) -> Module;
-	parseTerm(str : string) -> AlgTerm;
+    parseModule(str : string, name : string) -> Maybe<Module>;
+	parseTerm(str : string) -> Maybe<AlgTerm>;
 }
 
-parser : ref [PegOp] = ref [];
+semprog_parser : ref [PegOp] = ref [];
 
 getParser() -> [PegOp] {
-	if (^parser == []) {
+	if (^semprog_parser == []) {
 		e_gr = "#include parser/module.lingo";
-		parser := compilePegGrammar(e_gr);
+		semprog_parser := compilePegGrammar(e_gr);
 	}
-	^parser;
+	^semprog_parser;
 }
 
 term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
@@ -29,19 +29,19 @@ term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
 
 	// Terms
 	Pair("makeTermInfix", \s -> 
-		AlgTermFunc(s[0], concat([s[1], s[2]], cast(s[3] : flow -> [flow])), undefAlgType)
+		AlgTermFunc(s[0], concat([s[1], s[2]], cast(s[3] : flow -> [flow])), undefType)
 	),
-	Pair("makeTermPrefix",  \s -> AlgTermFunc(s[0], s[1], undefAlgType)),
+	Pair("makeTermPrefix",  \s -> AlgTermFunc(s[0], s[1], undefType)),
 	Pair("makeTermQuant",   \s -> 
-		AlgTermFunc(s[0], concat(cast(s[1] : flow -> [flow]), cast(s[2] : flow -> [flow])), undefAlgType)
+		AlgTermFunc(s[0], concat(cast(s[1] : flow -> [flow]), cast(s[2] : flow -> [flow])), undefType)
 	),
 	Pair("makeTermLet",   \s -> 
-		AlgTermFunc(s[0], [s[1], s[2], s[3]], undefAlgType)
+		AlgTermFunc(s[0], [s[1], s[2], s[3]], undefType)
 	),
 	Pair("makeTermString",  \s -> AlgTermFunc(s[0], [], stringType)),
 	Pair("makeTermInt",     \s -> AlgTermFunc(s[0], [], intType)),
 	Pair("makeTermBool",    \s -> AlgTermFunc(s[0], [], boolType)),
-	Pair("makeTermVarUse",  \s -> AlgTermVarUse(s[0], undefAlgType)),
+	Pair("makeTermVarUse",  \s -> AlgTermVarUse(s[0], undefType)),
 	Pair("makeTermVarDecl", \s -> AlgTermVarDecl(s[0], s[1])),
 ]);
 
@@ -55,17 +55,32 @@ module_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
 	))
 ]);
 
-parseModule(str : string, name : string) -> Module {
-	module : Module = parsic(getParser(), str, 
+// parsic3(op : [PegOp], code : string, actions : SemanticActions, def : ?) -> Triple<?, int, string> 
+
+parseModule(str : string, name : string) -> Maybe<Module> {
+	result = parsic3(getParser(), str, 
 		SemanticActions(mergeTree(defaultPegActions.t,
 			mergeTree(term_semantic_actions, module_semantic_actions)
-		))
+		)),
+		Module("", [])
 	);
-	Module(module with name = name);
+	if (result.third == "") {
+		Some(Module(result.first with name = name));
+	} else {
+		println(result.third);
+		None();
+	}
 }
 
-parseTerm(str : string) -> AlgTerm {
-	parsic(getParser(), str, 
-		SemanticActions(mergeTree(defaultPegActions.t, term_semantic_actions))
+parseTerm(str : string) -> Maybe<AlgTerm> {
+	result = parsic3(getParser(), str, 
+		SemanticActions(mergeTree(defaultPegActions.t, term_semantic_actions)),
+		undefTermVar
 	);
+	if (result.third == "") {
+		Some(result.first);
+	} else {
+		println(result.third);
+		None();
+	}
 }

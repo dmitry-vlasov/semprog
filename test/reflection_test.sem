@@ -1,0 +1,27 @@
+
+def inc (x : int) : int {
+    (x + 1)
+}
+
+def main() : void {
+    println(
+		("inc: " + term2s(src("inc"))),
+		//("inc: " + a2s(evalTerm(src("inc")))),
+		("inc(1): " + 
+			i2s(let x : int = 2;
+				evalTerm(src("inc"))
+			)
+		),
+		("inc(1): " + 
+			i2s(
+				call(
+					lambda(x : int,
+						evalTerm(src("inc"))
+					),
+					3
+				)
+			)
+		),
+    )
+}
+

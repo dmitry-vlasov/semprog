@@ -25,43 +25,54 @@ main() -> void {
         } else {
             src = getFileContent(conf.file);
             name = changeFileExt(conf.file, "");
-			parsed = parseModule(src, name);
-			if (lookupTreeDef(conf.opts, "show-parsed", "") == "1") {
-            	println("Parsed module " + name + ":\n" + moduleTerms2s(parsed, conf) + "\n\n");
-			} else {
-				module = typecheckModule(parsed, fullAlgebra);
-
-				algebra = EvalAlgebra("module " + name + " algebra", 
-					fold(module.defs, fullAlgebra.opers, \acc, def -> 
-						concat(acc, [makeDefOper(def)])
-					),
-					fullAlgebra.consts
-				);
-				semantics := algebraEval(algebra);
-				shower := algebraShow(algebra);
-
-				if (lookupTreeDef(conf.opts, "show-algebra", "") == "all") {
-					println(evalAlgebra2s(algebra));
-				} else if (lookupTreeDef(conf.opts, "show-algebra", "") == "module") {
-					println(evalAlgebra2s(
-						EvalAlgebra("module " + name + " algebra", 
-							map(module.defs, makeDefOper),
-							[]
-						)
-					));
-				} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
-					println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
-				} else {
-					if (exists(algebra.opers, \oper -> oper.name == "main")) {
-						^semantics(AlgTermFunc("main", [], voidType)).eval(conf.opts, conf);
-						{}
+			maybeApply(parseModule(src, name), 
+				\parsed -> {
+					if (lookupTreeDef(conf.opts, "show-parsed", "") == "1") {
+						println("Parsed module " + name + ":\n" + moduleTerms2s(parsed, conf) + "\n\n");
 					} else {
-						if (conf.verbose > 0) {
-							println("No main function is defined");
+						sign = moduleSignature(parsed, fullAlgebra);
+						module = typecheckModule(parsed, fullAlgebra, sign);
+						defs = fold(module.defs, makeTree(), \acc, def -> setTree(acc, def.name, def));
+
+						// makeSrcOper(defs : Tree<string, Def>) -> EvalOper;
+
+						algebra = EvalAlgebra("module " + name + " algebra", 
+							fold(module.defs, 
+								concat(fullAlgebra.opers, [makeSrcOper(defs)]), 
+								\acc, def -> concat(acc, [makeDefOper(def)])
+							),
+							fullAlgebra.consts
+						);
+						semantics := algebraEval(algebra);
+						shower := algebraShow(algebra);
+						parser := \str, vars -> maybeMap(parseTerm(str), \term -> typecheckTerm(term, vars, sign));
+
+						if (lookupTreeDef(conf.opts, "show-algebra", "") == "all") {
+							println(evalAlgebra2s(algebra));
+						} else if (lookupTreeDef(conf.opts, "show-algebra", "") == "module") {
+							println(evalAlgebra2s(
+								EvalAlgebra("module " + name + " algebra", 
+									map(module.defs, makeDefOper),
+									[]
+								)
+							));
+						} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
+							println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
+						} else {
+							if (exists(algebra.opers, \oper -> oper.name == "main")) {
+								^semantics(AlgTermFunc("main", [], voidType)).eval(
+									mapTree(conf.opts, \opt -> Val(opt, stringType)), conf
+								);
+								{}
+							} else {
+								if (conf.verbose > 0) {
+									println("No main function is defined");
+								}
+							}
 						}
 					}
 				}
-			}
+			);
         }
     }
     quit(0);

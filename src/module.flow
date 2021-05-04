@@ -12,33 +12,50 @@ export {
     );
 
     makeDefOper(def : Def) -> EvalOper;
+	makeSrcOper(defs : Tree<string, Def>) -> EvalOper;
     module2s(module : Module, conf : Conf) -> string;
     def2s(def : Def, conf : Conf) -> string;
 	moduleTerms2s(module : Module, conf : Conf) -> string;
 	defTerms2s(def : Def, conf : Conf) -> string;
-    typecheckModule(module : Module, algebra : EvalAlgebra) -> Module;
+    typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module;
+
+	moduleSignature(module : Module, algebra : EvalAlgebra) -> Tree<string, [AlgTypeFunc]>;
 }
 
 makeDefOper(def : Def) -> EvalOper {
     EvalOper(
         def.name,
         funcAlgType(map(def.vars, \v -> v.type), def.term.type),
-        \args -> Eval(\vals, conf -> 
-            if (length(args) != length(def.vars)) {
-                println("Function " + def.name + " arity " + i2s(length(def.vars)) + " mismatch arguments length " + i2s(length(args)));
-                flow(undefVal)
-            } else {
-                arg_vals = evalArgs(args, vals, conf);
-                if (conf.trace) {
-                     println(strIndentMany("calling func " + def.name + " with args " + toString(arg_vals), ^(conf.callDepth)));
-                }
-                vals1 = foldi(def.vars, vals, \i, acc, var -> 
-                    setTree(acc, var.name, arg_vals[i])
-                );
-                ^semantics(def.term).eval(vals1, conf);
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			arg_vals = evalArgs(args, vals, conf);
+			if (conf.trace) {
+				println(strIndentMany("calling func " + def.name + " with args " + toString(arg_vals), ^(conf.callDepth)));
+			}
+			vals1 = foldi(def.vars, vals, \i, acc, var -> 
+				setTree(acc, var.name, arg_vals[i])
+			);
+			ret = ^semantics(def.term).eval(vals1, conf);
+			if (conf.trace) {
+				println(strIndentMany("return func " + def.name + " with value " + toString(ret), ^(conf.callDepth)));
+			}
+			ret
+        }),
         showPrefixEvalOper(def.name)
+    );
+}
+
+makeSrcOper(defs : Tree<string, Def>) -> EvalOper {
+    EvalOper(
+        "src",
+        funcAlgType([stringType], termType),
+        \args -> Eval(\vals, conf -> {
+			name = flow2s(args[0].eval(vals, conf).val);
+			switch (lookupTree(defs, name)) {
+				Some(def): Val(def.term, termType);
+				None(): Val(undefTermVar, termType);
+			}
+        }),
+        showPrefixEvalOper("src")
     );
 }
 
@@ -64,19 +81,13 @@ defTerms2s(def : Def, conf : Conf) -> string {
      strIndent(algTerm2s(def.term)) + "\n}\n";
 }
 
-typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
-    alg_signs = fold(algebra.opers, makeTree(), \acc, oper ->
-        setTree(acc, oper.name, concat(lookupTreeDef(acc, oper.name, []), [oper.sign]))
-    );
-    signs = fold(module.defs, alg_signs, \acc, def ->
-        setTree(acc, def.name, concat(lookupTreeDef(acc, def.name, []), [defSign(def)]))
-    );
+typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module {
     Module(module with 
         defs = map(module.defs, \def -> {
             //println("typechecking: " + def.name);
             vars = fold(def.vars, makeTree(), \acc, var -> setTree(acc, var.name, var.type));
-            typechecked = typecheck(def.term, vars, signs);
-            if (typechecked.type == undefAlgType) {
+            typechecked = typecheckTerm(def.term, vars, sign);
+            if (typechecked.type == undefType) {
                 println("Term " + algTerm2s(def.term) + " was not typed");
             }
             Def(def with term = typechecked);
@@ -86,4 +97,13 @@ typecheckModule(module : Module, algebra : EvalAlgebra) -> Module {
 
 defSign(def : Def) -> AlgTypeFunc {
     funcAlgType(map(def.vars, \v -> v.type), def.type);
+}
+
+moduleSignature(module : Module, algebra : EvalAlgebra) -> Tree<string, [AlgTypeFunc]> {
+    fold(module.defs, 
+		fold(algebra.opers, makeTree1("src", [funcAlgType([stringType], termType)]), 
+			\acc, oper -> setTree(acc, oper.name, concat(lookupTreeDef(acc, oper.name, []), [oper.sign]))
+		), 
+		\acc, def -> setTree(acc, def.name, concat(lookupTreeDef(acc, def.name, []), [defSign(def)]))
+    );
 }

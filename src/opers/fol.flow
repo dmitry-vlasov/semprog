@@ -4,7 +4,7 @@ import opers/string;
 
 export {
     // Basic first order logic construcitons: restricted quantifier, equality and predicates.
-    makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper;
+    makeQuantifier(Q : string, quant : ([Val], (Val) -> bool) -> bool) -> EvalOper;
     makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOper;
 
     folOpers : [EvalOper];
@@ -21,18 +21,14 @@ folOpers = [
     EvalOper("=", 
         funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
         \args -> Eval(\vals, conf ->
-            if (length(args) != 2) flow(undefVal) else {
-                flow(args[0].eval(vals, conf) == args[1].eval(vals, conf));
-            }
+            Val(args[0].eval(vals, conf).val == args[1].eval(vals, conf).val, boolType)
         ),
         showInfixBinaryEvalOper("=")
     ),
     EvalOper("!=", 
         funcAlgType([AlgTypeVar("T"), AlgTypeVar("T")] , boolType),
         \args -> Eval(\vals, conf ->
-            if (length(args) != 2) flow(undefVal) else {
-                flow(args[0].eval(vals, conf) != args[1].eval(vals, conf));
-            }
+            Val(args[0].eval(vals, conf).val != args[1].eval(vals, conf).val, boolType)
         ),
         showInfixBinaryEvalOper("!=")
     ),
@@ -41,17 +37,16 @@ folOpers = [
             [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , 
             arrayAlgType(AlgTypeVar("T"))
         ),
-        \args -> Eval(\vals, conf ->
-            if (length(args) != 3) {
-                flow(undefVal)
-            } else {
-                v = flow2s(args[0].eval(vals, conf));
-                flow(filter(
-                    cast(args[1].eval(vals, conf) : flow -> [flow]),
-                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
-                ));
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+			v = flow2s(args[0].eval(vals, conf).val);
+			Val(
+				filter(
+					cast(args[1].eval(vals, conf).val : flow -> [Val]),
+					\a -> flow2b(args[2].eval(setTree(vals, v, a), conf).val)
+				), 
+				arrayAlgType(AlgTypeVar("T"))
+			);
+        }),
         \args -> Show(\conf ->
             if (length(args) != 3) "broken term" else {
             	long = "F " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
@@ -66,10 +61,10 @@ folOpers = [
     makePredicate("in", 
         [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
         \args -> {
-            if (args[0] == undefVal || args[1] == undefVal) flow(undefVal) else {
+            if (args[0] == undefVal || args[1] == undefVal) false else {
                 x = args[0];
                 a = cast(args[1] : flow -> [flow]);
-                flow(exists(a, \y -> y == x));
+                exists(a, \y -> y == x);
             }
         }
     ),
@@ -86,20 +81,19 @@ folOpers = [
     makePredicate("<=", [intType, intType], \args -> flow2i(args[0]) <= flow2i(args[1])),
 ];
 
-makeQuantifier(Q : string, quant : ([?], (?) -> bool) -> bool) -> EvalOper {
+makeQuantifier(Q : string, quant : ([Val], (Val) -> bool) -> bool) -> EvalOper {
     EvalOper(Q,
         funcAlgType([AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T")), boolType] , boolType),
-        \args -> Eval(\vals, conf ->
-            if (length(args) != 3) {
-                flow(undefVal)
-            } else {
-                v = flow2s(args[0].eval(vals, conf));
-                flow(quant(
-                    cast(args[1].eval(vals, conf) : flow -> [?]),
-                    \a -> flow2b(args[2].eval(setTree(vals, v, a), conf))
-                ));
-            }
-        ),
+        \args -> Eval(\vals, conf -> {
+                v = flow2s(args[0].eval(vals, conf).val);
+                Val(
+					quant(
+                    	cast(args[1].eval(vals, conf).val : flow -> [Val]),
+                    	\a -> flow2b(args[2].eval(setTree(vals, v, a), conf).val)
+                	),
+					boolType
+				);
+        }),
         \args -> Show(\conf -> 
             if (length(args) != 3) "broken term" else {
             	long = Q + " " + args[0].show(conf) + " in " + args[1].show(conf) + " " + args[2].show(conf);
@@ -115,9 +109,7 @@ makePredicate(name : string, types : [AlgType], p : ([flow]) -> bool) -> EvalOpe
     EvalOper(name, 
         funcAlgType(types, boolType),
         \args -> Eval(\vals, conf ->
-            if (length(args) != length(types)) flow(undefVal) else {
-                flow(p(evalArgs(args, vals, conf)))
-            }
+            Val(p(map(evalArgs(args, vals, conf), \arg -> arg.val)), boolType)
         ),
         showPrefixEvalOper(name)
     );

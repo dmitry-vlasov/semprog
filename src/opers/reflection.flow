@@ -1,0 +1,45 @@
+import shower;
+import dynamic;
+import common_types;
+import parser/parse;
+
+export {
+    // Reflection operations
+    reflectionOpers : [EvalOper];
+}
+
+reflectionOpers = [
+    EvalOper("s2term", 
+        funcAlgType([stringType], termType), 
+        \args -> Eval(\vals, conf -> {
+			src = flow2s(args[0].eval(vals, conf).val);
+			vars = mapTree(vals, \v -> v.type);
+			switch (^parser(src, vars)) {
+				Some(term): {
+					println(
+						"TERM: \n" + strIndent(src) + "\n=\n" + strIndent(^shower(term).show(conf)) + "\n"
+					);
+					Val(term, termType);
+				}
+				None(): Val(undefTermVar, termType);
+			}
+        }),
+        showPrefixEvalOper("s2term")
+    ),
+	EvalOper("term2s", 
+        funcAlgType([termType], stringType), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			Val(^shower(term).show(conf), stringType);
+        }),
+        showPrefixEvalOper("term2s")
+    ),
+	EvalOper("evalTerm", 
+        funcAlgType([termType], AlgTypeVar("T")), 
+        \args -> Eval(\vals, conf -> {
+			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
+			^semantics(term).eval(vals, conf);
+        }),
+        showPrefixEvalOper("evalTerm")
+    ),
+];

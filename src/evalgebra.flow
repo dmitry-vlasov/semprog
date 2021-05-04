@@ -4,9 +4,12 @@ import term;
 import common_types;
 
 export {
+	// Value of an expression: a value itself and its type
+	Val(val : flow, type : AlgType);
+
     // General semantics: eval function.
     Eval(
-        eval : (vals : Tree<string, flow>, conf : Conf) -> flow
+        eval : (vals : Tree<string, Val>, conf : Conf) -> Val
     );
     Show(
         show : (conf : Conf) -> string
@@ -25,7 +28,7 @@ export {
     // this structure provides its value from a string representation.
     EvalConst(
         type : AlgTypeFunc,
-        eval : (string, Conf) -> flow
+        eval : (string, Conf) -> Val
     );
 
     // Algebra: consists of a set of operations with their sementics.
@@ -36,18 +39,21 @@ export {
     undefVal = UndefVal();
 
 	// A trivial eval, show functions, which doesn't evaluate anything.
-	undefEval = Eval(\vals, conf -> undefVal);
+	undefEval = Eval(\vals, conf -> Val(undefVal, undefType));
 	undefShow = Show(\conf -> "");
 
 	// Show info about algebra, mainly its signature
 	evalAlgebra2s(alg : EvalAlgebra) -> string;
 
-	evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow];
+	evalArgs(args : [Eval], vals : Tree<string, Val>, conf : Conf) -> [Val];
 
 	// A global function, which makes eval function for each term. Initially it's trivial.
 	semantics : ref (AlgTerm) -> Eval = ref \term -> undefEval;
 
 	shower : ref (AlgTerm) -> Show = ref \term -> undefShow;
+
+	// Used in reflection: 
+	parser : ref (string, vars : Tree<string, AlgType>) -> Maybe<AlgTerm> = ref \__,__ -> None();
 }
 
 
@@ -60,6 +66,6 @@ evalAlgebra2s(alg : EvalAlgebra) -> string {
     );
 }
 
-evalArgs(args : [Eval], vals : Tree<string, flow>, conf : Conf) -> [flow] {
+evalArgs(args : [Eval], vals : Tree<string, Val>, conf : Conf) -> [Val] {
     map(args, \arg -> arg.eval(vals, conf));
 }

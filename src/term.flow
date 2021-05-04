@@ -11,8 +11,8 @@ export {
     algTerm2s(term : AlgTerm) -> string;
     algTypedTerm2s(term : AlgTerm) -> string;
     algTerm2vars(term : AlgTerm) -> Set<AlgTermVarUse>;
-    undefTermVar = AlgTermVarUse("UNDEF-VAR", undefAlgType);
-    undefTermFunc = AlgTermFunc("UNDEF-FUNC", [], undefAlgType)
+    undefTermVar = AlgTermVarUse("UNDEF-VAR", undefType);
+    undefTermFunc = AlgTermFunc("UNDEF-FUNC", [], undefType)
 
     // standard classes of operations
 

@@ -1,29 +1,29 @@
 import term;
 
 export {
-    typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm;
+    typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm;
 }
 
-typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm {
+typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm {
     //println("(A) typechecking: " + toString(term) + " ...");
     //println("(B) typechecking: " + algTerm2s(term) + " ...");
     ret = switch (term) {
         AlgTermVarUse(name, type): {
 			resolved = lookupTreeDef(vars, name, type);
-			if (resolved == undefAlgType) {
+			if (resolved == undefType) {
 				println("UNDEF RESOLVED TYPE FOR: " + algTerm2s(term));
 			}
             AlgTermVarUse(term with type = resolved);
         }
         AlgTermVarDecl(name, type): {
-			if (type == undefAlgType) {
+			if (type == undefType) {
 				println("UNDEF DECLARED TYPE FOR: " + algTerm2s(term));
 			}
             term;
         }
         AlgTermFunc(name, args, type): {
             typed_args = fold(args, Pair([], vars), \acc, arg -> {
-                typed = typecheck(arg, acc.second, signs);
+                typed = typecheckTerm(arg, acc.second, signs);
                 Pair(
                     concat(acc.first, [typed]),
                     switch (arg) {
@@ -33,7 +33,7 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
                 );
             })
 			arg_types = map(typed_args.first, \arg -> arg.type);
-			find_val_type = \ops -> {
+			find_val_type = \ops, def_type -> {
 				fits = filtermap(ops, \op -> 
 					maybeMap(
 						matchTypes(funcArgTypes(op), arg_types, makeTree()),
@@ -41,26 +41,28 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
 					)
 				);
 				if (length(fits) == 0) {
-					println("(B) no operator " + name + " matches argument types:\n" + 
-						strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
-					);
-					println("ops:\n" + 
-						strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
-					);
-					println("term: " + algTerm2s(term));
-					undefAlgType;
+					if (def_type == undefType) {
+						println("(B) no operator " + name + " matches argument types:\n" + 
+							strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
+						);
+						println("ops:\n" + 
+							strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
+						);
+						println("term: " + algTerm2s(term));
+					}
+					def_type;
 				} else if (length(fits) > 1) {
 					println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-					undefAlgType;
+					def_type;
 				} else {
 					op = fits[0].first;
 					sub = fits[0].second;
 					if (op.name != "fn") {
 						println("NOT fn: " + op.name);
-						undefAlgType 
+						def_type 
 					} else {
 						ret = instantiateType(funcValType(op), sub);
-						if (ret == undefAlgType) {
+						if (ret == undefType) {
 							println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
 						}
 						ret;
@@ -68,26 +70,26 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
 				}
 			}
 			surrender = \msg-> {
-				if (type == undefAlgType) {
-					println(msg + "unknown oprator: " + name);
+				if (type == undefType) {
+					println("Surrender: " + msg + " unknown operator: " + name);
 				}
 				type
 			}
             val_type = {
-                if (exists(arg_types, \t -> t == undefAlgType)) {
+                if (exists(arg_types, \t -> t == undefType)) {
                     println(
 						"untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") + "\n" +
 						"\t" + algTerm2s(term)
 					);
-                    undefAlgType;
+                    undefType;
                 } else {
 					switch (lookupTree(signs, name))  {
-						Some(ops): find_val_type(ops);
+						Some(ops): find_val_type(ops, type);
 						None(): {
 							switch (lookupTree(typed_args.second, name)) {
 								Some(var_type): {
 									switch (var_type) {
-										AlgTypeFunc(__,__): find_val_type([var_type]);
+										AlgTypeFunc(__,__): find_val_type([var_type], type);
 										default: surrender("A_");
 									}
 								} 
@@ -103,7 +105,7 @@ typecheck(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [Al
             );
         }
     }
-	if (ret.type == undefAlgType) {
+	if (ret.type == undefType) {
     	println("NOT typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
 	}
     ret

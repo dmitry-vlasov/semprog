@@ -1,5 +1,5 @@
 
-def tree_ () : int {
+def tree () : int {
     (1 + 2)
 }
 
@@ -21,6 +21,8 @@ def x_in_emptyset (x : int) : bool {
     (x in arr[])
 }
 */
+
+
 def mult (x : int, y : int) : int {
     (x * y)
 }
@@ -39,12 +41,18 @@ def x_in_set_one_two (x : int) : bool {
 
 
 def fact (x : int) : int {
-	((x = 0) ? 1 : (x * fact((x - 1))))
+	(
+		(x = 0) ? 1 : 
+		(x * fact((x - 1)))
+	)
 }
 
 def fact_five() : int {
     fact(5)
 }
+
+
+
 
 def fact_11() : string {
 	i2s(
@@ -132,9 +140,14 @@ def test_closure() : bool {
 	(fn(5) /\ !(fn(7)))
 }
 
+
 def main() : void {
     println(
-        ("5! = " + i2s(fact_five())),
+		("3 = " + i2s(tree())),
+		("one_less_two: " + b2s(one_less_two())),
+		("two_less_one: " + b2s(two_less_one())),
+		("3 * 4 = " + i2s(mult(3, 4))),
+		("5! = " + i2s(fact_five())),
         ("7! = " + i2s(fact(7))),
         ("lambda x : int . (x = 2)(2): " + b2s(
             call(lambda(x : int, (x = 2)), 2)
@@ -188,9 +201,6 @@ def main() : void {
 			)
         )),
 
-		("a2s(evals('56')): " + a2s(evals("56"))),
-
-
         ("E(x : int, arr[2, 3], (x = 2)): " + 
 			b2s(E(x : int, arr[2, 3], (x = 2)))
 		),
@@ -222,6 +232,7 @@ def main() : void {
 		find_egypt_up_to(4),
 		find_egypt_up_to(7),
 		("closure test passed: " + b2s(test_closure())),
+		//("find_egypt_up_to: " + term2s(src("find_egypt_up_to"))),
     )
 }
 
