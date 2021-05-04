@@ -1,0 +1,89 @@
+import shower;
+import dynamic;
+import common_types;
+
+export {
+    // Map operations
+    mapOpers : [EvalOper];
+}
+
+mapOpers = [
+    EvalOper(
+        "map",
+        funcAlgType([], 
+			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
+		),
+        \args -> Eval(\vals, conf -> 
+			Val(makeTree(), AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]))
+		),
+        showPrefixEvalOper("map")
+    ),
+	EvalOper(
+        "map",
+        funcAlgType(
+			[AlgTypeVar("K"), AlgTypeVar("V")], 
+			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
+		),
+        \args -> Eval(\vals, conf ->
+            Val(makeTree1(
+					args[0].eval(vals, conf),
+					args[1].eval(vals, conf),
+				), 
+				AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
+			)
+        ),
+        showPrefixEvalOper("map")
+    ),
+	EvalOper(
+        "get",
+        funcAlgType(
+			[
+				AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]),
+				AlgTypeVar("K"), 
+				AlgTypeVar("V")
+			], 
+			AlgTypeVar("V")
+		),
+        \args -> Eval(\vals, conf -> {
+            m = cast(args[0].eval(vals, conf).val : flow -> Tree<Val, Val>);
+			k = args[1].eval(vals, conf);
+			v = args[2].eval(vals, conf);
+			lookupTreeDef(m, k, v);
+		}),
+        showPrefixEvalOper("get")
+    ),
+	EvalOper(
+        "set",
+        funcAlgType(
+			[
+				AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]),
+				AlgTypeVar("K"), 
+				AlgTypeVar("V")
+			], 
+			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
+		),
+        \args -> Eval(\vals, conf -> {
+            m = cast(args[0].eval(vals, conf).val : flow -> Tree<Val, Val>);
+			k = args[1].eval(vals, conf);
+			v = args[2].eval(vals, conf);
+			Val(setTree(m, k, v), AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]));
+		}),
+        showPrefixEvalOper("get")
+    ),
+	EvalOper(
+        "remove",
+        funcAlgType(
+			[
+				AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]),
+				AlgTypeVar("K")
+			], 
+			AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")])
+		),
+        \args -> Eval(\vals, conf -> {
+            m = cast(args[0].eval(vals, conf).val : flow -> Tree<Val, Val>);
+			k = args[1].eval(vals, conf);
+			Val(removeFromTree(m, k), AlgTypeFunc("map", [AlgTypeVar("K"), AlgTypeVar("V")]));
+		}),
+        showPrefixEvalOper("get")
+    ),
+];

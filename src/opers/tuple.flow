@@ -14,7 +14,7 @@ tupleOpers = [
         \args -> Eval(\vals, conf -> 
 			Val([], AlgTypeFunc("tuple", []))
 		),
-        showPrefixEvalOper("tuple0")
+        showPrefixEvalOper("tuple")
     ),
 	EvalOper(
         "tuple",
@@ -26,7 +26,7 @@ tupleOpers = [
 				AlgTypeFunc("tuple", [AlgTypeVar("T")])
 			)
         ),
-        showPrefixEvalOper("tuple1")
+        showPrefixEvalOper("tuple")
     ),
 	EvalOper(
         "tuple",
@@ -39,7 +39,7 @@ tupleOpers = [
 				AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])
 			)
         ),
-        showPrefixEvalOper("tuple2")
+        showPrefixEvalOper("tuple")
     ),
 	EvalOper(
         "tuple",

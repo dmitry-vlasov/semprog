@@ -223,4 +223,52 @@ controlOpers = [
 		}),
 		showPrefixEvalOper("findmap")
     ),
+	EvalOper("map",
+        funcAlgType(
+            [
+				arrayAlgType(AlgTypeVar("T")), 
+				funcAlgType(
+					[AlgTypeVar("T")], 
+					AlgTypeVar("V")
+				)
+			] , 
+            arrayAlgType(AlgTypeVar("V"))
+        ),
+        \args -> Eval(\vals, conf -> {
+			fn = cast(args[1].eval(vals, conf).val : flow -> (Val) -> Val);
+			Val(
+				map(
+					cast(args[0].eval(vals, conf).val : flow -> [Val]),
+					fn
+				), 
+				arrayAlgType(AlgTypeVar("V"))
+			)
+		}),
+		showPrefixEvalOper("map")
+    ),
+	EvalOper("fold",
+        funcAlgType(
+            [
+				arrayAlgType(AlgTypeVar("T")), 
+				AlgTypeVar("A"),
+				funcAlgType(
+					[AlgTypeVar("A"), AlgTypeVar("T")], 
+					AlgTypeVar("A")
+				)
+			] , 
+            AlgTypeVar("A")
+        ),
+        \args -> Eval(\vals, conf -> {
+			fn = cast(args[1].eval(vals, conf).val : flow -> (Val, Val) -> Val);
+			Val(
+				fold(
+					cast(args[0].eval(vals, conf).val : flow -> [Val]),
+					args[1].eval(vals, conf),
+					fn
+				), 
+				arrayAlgType(AlgTypeVar("V"))
+			)
+		}),
+		showPrefixEvalOper("map")
+    ),
 ];

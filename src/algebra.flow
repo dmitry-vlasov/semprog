@@ -7,6 +7,7 @@ import opers/string;
 import opers/control;
 import opers/tuple;
 import opers/reflection;
+import opers/map;
 
 export {
     fullAlgebra : EvalAlgebra;
@@ -26,6 +27,7 @@ allOpers = concatA([
 	controlOpers,
 	tupleOpers,
 	reflectionOpers,
+	mapOpers,
 ]);
 
 allConsts = [
