@@ -22,7 +22,7 @@ makeStringConst(name : string) -> EvalOper {
 
 stringOpers = [
     EvalOper("println", 
-        funcAlgType([variadicAlgType(stringType)], voidType), 
+        funcAlgType([variadicStarAlgType(stringType)], voidType), 
         \args -> Eval(\vals, conf -> {
             iter(args, \arg -> println(arg.eval(vals, conf).val));
             Val(VoidVal(), voidType);
@@ -30,7 +30,7 @@ stringOpers = [
         showPrefixEvalOper("println")
     ),
     EvalOper("+", 
-        funcAlgType([variadicAlgType(stringType)], stringType), 
+        funcAlgType([variadicPlusAlgType(stringType)], stringType), 
         \args -> Eval(\vals, conf -> 
             Val(concatStrings(map(args, \arg -> 
                 flow2s(arg.eval(vals, conf).val)

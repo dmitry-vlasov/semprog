@@ -7,6 +7,7 @@ export {
 typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string, [AlgTypeFunc]>) -> AlgTerm {
     //println("(A) typechecking: " + toString(term) + " ...");
     //println("(B) typechecking: " + algTerm2s(term) + " ...");
+	undef_subterm_type = ref false;
     ret = switch (term) {
         AlgTermVarUse(name, type): {
 			resolved = lookupTreeDef(vars, name, type);
@@ -33,80 +34,85 @@ typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string,
                 );
             })
 			arg_types = map(typed_args.first, \arg -> arg.type);
-			find_val_type = \ops, def_type -> {
-				fits = filtermap(ops, \op -> 
-					maybeMap(
-						matchTypes(funcArgTypes(op), arg_types, makeTree()),
-						\sub -> Pair(op, sub)
-					)
-				);
-				if (length(fits) == 0) {
-					if (def_type == undefType) {
-						println("(B) no operator " + name + " matches argument types:\n" + 
-							strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
-						);
-						println("ops:\n" + 
-							strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
-						);
-						println("term: " + algTerm2s(term));
-					}
-					def_type;
-				} else if (length(fits) > 1) {
-					println("ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
-					def_type;
-				} else {
-					op = fits[0].first;
-					sub = fits[0].second;
-					if (op.name != "fn") {
-						println("NOT fn: " + op.name);
-						def_type 
-					} else {
-						ret = instantiateType(funcValType(op), sub);
-						if (ret == undefType) {
-							println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
-						}
-						ret;
-					}
-				}
-			}
-			surrender = \msg-> {
-				if (type == undefType) {
-					println("Surrender: " + msg + " unknown operator: " + name);
-				}
-				type
-			}
-            val_type = {
-                if (exists(arg_types, \t -> t == undefType)) {
-                    println(
-						"untyped: " + name + ": " + strGlue(map(arg_types, algType2s), ", ") + "\n" +
+			if (exists(arg_types, \t -> t == undefType)) {
+                    /*println(
+						"untyped " + name + ": " + strGlue(map(arg_types, algType2s), ", ") + "\n" +
 						"\t" + algTerm2s(term)
+					);*/
+					undef_subterm_type := true;
+                    AlgTermFunc(term with type = undefType);
+            } else {
+				find_val_type = \ops, def_type -> {
+					fits = filtermap(ops, \op -> 
+						maybeMap(
+							unifyTypes(funcArgTypes(op), arg_types, makeTree()),
+							\sub -> Pair(op, sub)
+						)
 					);
-                    undefType;
-                } else {
-					switch (lookupTree(signs, name))  {
-						Some(ops): find_val_type(ops, type);
-						None(): {
-							switch (lookupTree(typed_args.second, name)) {
-								Some(var_type): {
-									switch (var_type) {
-										AlgTypeFunc(__,__): find_val_type([var_type], type);
-										default: surrender("A_");
-									}
-								} 
-								None(): surrender("B_");
-							}
+					if (length(fits) == 0) {
+						if (def_type == undefType) {
+							println("(B) no operator " + name + " unifies with argument types:\n" + 
+								strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
+							);
+							println("ops:\n" + 
+								strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
+							);
+							println("term: " + algTerm2s(term));
 						}
-					};
+						def_type;
+					} else if (length(fits) > 1) {
+						println("ambigous operator " + name + " unifiction with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+						def_type;
+					} else {
+						op = fits[0].first;
+						sub = fits[0].second;
+						if (op.name != "fn") {
+							println("NOT fn: " + op.name);
+							def_type 
+						} else {
+							ret = instantiateType(funcValType(op), sub);
+							if (ret == undefType) {
+								println("NOT typechecked: instantiateType(funcValType(op), sub) failed\n\t" + algTerm2s(term));
+							}
+							ret;
+						}
+					}
 				}
+				surrender = \msg-> {
+					if (type == undefType) {
+						println("Surrender: " + msg + " unknown operator: " + name);
+					}
+					type
+				}
+				val_type = {
+					if (type != undefType) {
+						type
+					} else {
+						switch (lookupTree(signs, name))  {
+							Some(ops): find_val_type(ops, type);
+							None(): {
+								switch (lookupTree(typed_args.second, name)) {
+									Some(var_type): {
+										switch (var_type) {
+											AlgTypeFunc(__,__): find_val_type([var_type], type);
+											default: surrender("A_");
+										}
+									} 
+									None(): surrender("B_");
+								}
+							}
+						};
+					}
+				}
+				AlgTermFunc(term with 
+					type = val_type,
+					args = typed_args.first
+				);
 			}
-            AlgTermFunc(term with 
-                type = val_type,
-                args = typed_args.first
-            );
         }
     }
-	if (ret.type == undefType) {
-    	println("NOT typechecked: " + algTerm2s(term) + " : " + algType2s(ret.type));
+	if (ret.type == undefType && !^undef_subterm_type) {
+    	println("NOT typed: " + algTerm2s(term) + " : " + algType2s(ret.type));
 	}
     ret
 }

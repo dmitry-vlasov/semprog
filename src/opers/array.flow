@@ -11,7 +11,7 @@ arrayOpers = [
     EvalOper(
         "concat",
         funcAlgType(
-            [variadicAlgType(arrayAlgType(AlgTypeVar("T")))], 
+            [variadicPlusAlgType(arrayAlgType(AlgTypeVar("T")))], 
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf ->
@@ -82,7 +82,7 @@ arrayOpers = [
     EvalOper(
         "arr",
         funcAlgType(
-            [variadicAlgType(AlgTypeVar("T"))],
+            [variadicStarAlgType(AlgTypeVar("T"))],
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf -> 
@@ -102,5 +102,14 @@ arrayOpers = [
 			Val(map(enumFromTo(low, hi), \i -> Val(i, intType)), arrayAlgType(intType));
         }),
         showInfixBracketEvalOper("[", "]", "...")
+    ),
+	EvalOper(
+        "len",
+        funcAlgType([arrayAlgType(AlgTypeVar("T"))], intType),
+        \args -> Eval(\vals, conf -> {
+			a = cast(args[0].eval(vals, conf).val : flow -> [Val]);
+			Val(length(a), intType);
+		}),
+        showPrefixEvalOper("len")
     ),
 ];

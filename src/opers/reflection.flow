@@ -42,13 +42,21 @@ reflectionOpers = [
         }),
         showPrefixEvalOper("type2s")
     ),
-	EvalOper("evalTerm", 
+	EvalOper("eval", 
         funcAlgType([termType], AlgTypeVar("T")), 
         \args -> Eval(\vals, conf -> {
 			term = cast(args[0].eval(vals, conf).val : flow -> AlgTerm);
 			^semantics(term).eval(vals, conf);
         }),
-        showPrefixEvalOper("evalTerm")
+        showPrefixEvalOper("eval")
+    ),
+	EvalOper("quote", 
+        funcAlgType([anyType], AlgTypeFunc("term", [])), 
+        \args -> Eval(\vals, conf -> 
+			// This function is special - its eval is made in evaluator function
+			Val(undefVal, termType)
+        ),
+        showPrefixEvalOper("eval")
     ),
 	EvalOper("type2tuple", 
         funcAlgType([typeType], AlgTypeFunc("tuple", [stringType, boolType, arrayAlgType(typeType)])), 
@@ -207,6 +215,14 @@ reflectionOpers = [
 
 
 	EvalOper("makeVarUse", 
+        funcAlgType([stringType], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			Val(AlgTermVarUse(name, undefType), termType)
+        }),
+        showPrefixEvalOper("makeVarUse")
+    ),
+	EvalOper("makeVarUse", 
         funcAlgType([stringType, typeType], termType), 
         \args -> Eval(\vals, conf -> {
 			name   = flow2s(args[0].eval(vals, conf).val);
@@ -221,6 +237,15 @@ reflectionOpers = [
 			name   = flow2s(args[0].eval(vals, conf).val);
 			type   = cast(args[1].eval(vals, conf).val : flow -> AlgType);
 			Val(AlgTermVarDecl(name, type), termType)
+        }),
+        showPrefixEvalOper("makeVarDecl")
+    ),
+	EvalOper("makeTermFunc", 
+        funcAlgType([stringType, arrayAlgType(termType)], termType), 
+        \args -> Eval(\vals, conf -> {
+			name   = flow2s(args[0].eval(vals, conf).val);
+			as     = cast(args[1].eval(vals, conf).val : flow -> [Val]);
+			Val(AlgTermFunc(name, map(as, \a -> a.val), undefType), termType);
         }),
         showPrefixEvalOper("makeVarDecl")
     ),

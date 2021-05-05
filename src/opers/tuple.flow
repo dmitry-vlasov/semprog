@@ -9,15 +9,15 @@ export {
 
 tupleOpers = [
     EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType([], AlgTypeFunc("tuple", [])),
         \args -> Eval(\vals, conf -> 
 			Val([], AlgTypeFunc("tuple", []))
 		),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType([AlgTypeVar("T")], AlgTypeFunc("tuple", [AlgTypeVar("T")])),
         \args -> Eval(\vals, conf ->
             Val([
@@ -26,10 +26,10 @@ tupleOpers = [
 				AlgTypeFunc("tuple", [AlgTypeVar("T")])
 			)
         ),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType([AlgTypeVar("T1"), AlgTypeVar("T2")], AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])),
         \args -> Eval(\vals, conf ->
             Val([
@@ -39,10 +39,10 @@ tupleOpers = [
 				AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2")])
 			)
         ),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType(
 			[AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")], 
 			AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])
@@ -56,10 +56,10 @@ tupleOpers = [
 				AlgTypeFunc("tuple", [AlgTypeVar("T1"), AlgTypeVar("T2"), AlgTypeVar("T3")])
 			)
         ),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType(
 			[
 				AlgTypeVar("T1"), 
@@ -89,10 +89,10 @@ tupleOpers = [
 				])
 			)
         ),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	EvalOper(
-        "tuple",
+        "makeTuple",
         funcAlgType(
 			[
 				AlgTypeVar("T1"), 
@@ -126,7 +126,7 @@ tupleOpers = [
 				])
 			)
         ),
-        showPrefixEvalOper("tuple")
+        showPrefixEvalOper("makeTuple")
     ),
 	// First
 	EvalOper(

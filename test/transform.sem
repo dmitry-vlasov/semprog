@@ -1,0 +1,74 @@
+
+def inc (x : int) : int {
+    (x + 1)
+}
+
+def fn (x : int) : int {
+    (x + x + x)
+}
+
+/*
+def add_3(t0 : term) : term {
+	rec(
+		lambda(t : term, acc : term, fn : (term, term) -> term,
+			let 
+
+		)
+	)
+		lambda(name : string, t : type, args : [term],
+			(name == "E") 
+		)
+	)
+}
+*/
+
+def transf (t : term) : term {
+	if (
+		("+" = termName(t)),
+		makeTermFunc(
+			"*", 
+			map(termArgs(t), lambda(x : term, transf(x))), 
+			termType(t)
+		),
+		t,
+	)
+}
+
+def main() : void {
+    println(
+		("inc: " + term2s(src("inc"))),
+		//("inc: " + a2s(evalTerm(src("inc")))),
+		("inc(1): " + 
+			i2s(let x : int = 2;
+				evalTerm(src("inc"))
+			)
+		),
+		("inc(1): " + 
+			i2s(
+				call(
+					lambda(x : int,
+						evalTerm(src("inc"))
+					),
+					3
+				)
+			)
+		),
+
+		("transf: " + term2s(
+			transf(src("inc"))
+		)),
+
+		("fn(5): " + i2s(fn(5))),
+		("transf(fn)(5): " + 
+			i2s(
+				call(
+					lambda(x : int,
+						evalTerm(transf(src("fn")))
+					),
+					5
+				)
+			)
+		),
+    )
+}
+

@@ -91,13 +91,13 @@ def find_egypt(n : int) : maybe(tuple(int, int, int)) {
 								(((x * x) + (y * y)) = (z * z))
 							),
 							lambda(z : int,
-								tuple(y, z)
+								makeTuple(y, z)
 							)
 						)
 					)
 				),
 				lambda(pair : tuple(int, int),
-					tuple(x, first(pair), second(pair))
+					makeTuple(x, first(pair), second(pair))
 				)
 			)
 		)
@@ -110,7 +110,7 @@ def find_egypt_up_to(N : int) : string {
 			maybeMap(
 				find_egypt(n),
 				lambda(triple : tuple(int, int, int),
-					tuple(n, first(triple), second(triple), third(triple))
+					makeTuple(n, first(triple), second(triple), third(triple))
 				)
 			)
 		)
@@ -234,6 +234,26 @@ def main() : void {
 		find_egypt_up_to(7),
 		("closure test passed: " + b2s(test_closure())),
 		//("find_egypt_up_to: " + term2s(src("find_egypt_up_to"))),
+		("cascaded let test:\n" +
+			i2s(
+				let a : int = 5;
+				let b : int = 7;
+				let c : int = 2;
+				(a + (b * c))
+			)
+		),
+		("array test:\n" +
+			i2s(
+				let a : [int] = arr[1, 2, 5];
+				(get(a, 0) + get(a, 1) + get(a, 2))
+			)
+		),
+		("fold test:\n" +
+			i2s(
+				let a : [int] = arr[1, 2, 5];
+				fold(a, 0, lambda(acc : int, n : int, (acc + (n * n))))
+			)
+		),
     )
 }
 

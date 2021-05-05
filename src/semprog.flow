@@ -28,13 +28,14 @@ main() -> void {
 			maybeApply(parseModule(src, name), 
 				\parsed -> {
 					if (lookupTreeDef(conf.opts, "show-parsed", "") == "1") {
-						println("Parsed module " + name + ":\n" + moduleTerms2s(parsed, conf) + "\n\n");
+						println("Parsed module " + name + ":\n" + 
+							module2s(parsed, Conf(conf with opts = setTree(conf.opts, "show-term", "1")))
+							+ "\n\n"
+						);
 					} else {
 						sign = moduleSignature(parsed, fullAlgebra);
 						module = typecheckModule(parsed, fullAlgebra, sign);
 						defs = fold(module.defs, makeTree(), \acc, def -> setTree(acc, def.name, def));
-
-						// makeSrcOper(defs : Tree<string, Def>) -> EvalOper;
 
 						algebra = EvalAlgebra("module " + name + " algebra", 
 							fold(module.defs, 
@@ -57,7 +58,13 @@ main() -> void {
 								)
 							));
 						} else if (lookupTreeDef(conf.opts, "show-module", "") == "1") {
-							println("Module " + name + ":\n" + module2s(module, conf) + "\n\n");
+							println(module2s(module, conf));
+						} else if (lookupTreeDef(conf.opts, "show-def", "") != "") {
+							def_name = lookupTreeDef(conf.opts, "show-def", "");
+							switch (lookupTree(defs, def_name)) {
+								Some(def): println(def2s(def, conf));
+								None():    println("Def " + def_name + " in not found");
+							}
 						} else {
 							if (exists(algebra.opers, \oper -> oper.name == "main")) {
 								^semantics(AlgTermFunc("main", [], voidType)).eval(
@@ -96,7 +103,9 @@ usage(conf : Conf) -> void {
 	prih(help, "      file=<name.sem>           Specify the input file");
 	prih(help, "      show-parsed=1             Show the raw AST of parsed source");
 	prih(help, "      show-module=1             Show module after typechecking");
+	prih(help, "      show-def=<name>           Show a specified definition");
 	prih(help, "      show-algebra=<mode>       Show the signature of: {all | module | pre-defined}");
+	prih(help, "      show-typed=1              Show def with types");
 	prih(help, "      trace=1                   Trace the evaluation of source");
 	prih(help, "      verbose=<int>             Set the level of verbosity");
 	prih(help, "      fold-len=<int>            Maximum length of expressions, at which auto wrapping is on");

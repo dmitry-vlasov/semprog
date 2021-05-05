@@ -15,8 +15,6 @@ export {
 	makeSrcOper(defs : Tree<string, Def>) -> EvalOper;
     module2s(module : Module, conf : Conf) -> string;
     def2s(def : Def, conf : Conf) -> string;
-	moduleTerms2s(module : Module, conf : Conf) -> string;
-	defTerms2s(def : Def, conf : Conf) -> string;
     typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module;
 
 	moduleSignature(module : Module, algebra : EvalAlgebra) -> Tree<string, [AlgTypeFunc]>;
@@ -67,18 +65,16 @@ def2s(def : Def, conf : Conf) -> string {
     "def " +  def.name + 
     " (" + strGlue(map(def.vars, algTerm2s), ", ") + ")" + 
     " : " + algType2s(def.type) + " {\n" +
-     strIndent(^shower(def.term).show(conf)) + "\n}\n";
-}
-
-moduleTerms2s(module : Module, conf : Conf) -> string {
-    strGlue(map(module.defs, \def -> defTerms2s(def, conf)), "\n");
-}
-
-defTerms2s(def : Def, conf : Conf) -> string {
-    "def " +  def.name + 
-    " (" + strGlue(map(def.vars, algTerm2s), ", ") + ")" + 
-    " : " + algType2s(def.type) + " {\n" +
-     strIndent(algTerm2s(def.term)) + "\n}\n";
+		strIndent(
+			if (lookupTreeDef(conf.opts, "show-typed", "") == "1") {
+				algTypedTerm2s(def.term)
+			} else if (lookupTreeDef(conf.opts, "show-term", "") == "1") {
+				algTerm2s(def.term)
+			} else {
+				^shower(def.term).show(conf)
+			}
+		) 
+	 + "\n}\n";
 }
 
 typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module {
@@ -87,9 +83,9 @@ typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [Alg
             //println("typechecking: " + def.name);
             vars = fold(def.vars, makeTree(), \acc, var -> setTree(acc, var.name, var.type));
             typechecked = typecheckTerm(def.term, vars, sign);
-            if (typechecked.type == undefType) {
+            /*if (typechecked.type == undefType) {
                 println("Term " + algTerm2s(def.term) + " was not typed");
-            }
+            }*/
             Def(def with term = typechecked);
         })
     );

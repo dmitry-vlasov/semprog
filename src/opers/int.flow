@@ -16,7 +16,7 @@ export {
 intOpers = [
     makeIntUnary("-", \x -> -x),
     EvalOper("+",
-        funcAlgType([variadicAlgType(intType)], intType),
+        funcAlgType([variadicPlusAlgType(intType)], intType),
         \args -> Eval(\vals, conf -> {
             arg_vals = evalArgs(args, vals, conf);
             Val(fold(
@@ -26,7 +26,7 @@ intOpers = [
         showInfixVariadicEvalOper("+")
     ),
     EvalOper("*",
-        funcAlgType([variadicAlgType(intType)], intType),
+        funcAlgType([variadicPlusAlgType(intType)], intType),
         \args -> Eval(\vals, conf -> {
             arg_vals = evalArgs(args, vals, conf);
             Val(fold(

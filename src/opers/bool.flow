@@ -70,7 +70,7 @@ makeBoolBinary(name : string, op : (bool, bool) -> bool) -> EvalOper {
 
 makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper {
     EvalOper(name, 
-        funcAlgType([variadicAlgType(boolType)], boolType),
+        funcAlgType([variadicPlusAlgType(boolType)], boolType),
         \args -> Eval(\vals, conf ->
             Val(op(map(args, \arg -> flow2b(arg.eval(vals, conf).val))), boolType)
         ),

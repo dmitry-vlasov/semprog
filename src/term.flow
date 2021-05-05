@@ -39,7 +39,7 @@ algTerm2s(term : AlgTerm) -> string {
 				str /* + (if (type == undefAlgType) "" else " : " + algType2s(type));*/
 			}
 			if (length(args) == 0) {
-				if (type == stringType)"\"" + name + "\"" else 
+				if (type == stringType) "\"" + name + "\"" else 
 				if (type == intType || type == boolType) name else 
 				def_str();
 			} else {
@@ -54,9 +54,20 @@ algTypedTerm2s(term : AlgTerm) -> string {
         AlgTermVarUse(name, type): name + " : " + algType2s(type);
         AlgTermVarDecl(name, type): name + " : " + algType2s(type);
         AlgTermFunc(name, args, type): {
-            if (length(args) == 0) name else {
-                    name + " : " + algType2s(type) +  " (" + strGlue(map(args, algTypedTerm2s), ", ") + ")";
-            }
+			def_str = \-> {
+				long = name + "(" + strGlue(map(args, algTypedTerm2s), ", ") + ") : " + algType2s(type);
+				str = if (strlen(long) <= 48) long else {
+					name + "(\n" + strIndent(strGlue(map(args, algTypedTerm2s), ",\n")) + "\n) : " + algType2s(type);
+				}
+				str /* + (if (type == undefAlgType) "" else " : " + algType2s(type));*/
+			}
+			if (length(args) == 0) {
+				if (type == stringType) "\"" + name + "\"" else 
+				if (type == intType || type == boolType) name else 
+				def_str();
+			} else {
+				def_str();
+			}
         }
     }
 }

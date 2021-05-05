@@ -42,14 +42,14 @@ showAlgTerm(
                 lookupTree(opers, name), 
                 \ops -> {
                     fits = filter(ops, \op -> 
-                        isSome(matchTypes(funcArgTypes(op.sign), arg_types, makeTree()))
+                        isSome(unifyTypes(funcArgTypes(op.sign), arg_types, makeTree()))
                     );
                     if (length(fits) == 0) {
-                        println("No operator " + name + " matches argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+                        println("No operator " + name + " unifies with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                         println("ops: " + strGlue(map(ops, \op -> algType2s(op.sign)), ", "));
                         Show(\conf -> "undefVal");
                     } else if (length(fits) > 1) {
-                        println("Ambigous operator " + name + " matching with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
+                        println("Ambigous operator " + name + " unification with argument types: " + strGlue(map(arg_types, \t -> algType2s(t)), ", "));
                         Show(\conf -> "undefVal");
                     } else {
                         op = fits[0];

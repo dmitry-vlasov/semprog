@@ -44,8 +44,11 @@ export {
     // Product type: (type_1 x type_2 x ... x type_k)
     prodAlgType(args : [AlgType]) -> AlgTypeFunc;
 
-    // Variadic type: () or (type) or (type, type) or ... (type, ... , type)
-    variadicAlgType(arg : AlgType) -> AlgTypeFunc;
+    // Variadic type, which admits zero args: () or (type) or (type, type) or ... (type, ... , type)
+    variadicStarAlgType(arg : AlgType) -> AlgTypeFunc;
+
+	// Variadic type, with > 0 number of args: (type) or (type, type) or ... (type, ... , type)
+    variadicPlusAlgType(arg : AlgType) -> AlgTypeFunc;
 
     // Function type: args and value
     funcArgTypes(fn : AlgTypeFunc) -> [AlgType];
@@ -58,16 +61,16 @@ export {
     unwrapArrayAlgType(type : AlgType) -> AlgType;
 
     // A special constant - undefined type.
-    undefType : AlgType = AlgTypeFunc("__undef_type", []);
+    undefType : AlgType = AlgTypeFunc("?", []);
 
     // Substitute type variables with approptiate values from 'sub'
     instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType;
 
-    // Match a left with a type: try to instantiate type variables properly
-    matchType(left : AlgType, right : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+    // Unify a left with a type: try to instantiate type variables properly
+    unifyType(left : AlgType, right : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
 
-    // Matching a left with respect to variadic type 
-    matchTypes(left : [AlgType], right : [AlgType], ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
+    // Unification of a left with respect to variadic type 
+    unifyTypes(left : [AlgType], right : [AlgType], ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>>;
 }
 
 algType2s(type : AlgType) -> string {
@@ -78,8 +81,9 @@ algType2s(type : AlgType) -> string {
             if (name == "fn") "(" + strGlue(map(tail(args), algType2s), ", ") + ") -> " + (if (length(args) == 0) "" else algType2s(args[0])) else
             if (name == "U")  "(" + strGlue(map(args, algType2s), "U") + ")" else
             if (name == "x")  "(" + strGlue(map(args, algType2s), "x") + ")" else
-			if (name == "tp") "(" + strGlue(map(args, algType2s), ", ") + ")" else
+			//if (name == "tp") "(" + strGlue(map(args, algType2s), ", ") + ")" else
             if (name == "...") { if (length(args) == 0) "..." else algType2s(args[0]) + ", ... ," + algType2s(args[0]) } else 
+			if (name == "..")  { if (length(args) == 0) ".."  else algType2s(args[0]) + ", .. ,"  + algType2s(args[0]) } else 
 			name + (if (length(args) == 0) "" else "(" + strGlue(map(args, algType2s), ", ") + ")");
         }
     }
@@ -109,7 +113,11 @@ prodAlgType(args : [AlgType]) -> AlgTypeFunc {
     AlgTypeFunc("X", args);
 }
 
-variadicAlgType(arg : AlgType) -> AlgTypeFunc {
+variadicStarAlgType(arg : AlgType) -> AlgTypeFunc {
+    AlgTypeFunc("..", [arg]);
+}
+
+variadicPlusAlgType(arg : AlgType) -> AlgTypeFunc {
     AlgTypeFunc("...", [arg]);
 }
 
@@ -143,63 +151,111 @@ instantiateType(tp : AlgType, sub : Tree<string, AlgType>) -> AlgType {
     }
 }
 
-matchType(left0 : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
-	left = instantiateType(left0, ac);
-	right = instantiateType(right0, ac);
-    ret = switch (left) {
-        AlgTypeVar(left_v): {
-            switch (lookupTree(ac, left_v)) {
-                Some(left_t): {
-					maybeMap(matchType(left_t, right, ac), 
-						\ac1 -> {
-							resolved = instantiateType(right, ac1);
-							setTree(ac1, left_v, resolved);
-						}
-					);
-					/*if (t == right) Some(ac) else 
-					if (t != anyType) None() else {
-						Some(setTree(ac, v, right));
-					}*/
-				}
-                None(): {
-					Some(setTree(ac, left_v, right));
-				}
-            }
-        }
-        AlgTypeFunc(left_name, left_args): {
-            switch (right) {
-                AlgTypeVar(right_v): {
-					switch (lookupTree(ac, right_v)) {
-						Some(right_t): {
-							maybeMap(matchType(left, right_t, ac), 
-								\ac1 -> {
-									resolved = instantiateType(left, ac1);
-									setTree(ac1, right_v, resolved);
-								}
-							);
-							/*if (t == right) Some(ac) else 
-							if (t != anyType) None() else {
-								Some(setTree(ac, v, right));
-							}*/
-						}
-						None(): Some(setTree(ac, right_v, right));
-					}
-				}
-                AlgTypeFunc(right_name, right_args): {
-                    if (left_name == right_name) {
-						matchTypes(left_args, right_args, ac);
-					} else if (left_name == "any" || right_name == "any") {
-						// any is a universal type
-						Some(ac);
-					} else {
-						None();
-					}
-                }
-            }
+typeContainsVar(tp : AlgType, var : string) -> bool {
+	switch (tp) {
+        AlgTypeVar(v): v == var;
+        AlgTypeFunc(__, as): {
+			exists(as, \a -> typeContainsVar(a, var));
         }
     }
+}
+
+typeVars(acc : Set<string>, tp : AlgType) -> Set<string> {
+	switch (tp) {
+        AlgTypeVar(v): insertSet(acc, v);
+        AlgTypeFunc(__, as): {
+			fold(as, acc, typeVars);
+        }
+    }
+}
+
+renameTypeVars(tp : AlgType, renaming : Tree<string, string>) -> AlgType {
+	switch (tp) {
+        AlgTypeVar(v): AlgTypeVar(lookupTreeDef(renaming, v, v));
+        AlgTypeFunc(nm, as): {
+			AlgTypeFunc(nm, map(as, \a -> renameTypeVars(a, renaming)));
+        }
+    }
+}
+
+generateFreshVar(vars : Set<string>, var : string, ind : int) -> string {
+	if (!containsSet(vars, var)) var else {
+		fresh = var + "_" + i2s(ind);
+		if (!containsSet(vars, fresh)) fresh else 
+		generateFreshVar(vars, var, ind + 1);
+	}
+}
+
+unify_depth_counter = ref 0;
+
+unifyType(left : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+	unify_depth_counter := 0;
+	left_vars = typeVars(makeSet(), left);
+	right_vars = typeVars(makeSet(), right0);
+	renaming = foldSet(right_vars, makeTree(), \acc, var -> 
+		setTree(acc, var, generateFreshVar(left_vars, var, 0))
+	);
+	right = renameTypeVars(right0, renaming);
+	doUnifyType(left, right0, ac);
+}
+
+doUnifyType(left0 : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+	left = instantiateType(left0, ac);
+	right = instantiateType(right0, ac);
+	unify_depth_counter := ^unify_depth_counter + 1;
+
+	/*if (^unify_depth_counter > 128) {
+		println("unifying types: \n" +
+			algType2s(left) + "\n" + 
+			algType2s(right) + "\n" + 
+		);
+	}*/
+
+	unify_with_var = \var : string, type : AlgType -> {
+		if (typeContainsVar(type, var)) None() else {
+			switch (lookupTree(ac, var)) {
+				Some(type1): {
+					maybeBind(doUnifyType(type1, type, ac), 
+						\ac1 -> {
+							resolved = instantiateType(type, ac1);
+							//if (typeContainsVar(resolved, var)) None() else
+							Some(setTree(ac1, var, resolved));
+						}
+					);
+				}
+				None(): {
+					//if (typeContainsVar(type, var)) None() else
+					Some(setTree(ac, var, type));
+				}
+			}
+		}
+	}
+    ret = if (left == right) Some(ac) else {
+		switch (left) {
+			AlgTypeVar(left_v): {
+				unify_with_var(left_v, right);
+			}
+			AlgTypeFunc(left_name, left_args): {
+				switch (right) {
+					AlgTypeVar(right_v): {
+						unify_with_var(right_v, left);
+					}
+					AlgTypeFunc(right_name, right_args): {
+						if (left_name == right_name) {
+							unifyTypes(left_args, right_args, ac);
+						} else if (left_name == "any" || right_name == "any") {
+							// any is a universal type
+							Some(ac);
+						} else {
+							None();
+						}
+					}
+				}
+			}
+		}
+	}
     /*println(
-        "(A) matching: " + algType2s(left) + 
+        "(A) unifying: " + algType2s(left) + 
         " with: " + algType2s(right) + 
         " ret: " + toString(ret)
     );*/
@@ -210,7 +266,7 @@ unwrapVariadicAlgType(type : AlgType) -> AlgType {
     switch (type) {
         AlgTypeVar(__): undefType;
         AlgTypeFunc(name, args): {
-            if (name == "..." && length(args) == 1) {
+            if ((name == "..." || name == "..") && length(args) == 1) {
                 args[0];
             } else {
                 undefType;
@@ -219,7 +275,7 @@ unwrapVariadicAlgType(type : AlgType) -> AlgType {
     }
 }
 
-matchTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+unifyTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
 
     ret = if (length(lefts) == 0) {
         if (length(rights) == 0) {
@@ -232,45 +288,44 @@ matchTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -
 		if (variadic_left == undefType) {
 			if (length(lefts) == length(rights)) {
 				maybeBind(
-					matchType(lefts[0], rights[0], acc),
-					\sub -> matchTypes(tail(lefts), tail(rights), sub)
+					doUnifyType(lefts[0], rights[0], acc),
+					\sub -> unifyTypes(tail(lefts), tail(rights), sub)
 				);
 			} else {
 				None();
 			}
 		} else {
 			if (length(rights) == 0) {
-				None();
+				if (lefts[0].name == "..") Some(acc) else None();
 			} else {
 				//println("variafic left: " + algType2s(variadic_left));
 				maybeBind(
-					matchType(variadic_left, rights[0], acc),
+					doUnifyType(variadic_left, rights[0], acc),
 					\sub -> {
 						variadic_type = instantiateType(variadic_left, sub);
 						//println("variadic_type: " + algType2s(variadic_type));
-						matchVariadicTypes(variadic_type, tail(lefts), tail(rights), sub);
+						unifyVariadicTypes(variadic_type, tail(lefts), tail(rights), sub);
 					}
 				);
 			}
 		}
     }
-
     /*println(
-        "(B) matching: " + strGlue(map(lefts, algType2s), ", ") + 
+        "(B) unifying: " + strGlue(map(lefts, algType2s), ", ") + 
         " with: " + strGlue(map(rights, algType2s), ", ") + 
         " ret: " + toString(ret)
     );*/
     ret;
 }
 
-matchVariadicTypes(variadic : AlgType, lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+unifyVariadicTypes(variadic : AlgType, lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
     if (length(rights) == 0) {
         Some(acc);
     } else {
         if (rights[0] == variadic) {
-            matchVariadicTypes(variadic, lefts, tail(rights), acc);
+            unifyVariadicTypes(variadic, lefts, tail(rights), acc);
         } else {
-            matchTypes(lefts, rights, acc);
+            unifyTypes(lefts, rights, acc);
         }
     }
 }

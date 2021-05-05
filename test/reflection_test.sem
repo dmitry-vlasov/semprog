@@ -12,15 +12,151 @@ def egypt(n : int) : bool {
 	E(x : int, [1 ... n], 
 	E(y : int, [1 ... n],
 	E(z : int, [1 ... n]
-		let s : bool = (((x * x) + (y * y)) = (z * z));
-		s
+		(((x * x) + (y * y)) = (z * z))
 	)))
+}
+
+def find_egypt_up_to(N : int) : string {
+	let result : maybe(tuple(int, int, int, int)) = findmap([1 ... N], 
+		lambda(n : int, 
+			maybeMap(
+				find_egypt(n),
+				lambda(triple : tuple(int, int, int),
+					makeTuple(n, first(triple), second(triple), third(triple))
+				)
+			)
+		)
+	);
+	eitherMap(result,
+		lambda(quad : tuple(int, int, int, int),
+			(
+				"egypt triange is found for min boundary: " + 
+				i2s(first(quad)) + ", triangle: x=" + i2s(second(quad)) + " y=" + i2s(third(quad)) + " z=" + i2s(fourth(quad))
+			)
+		),
+		("no egypt triangles are found up to " + i2s(N))
+	)
+}
+
+def find_egypt(n : int) : maybe(tuple(int, int, int)) {
+	findmap([1 ... n], 
+		lambda(x : int,
+			maybeMap(
+				findmap([1 ... n],
+					lambda(y : int,
+						maybeMap(
+							findmap([1 ... n],
+								lambda(z : int,
+									if (
+										(((x * x) + (y * y)) = (z * z)),
+										some(makeTuple(z)),
+										none()
+									)
+								)
+							),
+							lambda(single : tuple(int),
+								makeTuple(y, first(single))
+							)
+						)
+					)
+				),
+				lambda(pair : tuple(int, int),
+					makeTuple(x, first(pair), second(pair))
+				)
+			)
+		)
+	)
+}
+
+/*
+
+
+def makeTypeTupleOfVars(vars : [tuple(string, type)]) : type {
+	if (
+		(len(vars) == 0),
+		makeTypeFunc("tuple", arr[]),
+
+	)
+}
+*/
+
+def retVarsTupleType (vars : [tuple(string, type)]) : type {
+	let tup_type : type = makeTypeFunc("tuple", 
+		map(vars, 
+			lambda(v : tuple(string, type),
+				makeTypeFunc("tuple", 
+					arr[makeTypeFunc("string", arr[]), second(v)]
+				)
+			)
+		)
+	);
+	let ret_type : type = makeTypeFunc("maybe", arr[tup_type]);
+	ret_type
+}
+
+
+def wrapExists (t : term, vars : [tuple(string, type)]) : term {
+	if (
+		("bool" = typeName(termType(t))),
+		let args : [term] = termArgs(t);
+		if (
+			A(arg : term, args, (typeName(termType(arg)) = "bool")),
+			/*if(
+				("E" = termName(t)),
+				(
+
+				),
+				makeTermFunc(
+					termName(t), 
+					map(args, lambda(x : term, wrapExists(x))), 
+					termType(t)
+				)
+			),*/
+			t,
+			let str_type : type = makeTypeFunc("string", arr[]); 
+			let undef_type : type = makeTypeFunc("?", arr[]); 
+			let tup_type : type = makeTypeFunc("tuple", 
+				map(vars, 
+					lambda(v : tuple(string, type),
+						makeTypeFunc("tuple", 
+							arr[makeTypeFunc("string", arr[]), second(v)]
+						)
+					)
+				)
+			);
+			let ret_type : type = makeTypeFunc("maybe", arr[tup_type]);
+			makeTermFunc("if",
+				arr[t, 
+					makeTermFunc("some", 
+						arr[
+							makeTermFunc(
+								"makeTuple",
+								map(vars, 
+									lambda(v : tuple(string, type),
+										makeTermFunc(
+											"makeTuple", 
+											arr[
+												makeTermFunc(first(v), arr[], str_type),
+												makeVarUse(first(v)),
+											]
+										)
+									)
+								)
+							)
+						]
+					),
+					makeTermFunc("none", arr[])
+				]
+			)
+		),
+		t,
+	)
 }
 
 
 def transf (t : term) : term {
 	if (
-		("+" = termName(t)),
+		(termName(t) = "+"),
 		makeTermFunc(
 			"*", 
 			map(termArgs(t), lambda(x : term, transf(x))), 
@@ -30,20 +166,45 @@ def transf (t : term) : term {
 	)
 }
 
+
+def test_wrap() : string {
+	let x : int = 1;
+	let y : int = 2;
+	let z : int = 3;
+	let int_type : type = makeTypeFunc("int", arr[]);
+	term2s(
+		wrapExists(
+			quote(
+				((x + (y * z)) = 5)
+			),
+			arr[
+				makeTuple("x", int_type),
+				makeTuple("y", int_type),
+				makeTuple("z", int_type)
+			]
+		)
+	)
+}
+
 def main() : void {
     println(
 		("inc: " + term2s(src("inc"))),
-		//("inc: " + a2s(evalTerm(src("inc")))),
+		//("inc: " + a2s(eval(src("inc")))),
 		("inc(1): " + 
 			i2s(let x : int = 2;
-				evalTerm(src("inc"))
+				eval(src("inc"))
+			)
+		),
+		("eval(quote((x + 1)))(2): " + 
+			i2s(let x : int = 2;
+				eval(quote((x + 1)))
 			)
 		),
 		("inc(1): " + 
 			i2s(
 				call(
 					lambda(x : int,
-						evalTerm(src("inc"))
+						eval(src("inc"))
 					),
 					3
 				)
@@ -63,12 +224,52 @@ def main() : void {
 			i2s(
 				call(
 					lambda(x : int,
-						evalTerm(transf(src("fn")))
+						eval(transf(src("fn")))
 					),
 					5
 				)
 			)
 		),
+
+		find_egypt_up_to(4),
+		find_egypt_up_to(7),
+
+		("retVarsTupleType: \n" +
+			type2s(
+				retVarsTupleType(arr[
+					makeTuple("x", 
+						makeTypeFunc("tp", arr[makeTypeVar("T"), makeTypeFunc("tpf", arr[])])
+					),
+					makeTuple("y", 
+						makeTypeFunc("string", arr[])
+					),
+					makeTuple("z", 
+						makeTypeFunc("ar", arr[makeTypeFunc("int", arr[])])
+					)
+				])
+			)
+		)
+
+		// def wrapExists (t : term, vars : [tuple(string, type)]) : term 
+
+		//("wrapExists: " + test_wrap())
+		/*	let x : int = 1;
+			let y : int = 2;
+			let z : int = 3;
+			let int_type : type = makeTypeFunc("int", arr[]);
+			term2s(
+				wrapExists(
+					quote(
+						((x + (y * z)) = 5)
+					),
+					arr[
+						makeTuple("x", int_type),
+						makeTuple("y", int_type),
+						makeTuple("z", int_type)
+					]
+				)
+			)
+		)*/
     )
 }
 
