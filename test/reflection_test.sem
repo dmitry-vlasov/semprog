@@ -4,23 +4,19 @@ def inc (x : int) : int {
 }
 
 def fn (x : int) : int {
-    (x + x + x)
+    (x + (x + (x - 1)))
 }
 
-/*
-def add_3(t0 : term) : term {
-	rec(
-		lambda(t : term, acc : term, fn : (term, term) -> term,
-			let 
 
-		)
-	)
-		lambda(name : string, t : type, args : [term],
-			(name == "E") 
-		)
-	)
+def egypt(n : int) : bool {
+	E(x : int, [1 ... n], 
+	E(y : int, [1 ... n],
+	E(z : int, [1 ... n]
+		let s : bool = (((x * x) + (y * y)) = (z * z));
+		s
+	)))
 }
-*/
+
 
 def transf (t : term) : term {
 	if (
@@ -59,6 +55,10 @@ def main() : void {
 		)),
 
 		("fn(5): " + i2s(fn(5))),
+		("transf(\"fn\"):\n" + 
+			"\t" + term2s(src("fn")) + "\n" +
+			"\t" + term2s(transf(src("fn"))) + "\n"
+		),
 		("transf(fn)(5): " + 
 			i2s(
 				call(

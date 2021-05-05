@@ -40,7 +40,7 @@ term_let     = "let" $op ws var_decl:v "=" ws term:def ";" ws term:body { makeTe
 
 term_int     = ('0'-'9')+$val ws           { makeTermInt($val) };
 term_bool    = ("true" | "false")$val ws   { makeTermBool($val) };
-term_string  = '"' (!'"' char_)* $s '"' ws { makeTermString($s) };
+term_string  = '"' ("\\\"" | (!'"' char_))* $s '"' ws { makeTermString($s) };
 term_fn_arg  = term:t (',' ws)?  { :t };
 term_inf_arg = term_id ws term:t { :t };
 
