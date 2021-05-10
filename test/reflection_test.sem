@@ -114,17 +114,6 @@ def wrapExists (t : term, vars : [tuple(string, type)]) : term {
 			),*/
 			t,
 			let str_type : type = makeTypeFunc("string", arr[]); 
-			let undef_type : type = makeTypeFunc("?", arr[]); 
-			let tup_type : type = makeTypeFunc("tuple", 
-				map(vars, 
-					lambda(v : tuple(string, type),
-						makeTypeFunc("tuple", 
-							arr[makeTypeFunc("string", arr[]), second(v)]
-						)
-					)
-				)
-			);
-			let ret_type : type = makeTypeFunc("maybe", arr[tup_type]);
 			makeTermFunc("if",
 				arr[t, 
 					makeTermFunc("some", 
@@ -252,7 +241,7 @@ def main() : void {
 
 		// def wrapExists (t : term, vars : [tuple(string, type)]) : term 
 
-		//("wrapExists: " + test_wrap())
+		("wrapExists: \n" + test_wrap())
 		/*	let x : int = 1;
 			let y : int = 2;
 			let z : int = 3;

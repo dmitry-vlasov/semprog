@@ -63,7 +63,7 @@ evalAlgTerm(
 								}
 							}
 						} else {
-							evalAlgTermVal(name, type, arg_evals);
+							evalAlgTermVal(name, type, arg_types, arg_evals, opers);
 						}
 					}
 				}
@@ -130,7 +130,9 @@ evalAlgTermOper(
 evalAlgTermVal(
     name : string, 
 	type : AlgType,
+	arg_types : [AlgType],
 	arg_evals : [Eval],
+	opers : Tree<string, [EvalOper]>,
 ) -> Eval {
 	Eval(\vals, conf -> {
 		switch (lookupTree(vals, name)) {
@@ -198,7 +200,17 @@ evalAlgTermVal(
 				}
 			}
 			None(): {
-				println("Unknown operator: " + name);
+				switch (lookupTree(opers, name)) {
+					Some(ops): {
+						println(
+							"Operator: " + name + " type cannot be unifed with argument types:\n" +
+							concatStrings(map(arg_types, \t -> "\t" + algType2s(t) + "\n")) + "\n" + 
+							"overloaded variants:\n" +
+							concatStrings(map(ops, \op -> "\t" + op.name + " : " + algType2s(op.sign) + "\n"))
+						);
+					}
+					None(): println("Unknown operator: " + name + "\n" +);
+				}
 				Val(undefVal, type);
 			}
 		}

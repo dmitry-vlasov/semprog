@@ -34,8 +34,12 @@ showAlgTerm(
     consts : Tree<AlgTypeFunc, EvalConst>
 ) -> Show {
     switch (term) {
-        AlgTermVarUse(name, type): Show(\conf -> name);
-        AlgTermVarDecl(name, type): Show(\conf -> name + " : " + algType2s(type));
+        AlgTermVarUse(name, type): {
+			Show(\conf -> name);
+		}
+        AlgTermVarDecl(name, type): {
+			Show(\conf -> name + " : " + algType2s(type));
+		}
         AlgTermFunc(name, args, type): {
             arg_types = map(args, \arg -> arg.type);
             eitherMap(
@@ -64,7 +68,11 @@ showAlgTerm(
 						}
 					});
                 } else {
-                    Show(\conf -> name);
+					if (type == stringType) {
+						Show(\conf -> "\"" + name + "\"");
+					} else {
+                    	Show(\conf -> name);
+					}
                     /*switch (lookupTree(consts, type)) {
                         Some(__): name;
                         None(): {

@@ -189,14 +189,42 @@ generateFreshVar(vars : Set<string>, var : string, ind : int) -> string {
 unify_depth_counter = ref 0;
 
 unifyType(left : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
+	/*println(
+		"UNIFYING:\n" +
+		"\t" + algType2s(left) + "\n" +
+		"AND\n" + 
+		"\t" + algType2s(right0) + "\n" +
+	);*/
 	unify_depth_counter := 0;
 	left_vars = typeVars(makeSet(), left);
 	right_vars = typeVars(makeSet(), right0);
-	renaming = foldSet(right_vars, makeTree(), \acc, var -> 
-		setTree(acc, var, generateFreshVar(left_vars, var, 0))
-	);
-	right = renameTypeVars(right0, renaming);
-	doUnifyType(left, right0, ac);
+
+	/*println(
+		"LEFT VARS:\n" +
+		concatStrings(map(set2array(left_vars), \v -> "\t" + v + "\n")) + "\n" +
+		"RIGHT VARS:\n" +
+		concatStrings(map(set2array(right_vars), \v -> "\t" + v + "\n")) + "\n" +
+		"|INTERSECT:\n" +
+		concatStrings(map(set2array(intersectSets(left_vars, right_vars)), \v -> "\t" + v + "\n")) + "\n" +
+	);*/
+
+	right = if (sizeSet(intersectSets(left_vars, right_vars)) == 0) right0 else {
+		renaming = foldSet(right_vars, makeTree(), \acc, var -> 
+			setTree(acc, var, generateFreshVar(left_vars, var, 0))
+		);
+		right = renameTypeVars(right0, renaming);
+		//if (sizeTree(renaming) > 0) {
+		//println("AAA");
+		/*println(
+				"UNIFYING:\n" +
+				"\t" + algType2s(left) + "\n" +
+				"AND\n" + 
+				"\t" + algType2s(right) + "\n" +
+			);*/
+		//}
+		right;
+	}
+	doUnifyType(left, right, ac);
 }
 
 doUnifyType(left0 : AlgType, right0 : AlgType, ac : Tree<string, AlgType>) -> Maybe<Tree<string, AlgType>> {
@@ -288,7 +316,7 @@ unifyTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -
 		if (variadic_left == undefType) {
 			if (length(lefts) == length(rights)) {
 				maybeBind(
-					doUnifyType(lefts[0], rights[0], acc),
+					unifyType(lefts[0], rights[0], acc),
 					\sub -> unifyTypes(tail(lefts), tail(rights), sub)
 				);
 			} else {
@@ -300,7 +328,7 @@ unifyTypes(lefts : [AlgType], rights : [AlgType], acc : Tree<string, AlgType>) -
 			} else {
 				//println("variafic left: " + algType2s(variadic_left));
 				maybeBind(
-					doUnifyType(variadic_left, rights[0], acc),
+					unifyType(variadic_left, rights[0], acc),
 					\sub -> {
 						variadic_type = instantiateType(variadic_left, sub);
 						//println("variadic_type: " + algType2s(variadic_type));
