@@ -10,19 +10,19 @@ import opers/reflection;
 import opers/map;
 
 export {
-    fullAlgebra : EvalAlgebra;
-    allOpers : [EvalOper];
-    allConsts : [EvalConst];
+	fullAlgebra : EvalAlgebra;
+	allOpers : [EvalOper];
+	allConsts : [EvalConst];
 }
 
 fullAlgebra = EvalAlgebra("Algebra", allOpers, allConsts);
 
 allOpers = concatA([
-    arrayOpers,
-    boolOpers,
-    intOpers,
-    folOpers,
-    stringOpers,
+	arrayOpers,
+	boolOpers,
+	intOpers,
+	folOpers,
+	stringOpers,
 	lambdaOpers,
 	controlOpers,
 	tupleOpers,
@@ -31,6 +31,7 @@ allOpers = concatA([
 ]);
 
 allConsts = [
-    intConst,
-    stringConst
+	intConst,
+	boolConst,
+	stringConst
 ];

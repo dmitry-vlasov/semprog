@@ -68,18 +68,6 @@ def find_egypt(n : int) : maybe(tuple(int, int, int)) {
 	)
 }
 
-/*
-
-
-def makeTypeTupleOfVars(vars : [tuple(string, type)]) : type {
-	if (
-		(len(vars) == 0),
-		makeTypeFunc("tuple", arr[]),
-
-	)
-}
-*/
-
 def retVarsTupleType (vars : [tuple(string, type)]) : type {
 	let tup_type : type = makeTypeFunc("tuple", 
 		map(vars, 
@@ -104,7 +92,10 @@ def wrapExists (t : term, vars : [tuple(string, type)]) : term {
 			/*if(
 				("E" = termName(t)),
 				(
+					makeTermFunc("findmap", arr[
+						get(termArgs(t), 1),
 
+					])
 				),
 				makeTermFunc(
 					termName(t), 
@@ -171,6 +162,99 @@ def test_wrap() : string {
 				makeTuple("y", int_type),
 				makeTuple("z", int_type)
 			]
+		)
+	)
+}
+
+
+def tic_tac_toe_win_strategy(n : int, m : int, k : int) : bool {
+	let a_steps : [tuple(int, int)] = arr[];
+	let b_steps : [tuple(int, int)] = arr[];
+	tic_tac_toe_win_strategy(n, m, k, a_steps, b_steps, 0)
+}
+
+def tic_tac_toe_win_strategy(
+	n : int, 
+	m : int, 
+	k : int, 
+	a_steps : [tuple(int, int)],
+	b_steps : [tuple(int, int)],
+	step : int
+) : bool {
+	if(
+		(check_is_winning(n, m, k, a_steps) /\ !(check_is_winning(n, m, k, b_steps))),
+		true,
+		if(
+			check_is_winning(n, m, k, b_steps),
+			false,
+			if (
+				(step = k),
+				false,
+				E(ax : int, [0 ... (n - 1)],
+					E(ay : int, [0 ... (m - 1)],
+						let a : tuple(int, int) = makeTuple(ax, ay);
+						(
+							!(contains(a_steps, a)) /\
+							let a1_steps : [tuple(int, int)] = add(a, a_steps);
+							if(
+								check_is_winning(n, m, k, a1_steps),
+								true,
+								A(bx : int, [0 ... (n - 1)],
+									A(by : int, [0 ... (m - 1)],
+										let b : tuple(int, int) = makeTuple(bx, by);
+										(
+											!(contains(b_steps, b)) ->
+											let b1_steps : [tuple(int, int)] = add(b, b_steps);
+											tic_tac_toe_win_strategy(n, m, k, a1_steps, b_steps, (step + 1))
+										)
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+		)
+	)
+}
+
+def check_is_winning_fn(
+	n : int, 
+	m : int, 
+	k : int, 
+	steps : [tuple(int, int)], 
+	fn : (int, int, int) -> tuple(int, int)
+) : bool {
+	E(i : int, [0 ... (n - 1)],
+		E(j : int, [0 ... (m - 1)],
+			A(s : int, [0 ... (k - 1)],
+				contains(steps, fn(i, j, s))
+			)
+		)
+	)
+}
+
+def check_is_winning(
+	n : int, 
+	m : int, 
+	k : int, 
+	steps : [tuple(int, int)]
+) : bool {
+	(
+		check_is_winning_fn(n, m, k, steps,
+			lambda(i : int, j : int, s : int,
+				makeTuple(i, (j + s))
+			)
+		) \/
+		check_is_winning_fn(n, m, k, steps,
+			lambda(i : int, j : int, s : int,
+				makeTuple((i + s), j)
+			)
+		) \/
+		check_is_winning_fn(n, m, k, steps,
+			lambda(i : int, j : int, s : int,
+				makeTuple((i + s), (j + s))
+			)
 		)
 	)
 }
@@ -259,6 +343,18 @@ def main() : void {
 				)
 			)
 		)*/
+		("tic-tac 1x1x1: \n\t" + 
+			a2s(tic_tac_toe_win_strategy(1, 1, 1))
+		),
+		("tic-tac 2x2x2: \n\t" + 
+			a2s(tic_tac_toe_win_strategy(2, 2, 2))
+		),
+		("tic-tac 3x3x3: \n\t" + 
+			a2s(tic_tac_toe_win_strategy(3, 3, 3))
+		),
+		("tic-tac 4x4x3: \n\t" + 
+			a2s(tic_tac_toe_win_strategy(4, 4, 3))
+		)
     )
 }
 

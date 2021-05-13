@@ -24,6 +24,22 @@ arrayOpers = [
         ),
         showPrefixEvalOper("concat")
     ),
+	EvalOper(
+        "contains",
+        funcAlgType(
+            [arrayAlgType(AlgTypeVar("T")), AlgTypeVar("T")], 
+            boolType
+        ),
+        \args -> Eval(\vals, conf -> {
+			arr = cast(args[0].eval(vals, conf).val : flow -> [Val]);
+			val = args[0].eval(vals, conf);
+            Val(
+				contains(arr, val), 
+				boolType
+			)
+		}),
+        showPrefixEvalOper("contains")
+    ),
     EvalOper("add", 
         funcAlgType(
             [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 

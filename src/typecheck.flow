@@ -51,13 +51,13 @@ typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string,
 					);
 					if (length(fits) == 0) {
 						if (def_type == undefType) {
-							println("(B) no operator " + name + " unifies with argument types:\n" + 
+							/*println("No operator " + name + " unifies with argument types:\n" + 
 								strIndent(strGlue(map(arg_types, \t -> algType2s(t)), "\n"))
 							);
 							println("ops:\n" + 
 								strIndent(strGlue(map(ops, \op -> algType2s(op)), "\n"))
 							);
-							println("term: " + algTerm2s(term));
+							println("term: " + algTerm2s(term));*/
 						}
 						def_type;
 					} else if (length(fits) > 1) {
@@ -80,7 +80,7 @@ typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string,
 				}
 				surrender = \msg-> {
 					if (type == undefType) {
-						println("Surrender: " + msg + " unknown operator: " + name);
+						println("Surrender typecheking: " + msg + " unknown operator: " + name);
 					}
 					type
 				}
@@ -88,20 +88,29 @@ typecheckTerm(term : AlgTerm, vars : Tree<string, AlgType>, signs : Tree<string,
 					if (type != undefType) {
 						type
 					} else {
-						switch (lookupTree(signs, name))  {
-							Some(ops): find_val_type(ops, type);
-							None(): {
-								switch (lookupTree(typed_args.second, name)) {
-									Some(var_type): {
-										switch (var_type) {
-											AlgTypeFunc(__,__): find_val_type([var_type], type);
-											default: surrender("A_");
-										}
-									} 
-									None(): surrender("B_");
+						typecheck_with_signs = \-> {
+							switch (lookupTree(signs, name))  {
+								Some(ops): find_val_type(ops, type);
+								None(): {  
+									println("Typecheking of operator: '" + name + "' failed: unknown oprator");
+									type;
 								}
 							}
 						};
+						switch (lookupTree(typed_args.second, name)) {
+							Some(var_type): {
+								switch (var_type) {
+									AlgTypeFunc(__,__): {
+										ret = find_val_type([var_type], type);
+										if (ret != undefType) ret else {
+											typecheck_with_signs();
+										}
+									}
+									default: typecheck_with_signs();
+								}
+							} 
+							None(): typecheck_with_signs();
+						}
 					}
 				}
 				AlgTermFunc(term with 

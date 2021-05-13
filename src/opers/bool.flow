@@ -11,6 +11,7 @@ export {
     makeBoolNary(name : string, op: ([bool]) -> bool) -> EvalOper;
 
     boolOpers : [EvalOper];
+	boolConst : EvalConst;
 
     makeAndTerm(args : [AlgTerm]) -> AlgTermFunc;
     makeOrTerm(args : [AlgTerm]) -> AlgTermFunc;
@@ -26,9 +27,21 @@ export {
     getTermQuantVar(t : AlgTerm) -> AlgTermVarUse;
 }
 
+boolConst = EvalConst(
+    boolType, 
+    \n, conf -> if (n == "true" || n == "false") {
+        Val(s2b(n), boolType);
+    } else {
+        println("wrong bool const format: " + n);
+        Val(undefVal, boolType);
+    }
+);
+
 boolOpers = [
     makeBoolConst("T", true),
     makeBoolConst("F", false),
+	makeBoolConst("true", true),
+    makeBoolConst("false", false),
     makeBoolUnary("!", \v -> !v),
     makeBoolNary("\\/", any),
     makeBoolNary("/\\", all),

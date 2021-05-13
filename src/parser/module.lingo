@@ -21,7 +21,7 @@ bad_type_id_char = ws_ | '(' | ')' | '[' | ']' | '{' | '}' | ',';
 
 // Terms (general algebraic representation)
 
-term = term_int   | term_string   | term_let      |
+term = term_int   | term_string   | term_bool     | term_let      |
 	term_prefix_1 | term_prefix_2 | term_prefix_3 |
 	term_infix_1  | term_infix_2  | term_infix_3  |
 	var_decl      | var_use;

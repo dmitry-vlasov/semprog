@@ -203,7 +203,7 @@ evalAlgTermVal(
 				switch (lookupTree(opers, name)) {
 					Some(ops): {
 						println(
-							"Operator: " + name + " type cannot be unifed with argument types:\n" +
+							"Operator: '" + name + "' cannot be unifed with argument types:\n" +
 							concatStrings(map(arg_types, \t -> "\t" + algType2s(t) + "\n")) + "\n" + 
 							"overloaded variants:\n" +
 							concatStrings(map(ops, \op -> "\t" + op.name + " : " + algType2s(op.sign) + "\n"))
