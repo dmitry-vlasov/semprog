@@ -43,9 +43,35 @@ boolOpers = [
 	makeBoolConst("true", true),
     makeBoolConst("false", false),
     makeBoolUnary("!", \v -> !v),
-    makeBoolNary("\\/", any),
-    makeBoolNary("/\\", all),
-    makeBoolBinary("->", \v1, v2 -> !v1 || v2),
+    //makeBoolNary("\\/", any),
+	EvalOper("\\/", 
+        funcAlgType([variadicPlusAlgType(boolType)], boolType),
+        \args -> Eval(\vals, conf -> {
+			i = iteriUntil(args, \i, arg -> flow2b(arg.eval(vals, conf).val));
+            Val(i != length(args), boolType);
+		}),
+        showInfixVariadicEvalOper("\\/")
+    ),
+    //makeBoolNary("/\\", all),
+	EvalOper("/\\", 
+        funcAlgType([variadicPlusAlgType(boolType)], boolType),
+        \args -> Eval(\vals, conf -> {
+			i = iteriUntil(args, \i, arg -> !flow2b(arg.eval(vals, conf).val));
+            Val(i == length(args), boolType);
+		}),
+        showInfixVariadicEvalOper("/\\")
+    ),
+    //makeBoolBinary("->", \v1, v2 -> !v1 || v2),
+	EvalOper("->", binaryBoolFnType,
+        \args -> Eval(\vals, conf ->
+			if (!flow2b(args[0].eval(vals, conf).val)) {
+				Val(true, boolType);
+			} else {
+				Val(flow2b(args[1].eval(vals, conf).val), boolType);
+			}
+        ),
+        showInfixBinaryEvalOper("->")
+    ),
     makeBoolBinary("<->", \v1, v2 -> (v1 && v2) || (!v1 && !v2)),
     makeBoolQuantifier("BA"),
     makeBoolQuantifier("BE")

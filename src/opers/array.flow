@@ -32,9 +32,10 @@ arrayOpers = [
         ),
         \args -> Eval(\vals, conf -> {
 			arr = cast(args[0].eval(vals, conf).val : flow -> [Val]);
-			val = args[0].eval(vals, conf);
+			arg = args[1].eval(vals, conf);
             Val(
-				contains(arr, val), 
+				contains(arr, arg), 
+				//contains(map(arr, \x -> x.val), arg.val), 
 				boolType
 			)
 		}),
@@ -42,14 +43,14 @@ arrayOpers = [
     ),
     EvalOper("add", 
         funcAlgType(
-            [AlgTypeVar("T"), arrayAlgType(AlgTypeVar("T"))], 
+            [arrayAlgType(AlgTypeVar("T")), AlgTypeVar("T")], 
             arrayAlgType(AlgTypeVar("T"))
         ),
         \args -> Eval(\vals, conf ->
 			Val(
-				concat(
-					[args[0].eval(vals, conf)], 
-					cast(args[1].eval(vals, conf).val : flow -> [Val])
+				concat( 
+					cast(args[0].eval(vals, conf).val : flow -> [Val]),
+					[args[1].eval(vals, conf)],
 				), 
 				arrayAlgType(AlgTypeVar("T"))
 			)

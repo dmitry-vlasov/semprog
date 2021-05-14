@@ -266,4 +266,19 @@ controlOpers = [
 		),
 		showPrefixEvalOper("map")
     ),
+	EvalOper("seq",
+        funcAlgType(
+            [
+				variadicStarAlgType(anyType), 
+				AlgTypeVar("A")
+			] , 
+            AlgTypeVar("A")
+        ),
+        \args -> Eval(\vals, conf -> {
+			arg_vals = evalArgs(args, vals, conf);
+			lastElement(arg_vals, Val(undefVal, undefType));
+		}),
+		//showInfixBracketEvalOper("{", "}", ";")
+		showPrefixEvalOper("seq")
+    ),
 ];
