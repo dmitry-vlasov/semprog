@@ -36,6 +36,7 @@ intOpers = [
         showInfixVariadicEvalOper("*")
     ),
     makeIntBinary("/", \x, y -> x / y),
+    makeIntBinary("%", \x, y -> x % y),
     makeIntBinary("-", \x, y -> x - y)
 ];
 

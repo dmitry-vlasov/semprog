@@ -1,9 +1,15 @@
 
 
-def n_m_k__win_strategy(n : int, m : int, k : int) : bool {
+def n_m_k__win_strategy(
+	n : int, 
+	m : int, 
+	k : int, 
+	topology_gen : (int, int) -> (tuple(int, int)) -> tuple(int, int)
+) : bool {
 	let a_steps : [tuple(int, int)] = arr[];
 	let b_steps : [tuple(int, int)] = arr[];
-	n_m_k__win_strategy(n, m, k, a_steps, b_steps, 0)
+	let topology : (tuple(int, int)) -> tuple(int, int) = topology_gen(n, m);
+	n_m_k__win_strategy(n, m, k, a_steps, b_steps, 0, topology)
 }
 
 def n_m_k__win_strategy(
@@ -12,11 +18,12 @@ def n_m_k__win_strategy(
 	k : int, 
 	a_steps : [tuple(int, int)],
 	b_steps : [tuple(int, int)],
-	step : int
+	step : int,
+	topology : (tuple(int, int)) -> tuple(int, int)
 ) : bool {
 	let show_wins : bool = (show-wins = "1");
-	let a_win : bool = check_is_winning(n, m, k, a_steps);
-	let b_win : bool = check_is_winning(n, m, k, b_steps);
+	let a_win : bool = check_is_winning(n, m, k, a_steps, topology);
+	let b_win : bool = check_is_winning(n, m, k, b_steps, topology);
 	let show_pos : (tuple(int, int)) -> string = lambda(pair : tuple(int, int), 
 		("[" + i2s(first(pair)) + "," + i2s(second(pair)) + "]")
 	);
@@ -63,7 +70,7 @@ def n_m_k__win_strategy(
 							!(contains(b_steps, a)) /\
 							let a1_steps : [tuple(int, int)] = add(a_steps, a);
 							if(
-								check_is_winning(n, m, k, a1_steps),
+								check_is_winning(n, m, k, a1_steps, topology),
 								true,
 								A(bx : int, [0 ... (n - 1)],
 									A(by : int, [0 ... (m - 1)],
@@ -71,7 +78,7 @@ def n_m_k__win_strategy(
 										(
 											(!(contains(a1_steps, b)) /\ !(contains(b_steps, b))) ->
 											let b1_steps : [tuple(int, int)] = add(b_steps, b);
-											n_m_k__win_strategy(n, m, k, a1_steps, b1_steps, (step + 1))
+											n_m_k__win_strategy(n, m, k, a1_steps, b1_steps, (step + 1), topology)
 										)
 									)
 								)
@@ -88,20 +95,21 @@ def check_is_winning(
 	n : int, 
 	m : int, 
 	k : int, 
-	steps : [tuple(int, int)]
+	steps : [tuple(int, int)],
+	topology : (tuple(int, int)) -> tuple(int, int)
 ) : bool {
 	E(pair : tuple(int, int), steps,
 		let i : int = first(pair);
 		let j : int = second(pair);
 		(
 			A(s : int, [0 ... (k - 1)],
-				contains(steps, makeTuple(i, (j + s)))
+				contains(steps, topology(makeTuple(i, (j + s))))
 			) \/
 			A(s : int, [0 ... (k - 1)],
-				contains(steps, makeTuple((i + s), j))
+				contains(steps, topology(makeTuple((i + s), j)))
 			) \/
 			A(s : int, [0 ... (k - 1)],
-				contains(steps, makeTuple((i + s), (j + s)))
+				contains(steps, topology(makeTuple((i + s), (j + s))))
 			)
 		)
 	)
@@ -140,26 +148,76 @@ def show_board(
 	("board:\n" + str + "\n")
 }
 
+def run_topology(
+	top_gen : (int, int) -> (tuple(int, int)) -> tuple(int, int), 
+	top_string : string
+) : string {
+	(
+		(top_string + " n_m_k: 1x1x1: \n\t" + 
+			a2s(n_m_k__win_strategy(1, 1, 1, top_gen))
+		) + "\n" + 
+		(top_string + " n_m_k: 2x2x2: \n\t" + 
+			a2s(n_m_k__win_strategy(2, 2, 2, top_gen))
+		) + "\n" + 
+		(top_string + " n_m_k: 3x3x3: \n\t" + 
+			a2s(n_m_k__win_strategy(3, 3, 3, top_gen))
+		) + "\n" + 
+		(top_string + " n_m_k: 4x4x3: \n\t" + 
+			a2s(n_m_k__win_strategy(4, 4, 3, top_gen))
+		) + "\n" + 
+		(top_string + " n_m_k: 4x4x4: \n\t" + 
+			a2s(n_m_k__win_strategy(4, 4, 4, top_gen))
+		) + "\n" + 
+		(top_string + " n_m_k: 5x5x3: \n\t" + 
+			a2s(n_m_k__win_strategy(5, 5, 3, top_gen))
+		) + "\n"
+	)
+}
+
+def plain_topology_gen() : (int, int) -> (tuple(int, int)) -> tuple(int, int) {
+	lambda(n : int, m : int,
+		lambda(pair : tuple(int, int),
+			pair
+		)
+	)
+}
+
+def torus_topology_gen() : (int, int) -> (tuple(int, int)) -> tuple(int, int) {
+	lambda(n : int, m : int,
+		lambda(pair : tuple(int, int),
+			let i : int = first(pair);
+			let j : int = second(pair);
+			makeTuple((i % n), (j % m))
+		)
+	)
+}
+
+def klein_topology_gen() : (int, int) -> (tuple(int, int)) -> tuple(int, int) {
+	lambda(n : int, m : int,
+		lambda(pair : tuple(int, int),
+			let i : int = first(pair);
+			let j : int = second(pair);
+			makeTuple((i % n), ((m - 1) - (j % m)))
+		)
+	)
+}
+
+def projective_topology_gen() : (int, int) -> (tuple(int, int)) -> tuple(int, int) {
+	lambda(n : int, m : int,
+		lambda(pair : tuple(int, int),
+			let i : int = first(pair);
+			let j : int = second(pair);
+			makeTuple(((n - 1) - (i % n)), ((m - 1) - (j % m)))
+		)
+	)
+}
+
 def main() : void {
     println(
-		("n_m_k: 1x1x1: \n\t" + 
-			a2s(n_m_k__win_strategy(1, 1, 1))
-		),
-		("n_m_k: 2x2x2: \n\t" + 
-			a2s(n_m_k__win_strategy(2, 2, 2))
-		),
-		("n_m_k: 3x3x3: \n\t" + 
-			a2s(n_m_k__win_strategy(3, 3, 3))
-		),
-		("n_m_k: 4x4x3: \n\t" + 
-			a2s(n_m_k__win_strategy(4, 4, 3))
-		),
-		("n_m_k: 4x4x4: \n\t" + 
-			a2s(n_m_k__win_strategy(4, 4, 4))
-		),
-		("n_m_k: 5x5x3: \n\t" + 
-			a2s(n_m_k__win_strategy(5, 5, 3))
-		)
+		run_topology(plain_topology_gen(), "plain"),
+		run_topology(torus_topology_gen(), "torus"),
+		run_topology(klein_topology_gen(), "klein"),
+		run_topology(projective_topology_gen(), "projective")
     )
 }
 
