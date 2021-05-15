@@ -90,18 +90,18 @@ def check_is_winning(
 	k : int, 
 	steps : [tuple(int, int)]
 ) : bool {
-	E(i : int, [0 ... (n - 1)],
-		E(j : int, [0 ... (m - 1)],
-			(
-				A(s : int, [0 ... (k - 1)],
-					contains(steps, makeTuple(i, (j + s)))
-				) \/
-				A(s : int, [0 ... (k - 1)],
-					contains(steps, makeTuple((i + s), j))
-				) \/
-				A(s : int, [0 ... (k - 1)],
-					contains(steps, makeTuple((i + s), (j + s)))
-				)
+	E(pair : tuple(int, int), steps,
+		let i : int = first(pair);
+		let j : int = second(pair);
+		(
+			A(s : int, [0 ... (k - 1)],
+				contains(steps, makeTuple(i, (j + s)))
+			) \/
+			A(s : int, [0 ... (k - 1)],
+				contains(steps, makeTuple((i + s), j))
+			) \/
+			A(s : int, [0 ... (k - 1)],
+				contains(steps, makeTuple((i + s), (j + s)))
 			)
 		)
 	)
