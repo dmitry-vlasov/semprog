@@ -4,7 +4,19 @@ import opers/string;
 
 export {
     controlOpers : [EvalOper];
+
+	voidConst : EvalConst;
 }
+
+voidConst = EvalConst(
+    voidType, 
+    \n, conf -> if (n == "void") {
+        Val(VoidVal(), voidType);
+    } else {
+        println("wrong void const format: " + n);
+        Val(undefVal, voidType);
+    }
+);
 
 controlOpers = [
     EvalOper(
@@ -279,6 +291,34 @@ controlOpers = [
 			lastElement(arg_vals, Val(undefVal, undefType));
 		}),
 		//showInfixBracketEvalOper("{", "}", ";")
+		showPrefixEvalOper("seq")
+    ),
+	EvalOper("K1", // K combinator
+        funcAlgType(
+            [
+				AlgTypeVar("A"), 
+				AlgTypeVar("X")
+			] , 
+            AlgTypeVar("A")
+        ),
+        \args -> Eval(\vals, conf -> {
+			arg_vals = evalArgs(args, vals, conf);
+			arg_vals[0];
+		}),
+		showPrefixEvalOper("seq")
+    ),
+	EvalOper("K2", // K combinator
+        funcAlgType(
+            [
+				AlgTypeVar("X"), 
+				AlgTypeVar("A")
+			] , 
+            AlgTypeVar("A")
+        ),
+        \args -> Eval(\vals, conf -> {
+			arg_vals = evalArgs(args, vals, conf);
+			arg_vals[1];
+		}),
 		showPrefixEvalOper("seq")
     ),
 ];

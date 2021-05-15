@@ -15,7 +15,7 @@ export {
 	makeSrcOper(defs : Tree<string, Def>) -> EvalOper;
     module2s(module : Module, conf : Conf) -> string;
     def2s(def : Def, conf : Conf) -> string;
-    typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module;
+    typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>, conf : Conf) -> Module;
 
 	moduleSignature(module : Module, algebra : EvalAlgebra) -> Tree<string, [AlgTypeFunc]>;
 }
@@ -77,11 +77,11 @@ def2s(def : Def, conf : Conf) -> string {
 	 + "\n}\n";
 }
 
-typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>) -> Module {
+typecheckModule(module : Module, algebra : EvalAlgebra, sign : Tree<string, [AlgTypeFunc]>, conf : Conf) -> Module {
     Module(module with 
         defs = map(module.defs, \def -> {
             //println("typechecking: " + def.name);
-            vars = fold(def.vars, makeTree(), \acc, var -> setTree(acc, var.name, var.type));
+            vars = fold(def.vars, mapTree(conf.opts, \opt -> stringType), \acc, var -> setTree(acc, var.name, var.type));
             typechecked = typecheckTerm(def.term, vars, sign);
             /*if (typechecked.type == undefType) {
                 println("Term " + algTerm2s(def.term) + " was not typed");

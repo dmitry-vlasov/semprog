@@ -21,7 +21,7 @@ bad_type_id_char = ws_ | '(' | ')' | '[' | ']' | '{' | '}' | ',';
 
 // Terms (general algebraic representation)
 
-term = term_int   | term_string   | term_bool     | term_let      |
+term = term_void  | term_int      | term_string   | term_bool     | term_let      |
 	term_prefix_1 | term_prefix_2 | term_prefix_3 |
 	term_infix_1  | term_infix_2  | term_infix_3  |
 	var_decl      | var_use;
@@ -38,6 +38,7 @@ term_quant    = term_id:op ws var_decl_arg*:ds (term_fn_arg)+:as { makeTermQuant
 
 term_let     = "let" $op ws var_decl:v "=" ws term:def ";" ws term:body { makeTermLet($op, :v, :def, :body) };
 
+term_void    = "void" ws                   { makeTermVoid($val) };
 term_int     = ('0'-'9')+$val ws           { makeTermInt($val) };
 term_bool    = ("true" | "false")$val ws   { makeTermBool($val) };
 term_string  = '"' ("\\\"" | (!'"' char_))* $s '"' ws { makeTermString($s) };

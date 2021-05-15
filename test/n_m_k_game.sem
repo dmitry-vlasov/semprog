@@ -14,6 +14,7 @@ def n_m_k__win_strategy(
 	b_steps : [tuple(int, int)],
 	step : int
 ) : bool {
+	let show_wins : bool = (show-wins = "1");
 	let a_win : bool = check_is_winning(n, m, k, a_steps);
 	let b_win : bool = check_is_winning(n, m, k, b_steps);
 	let show_pos : (tuple(int, int)) -> string = lambda(pair : tuple(int, int), 
@@ -33,28 +34,16 @@ def n_m_k__win_strategy(
 		) + "\n"
 	);
 	if(
-		seq(
-			/*println((
-				/*show_moves + 
-				if(
-					(step = 0), "",
-					let pair : tuple(int, int) = get(a_steps, 0);
-					("a_steps contains: " + show_pos(pair) + ": " + b2s(contains(a_steps, get(a_steps, 0))) + "\n")
-				) +* /
-				if(a_win, "X wins " + show_n_m_k + " game\n", if(b_win, "O wins\n", "No wins\n")) + 
-				show_board(n, m, a_steps, b_steps)
-			)),*/
-			println(
-				if(a_win, 
-					("X wins " + show_n_m_k + " game\n" + show_moves + 
+		K2(
+			if((a_win /\ show_wins), 
+				println(("X wins " + show_n_m_k + " game\n" + show_moves + 
+					show_board(n, m, a_steps, b_steps)
+				)), 
+				if((b_win /\ show_wins), 
+					println(("O wins " + show_n_m_k + " game\n" + show_moves + 
 						show_board(n, m, a_steps, b_steps)
-					), 
-					if(b_win, 
-						("O wins " + show_n_m_k + " game\n" + show_moves + 
-							show_board(n, m, a_steps, b_steps)
-						), 
-						""
-					)
+					)), 
+					void
 				)
 			),
 			(a_win /\ !(b_win))
@@ -95,42 +84,24 @@ def n_m_k__win_strategy(
 	)
 }
 
-def check_is_winning_fn(
-	n : int, 
-	m : int, 
-	k : int, 
-	steps : [tuple(int, int)], 
-	fn : (int, int, int) -> tuple(int, int)
-) : bool {
-	E(i : int, [0 ... (n - 1)],
-		E(j : int, [0 ... (m - 1)],
-			A(s : int, [0 ... (k - 1)],
-				contains(steps, fn(i, j, s))
-			)
-		)
-	)
-}
-
 def check_is_winning(
 	n : int, 
 	m : int, 
 	k : int, 
 	steps : [tuple(int, int)]
 ) : bool {
-	(
-		check_is_winning_fn(n, m, k, steps,
-			lambda(i : int, j : int, s : int,
-				makeTuple(i, (j + s))
-			)
-		) \/
-		check_is_winning_fn(n, m, k, steps,
-			lambda(i : int, j : int, s : int,
-				makeTuple((i + s), j)
-			)
-		) \/
-		check_is_winning_fn(n, m, k, steps,
-			lambda(i : int, j : int, s : int,
-				makeTuple((i + s), (j + s))
+	E(i : int, [0 ... (n - 1)],
+		E(j : int, [0 ... (m - 1)],
+			(
+				A(s : int, [0 ... (k - 1)],
+					contains(steps, makeTuple(i, (j + s)))
+				) \/
+				A(s : int, [0 ... (k - 1)],
+					contains(steps, makeTuple((i + s), j))
+				) \/
+				A(s : int, [0 ... (k - 1)],
+					contains(steps, makeTuple((i + s), (j + s)))
+				)
 			)
 		)
 	)
@@ -144,16 +115,23 @@ def show_board(
 ) : string {
 	let show_pos : (int, int) -> string = lambda(i : int, j : int
 		let pos : tuple(int, int) = makeTuple(i, j);
-		if(contains(a_steps, pos), "X", if(contains(b_steps, pos), "O", "_"))
+		if(contains(a_steps, pos), "X|", if(contains(b_steps, pos), "O|", " |"))
 	);
+	let bar : string = ("-" + fold([0 ... (m - 1)], "", 
+		lambda(acc : string, i : int,
+			(acc + "--")
+		)
+	));
 	let show_row : (int) -> string = lambda(i : int,
-		fold([0 ... (m - 1)], "", 
-			lambda(acc : string, j : int,
-				(acc + show_pos(i, j))
-			)
+		(
+			fold([0 ... (m - 1)], "|", 
+				lambda(acc : string, j : int,
+					(acc + show_pos(i, j))
+				)
+			) + "\n" + bar
 		)
 	);
-	let str : string = fold([0 ... (n - 1)], "",
+	let str : string = fold([0 ... (n - 1)], bar,
 		lambda(acc : string, i : int,
 			let s : string = show_row(i);
 			(acc + "\n" + s)

@@ -41,6 +41,7 @@ term_semantic_actions : Tree<string, ([flow]) -> flow> = pairs2tree([
 	Pair("makeTermString",  \s -> 
 		AlgTermFunc(strReplaces(s[0], ["\\\"", "\"", "\\n", "\n", "\\t", "\t"]), [], stringType)
 	),
+	Pair("makeTermVoid",    \s -> AlgTermFunc("void", [], voidType)),
 	Pair("makeTermInt",     \s -> AlgTermFunc(s[0], [], intType)),
 	Pair("makeTermBool",    \s -> AlgTermFunc(s[0], [], boolType)),
 	Pair("makeTermVarUse",  \s -> AlgTermVarUse(s[0], undefType)),

@@ -34,7 +34,7 @@ main() -> void {
 						);
 					} else {
 						sign = moduleSignature(parsed, fullAlgebra);
-						module = typecheckModule(parsed, fullAlgebra, sign);
+						module = typecheckModule(parsed, fullAlgebra, sign, conf);
 						defs = fold(module.defs, makeTree(), \acc, def -> setTree(acc, def.name, def));
 
 						algebra = EvalAlgebra("module " + name + " algebra", 
