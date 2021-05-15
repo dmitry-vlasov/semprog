@@ -154,6 +154,9 @@ def main() : void {
 		("n_m_k: 4x4x3: \n\t" + 
 			a2s(n_m_k__win_strategy(4, 4, 3))
 		),
+		("n_m_k: 4x4x4: \n\t" + 
+			a2s(n_m_k__win_strategy(4, 4, 4))
+		),
 		("n_m_k: 5x5x3: \n\t" + 
 			a2s(n_m_k__win_strategy(5, 5, 3))
 		)
